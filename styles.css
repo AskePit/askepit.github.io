@@ -1,0 +1,41 @@
+h1 {
+    font-weight: 100;
+    font-family: Consolas, Lucida Console, monospace;
+    font-variant: small-caps;
+    font-size: 46pt;
+    text-align: center;
+}
+
+h2 {
+    font-family: Consolas, Lucida Console, Arial, Helvetica, sans-serif;
+    font-size: 24pt;
+}
+
+p {
+    font-family: Tahoma, Verdana, Geneva, Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    padding: 0px 40px;
+}
+
+body {
+    padding: 15px 50px;
+}
+
+img {
+    padding: 0px 40px;
+}
+
+ul {
+    list-style-type: none;
+}
+
+li {
+    font-size: 24px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: black;
+}
+
+a:link    {color:#000;}  /* unvisited link  */
+a:visited {color:#000;}  /* visited link    */
+a:hover   {color:#666;}  /* mouse over link */
+a:active  {color:#000;}  /* selected link   */ 
