@@ -1,120 +1,181 @@
 body {
-    margin: 50px 80px
+    margin: 0;
 }
 
-.centrator-flex {
+#global-grid {
+    display: grid;
+    grid-template-columns: 1fr min-content 1fr;
+    grid-template-rows: min-content min-content min-content min-content;
+    grid-template-areas:
+        "north-west north north-east"
+        "west center east"
+        "south-west south south-east"
+        "south2-west south2 south2-east"
+    ;
+}
+
+#north {
+    grid-area: north;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
+    padding: 0px 0px 5px 0px;
 }
 
-.main-flex {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    align-items: left;
-    gap: 20px;
+#west {
+    grid-area: west;
+    place-self: stretch stretch;
 }
 
-.ver-flex {
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    flex: 0 1 auto;
-    align-items: center;
-    gap: 0;
+#center {
+    grid-area: center;
 }
 
-.hor-flex {
+#east {
+    grid-area: east;
+    place-self: stretch stretch;
+}
+
+#south {
+    grid-area: south;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px 0px;
 }
 
-.rythm-row {
+#south2-west {
+    grid-area: south2-west;
+    background-color: #ffe03d;
+}
+
+#south2 {
+    grid-area: south2;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: #ffe03d;
+    padding: 23px 0px;
+}
+
+#south2-east {
+    grid-area: south2-east;
+    background-color: #ffe03d;
+}
+
+#logo {
+    align-self: center;
+    padding: 25px 0px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td {
+    border-color: #ffe03d;
+    border-width: 2px;
+    border-style: solid;
+    margin: 0px;
+    padding: 0px;
 }
 
 .rythm-tile {
-    border: 1px solid #ddd;
     width: 190px;
     text-align: center;
-    margin: 5px 0px;
-    padding: 5px 5px;
+    padding: 8px 22px;
+}
+
+.rythm-tile img {
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .rythm-tile.active {
-    border-color: transparent; /* remove the border's colour */
-    box-shadow: 0 0 0 2px blue; /* emulate the border */
+    text-align: center;
+    background-color: #ffe03dd8;
 }
 
-.speed-block, .result-block {
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    align-items: flex-end;
-    flex-wrap: wrap;
+.rythm-tile:hover {
+    background-color: #ffe03dd8;
+}
+
+.table-expand {
+    width: 100%;
+    height: 100%;
+}
+
+.td-expand {
+    width: 100%;
+    border-width: 2px 0px 2px 0px;
 }
 
 button {
-    padding: 15px 30px;
-    border-radius: 12px;
+    width: 98px;
+    height: 75px;
+    border-radius: 5px;
     border-width: 1px;
-    margin-left: auto;
-    background-color: darkorchid;
-    color: #fff;
-    font-size: 26px;
-    font-weight: 1000;
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    font-variant: small-caps;
+    stroke-width: 0px;
+    background-color: #ee00d6;
+    padding: 0px;
+    border: 0px solid;
 }
 
-h1 {
-    font-family: fantasy;
-    font-variant: small-caps;
-    font-size: 50px;
-    font-weight: 100;
+button:hover {
+    background-color: black;
 }
 
 h3 {
-    font-family: Calibri;
+    font-family: 'Reddit Sans';
     font-variant: normal;
-    font-size: 26px;
-    font-weight: 500;
+    font-size: 40px;
+    font-weight: 600;
     font-variant: normal;
-    margin-top: 10px;
-    margin-bottom: 0px;
+    text-transform: uppercase;
+    margin: 3px;
 }
 
-p {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    font-size: 24px;
-    font-weight: 800;
-    margin-top: 0px;
-    margin-bottom: -1px;
+#riff {
+    font-family: 'Reddit Sans';
+    font-size: 40px;
+    font-weight: 700;
+    color: #ee003d;
 }
 
 input {
-    width: 45px;
+    width: auto;
     border-radius: 0px;
-    border-width: 0px 0px 1px 0px;
+    border-width: 0px 0px 2px 0px;
+    border-color: #ffe03d;
     align-content: center;
     text-align: center;
+    margin: 0px;
+    margin-left: auto;
 }
 
-textarea:focus, input:focus{
+input, .unit {
+    font-family: 'Reddit Sans';
+    font-size: 24px;
+    font-weight: 300;
+}
+
+textarea:focus, input:focus {
     outline: none;
 }
 
-hr {
-    align-self: stretch;
-    width: 620px;
-    height: 3px;
-    background-color: black;
-    border: 0;
+.svg-triangle path {
+    stroke-width: 16px;
+    stroke: white;
+    stroke-linejoin: round;
+    stroke-linecap:round;
+    fill: white;
+}
+
+.coupler {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0px 14px;
 }
