@@ -1,0 +1,45 @@
+body {
+    margin: 10px 25%;
+}
+
+h1 {
+    font-family: 'Oswald';
+    font-size: 60px;
+    font-weight: 200;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-family: 'Oswald';
+    font-size: 45px;
+    font-weight: 400;
+}
+
+p {
+    font-family: 'Old Standard TT';
+    font-size: 24px;
+    font-weight: 400;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+code {
+    font-family: 'Fira Code';
+    font-size: 16px;
+    font-weight: 400;
+
+    background-color: #f3f4fa;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+}
+
+pre code {
+    background-color: #f3f4fa00;
+    padding-left: 0em;
+    padding-right: 0em;
+}
+
+pre {
+    background-color: #f3f4fa;
+    padding: 30px;
+}
