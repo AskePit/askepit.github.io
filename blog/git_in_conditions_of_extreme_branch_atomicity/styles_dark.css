@@ -1,0 +1,58 @@
+body {
+    margin: 60px 25% 80px 25%;
+    background-color: #333;
+
+    --text-color: white;
+}
+
+h1, h2, h3, p, code {
+    color: var(--text-color);
+}
+
+h1 {
+    font-family: 'Oswald';
+    font-size: 60px;
+    font-weight: 200;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-family: 'Oswald';
+    font-size: 45px;
+    font-weight: 400;
+}
+
+p {
+    font-family: 'Old Standard TT';
+    font-size: 24px;
+    font-weight: 400;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+code {
+    font-family: 'Fira Code';
+    font-size: 16px;
+    font-weight: 400;
+
+    background-color: #1c1c1c;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+}
+
+pre code {
+    background-color: #f3f4fa00;
+    padding-left: 0em;
+    padding-right: 0em;
+}
+
+pre {
+    background-color: #1c1c1c;
+    padding: 30px;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0px;
+}

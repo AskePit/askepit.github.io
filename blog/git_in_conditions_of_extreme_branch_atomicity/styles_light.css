@@ -1,5 +1,5 @@
 body {
-    margin: 10px 25%;
+    margin: 60px 25% 80px 25%;
 }
 
 h1 {
@@ -42,4 +42,10 @@ pre code {
 pre {
     background-color: #f3f4fa;
     padding: 30px;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0px;
 }
