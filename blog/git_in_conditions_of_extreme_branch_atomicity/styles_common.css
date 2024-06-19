@@ -5,6 +5,12 @@ body {
     padding: 0px calc((100vw - var(--column-width))/2);
 }
 
+@media only screen and (max-width: 1000px) {
+    body {
+        margin: 15px;
+    }
+}
+
 h1 {
     font-family: 'Oswald';
     font-size: 60px;
