@@ -1,41 +1,18 @@
-h1 {
-    font-weight: 100;
-    font-family: Consolas, Lucida Console, monospace;
-    font-variant: small-caps;
-    font-size: 46pt;
-    text-align: center;
-}
-
-h2 {
-    font-family: Consolas, Lucida Console, Arial, Helvetica, sans-serif;
-    font-size: 24pt;
-}
-
-p {
-    font-family: Tahoma, Verdana, Geneva, Arial, Helvetica, sans-serif;
-    font-size: 10pt;
-    padding: 0px 40px;
-}
-
 body {
-    padding: 15px 50px;
+    margin: 0;
 }
 
-img {
-    padding: 0px 40px;
+#main-divider {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    justify-content: space-around;
+    width: 50%;
 }
 
-ul {
-    list-style-type: none;
+#line {
+    border-left: 6px solid #1c1c1c;
+    height: 500px;
+    margin: 20px;
 }
-
-li {
-    font-size: 24px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: black;
-}
-
-a:link    {color:#000;}  /* unvisited link  */
-a:visited {color:#000;}  /* visited link    */
-a:hover   {color:#666;}  /* mouse over link */
-a:active  {color:#000;}  /* selected link   */ 
