@@ -25,3 +25,12 @@ body {
 ul, li, p {
     text-align: left;
 }
+
+.centered {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
