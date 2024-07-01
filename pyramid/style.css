@@ -1,0 +1,78 @@
+* {
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+    overflow: hidden;
+}
+
+*:focus {
+    outline: none;
+}
+
+body {
+    margin: 0 auto;
+    background: url("table.jpg");
+    text-align: center;
+	line-height: 0;
+}
+
+
+.card-space {
+    width: 15vh;
+    height: 21vh;
+	
+    position: relative;
+    display: inline-block;
+}
+
+.card {
+	background-size: contain;
+    background-position: center center;
+    border-radius: 1vh;
+	border: 1px solid #555;
+    box-shadow: 1px -1px 3px rgba(0, 0, 0, 1);
+}
+
+#deck {
+    /*margin-top: 20vh;*/
+    position: fixed;
+    top: 5vh;
+	left: 5vh;
+	
+	background-image: url("cards/vegas/0.jpg");
+}
+
+#pyramid{
+    margin-top: 3vh;
+    /*height: 280px;*/
+    /*padding: 0 250px 0 0;*/
+    text-align: center;
+    position: relative;
+	/*border: 1px solid;*/
+	display: inline-block;
+}
+
+.result_label {
+    position: absolute;
+    top: 400px;
+    left: 50%;
+    transform: translate(-50%, -50%) translate(0px, -35px);
+
+    width: 700px;
+    height: 200px;
+
+    background: rgba(0, 0, 0, 0);
+    border: 0px solid rgba(0, 0, 0, 0.15);
+
+    opacity: 0.8;
+
+    color: #003000;
+
+    font-family: "Impact";
+    font-size: 72pt;
+
+    visibility: hidden;
+
+    text-align: center;
+    align-content: center;
+}

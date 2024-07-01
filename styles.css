@@ -13,7 +13,15 @@ body {
 }
 
 #line {
-    border-left: 6px solid #1c1c1c;
+    border-left: 4px solid #1c1c1c;
     height: 500px;
     margin: 20px;
+}
+
+#tools, #articles {
+    width: 50vw;
+}
+
+ul, li, p {
+    text-align: left;
 }
