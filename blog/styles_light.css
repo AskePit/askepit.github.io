@@ -6,10 +6,10 @@ body {
     color: black;
 }
 
-pre code {
-    background-color: #f3f4fa00;
-}
-
 pre, code {
     background-color: #f3f4fa;
+}
+
+a, a code {
+    color: #258ae7;
 }

@@ -24,6 +24,12 @@ h2 {
     font-weight: 400;
 }
 
+h3 {
+    font-family: 'Oswald';
+    font-size: 30px;
+    font-weight: 500;
+}
+
 ul, li, p {
     font-family: 'Old Standard TT';
     font-size: 24px;
@@ -48,6 +54,7 @@ pre code {
 
 pre {
     padding: 30px;
+    overflow: auto;
 }
 
 figure {
@@ -70,4 +77,8 @@ figcaption {
     display: flex;
     flex-direction: row;
     justify-content: center;
+}
+
+a {
+    text-decoration-thickness: 1px;
 }
