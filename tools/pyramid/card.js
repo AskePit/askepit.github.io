@@ -177,9 +177,10 @@ function getCardUrl(card) {
 	if(card.isEmpty()) {
 		url = '';
 	} else if (card.opened) {
-        url = 'url("cards/' + card.rank + card.suit + '.svg")';
+        let ext = '.jpg'
+        url = 'url("cards/cards_' + card.rank + card.suit + ext + '")';
     } else {
-        url = 'url("cards/1B.svg")';
+        url = 'url("cards/cards_shirt.jpg")';
     }
     return url;
 }
@@ -234,11 +235,13 @@ function Deck(setType, deckCount) {
 		
 		if(this.isEmpty()) {
 			view.style.backgroundImage = getCardUrl(new Card(Rank.No, Suit.No, true));
+            view.style.backgroundRepeat = 'no-repeat';
 			return;
 		}
 
 		var c = this.last();
 		view.style.backgroundImage = getCardUrl(c);
+        view.style.backgroundRepeat = 'no-repeat';
 		
 		var shadow = '';
 		var cardsCount = this.cards.length;
@@ -297,6 +300,7 @@ function Pyramid(deck, stepFunc) {
 				} else {
 					cardView.setAttribute('class', 'card-space card');
 					cardView.style.backgroundImage = getCardUrl(card);
+                    cardView.style.backgroundRepeat = 'no-repeat';
                     cardView.style.transform = 'translateY(-' + 9*row + 'vh)';
 				}
 								

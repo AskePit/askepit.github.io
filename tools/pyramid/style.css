@@ -11,14 +11,14 @@
 
 body {
     margin: 0 auto;
-    background: url("table.jpg");
+    background-color: #154247;
     text-align: center;
 	line-height: 0;
 }
 
 
 .card-space {
-    width: 15vh;
+    width: 13.88vh;
     height: 21vh;
 	
     position: relative;
