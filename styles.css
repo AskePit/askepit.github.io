@@ -3,13 +3,18 @@ body {
     padding: 0px;
 }
 
+#header-divider {
+    display: flex;
+    flex-direction: column;
+    width: 60%;
+}
+
 #main-divider {
     display: flex;
     flex-direction: row;
     flex-grow: 1;
     flex-shrink: 1;
     justify-content: space-around;
-    width: 50%;
 }
 
 #line {
@@ -22,15 +27,26 @@ body {
     width: 50vw;
 }
 
+#tools {
+    padding-left: 10px;
+}
+
 ul, li, p {
     text-align: left;
 }
 
+ul {
+    padding-left: 20px;
+}
+
+li {
+    padding-bottom: 8px;
+}
+
 .centered {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
-    align-items: center;
     width: 100vw;
     height: 100vh;
 }
