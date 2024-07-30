@@ -1,3 +1,3 @@
-# Punk riff generator
+# Askepit projects
 
-Achtung! Deep WIP
+Here go my articles and funny programs
