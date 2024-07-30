@@ -177,10 +177,10 @@ function getCardUrl(card) {
 	if(card.isEmpty()) {
 		url = '';
 	} else if (card.opened) {
-        let ext = '.jpg'
-        url = 'url("cards/cards_' + card.rank + card.suit + ext + '")';
+        let ext = '.svg'
+        url = 'url("cards/' + card.rank + card.suit + ext + '")';
     } else {
-        url = 'url("cards/cards_shirt.jpg")';
+        url = 'url("cards/shirt.svg")';
     }
     return url;
 }
