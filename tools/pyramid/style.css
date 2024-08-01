@@ -18,8 +18,12 @@ body {
 
 
 .card-space {
-    width: 13.88vh;
-    height: 21vh;
+    --card-ratio: calc(800.0/1267.0);
+    --card-height: 23.5vh;
+    --card-width: calc(var(--card-height) * var(--card-ratio));
+
+    width: var(--card-width);
+    height: var(--card-height);
 	
     position: relative;
     display: inline-block;
@@ -34,21 +38,17 @@ body {
 }
 
 #deck {
-    /*margin-top: 20vh;*/
     position: fixed;
     top: 5vh;
 	left: 5vh;
 	
-	background-image: url("cards/vegas/0.jpg");
+	background-image: url("cards/shirt.svg");
 }
 
 #pyramid{
     margin-top: 3vh;
-    /*height: 280px;*/
-    /*padding: 0 250px 0 0;*/
     text-align: center;
     position: relative;
-	/*border: 1px solid;*/
 	display: inline-block;
 }
 

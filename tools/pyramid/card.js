@@ -301,7 +301,7 @@ function Pyramid(deck, stepFunc) {
 					cardView.setAttribute('class', 'card-space card');
 					cardView.style.backgroundImage = getCardUrl(card);
                     cardView.style.backgroundRepeat = 'no-repeat';
-                    cardView.style.transform = 'translateY(-' + 9*row + 'vh)';
+                    cardView.style.transform = 'translateY(-' + 11.9*row + 'vh)';
 				}
 								
 				(function(_cardView, _card, _deck, _pyramid){
