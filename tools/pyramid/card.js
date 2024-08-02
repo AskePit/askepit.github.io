@@ -172,6 +172,19 @@ function Card(rank, suit, opened) {
 	}
 }
 
+function getCardPath(card) {
+    var url;
+	if(card.isEmpty()) {
+		url = '';
+	} else if (card.opened) {
+        let ext = '.svg'
+        url = 'cards/' + card.rank + card.suit + ext;
+    } else {
+        url = 'cards/shirt.svg';
+    }
+    return url;
+}
+
 function getCardUrl(card) {
     var url;
 	if(card.isEmpty()) {
@@ -183,6 +196,11 @@ function getCardUrl(card) {
         url = 'url("cards/shirt.svg")';
     }
     return url;
+}
+
+function preloadImage(im_url) {
+    let img = new Image();
+    img.src = im_url;
 }
 
 function Deck(setType, deckCount) {
@@ -222,6 +240,8 @@ function Deck(setType, deckCount) {
             for (var r = 0; r<rankSet.length; ++r) {
                 var c = new Card(rankSet[r], SuitSet[s], false);
                 this.cards.push(c);
+
+                preloadImage(getCardPath(new Card(rankSet[r], SuitSet[s], true)));
             }
         }
     }
