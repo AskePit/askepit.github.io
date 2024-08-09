@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+    <title>Git in conditions of extreme branch atomicity</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <!-- <link rel="stylesheet alternate" href="../styles_dark.css" id="dark-styles" title="Dark" type="text/css"/> -->
+    <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" name="theme">
+        <span class="slider round"></span>
+    </label>
+    <p><span style="font-size: 20px;">theme</span></p>
+</div>
+<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<p>C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language’s standard library. How did we end up with these helper files, and when will this ever end?</p>
+<h1>Features that do not exist</h1>
+<p>For over a decade, I’ve been professionally involved in C++ development. I entered the field in 2013, just when the C++ standardization committee got into gear and adopted the three-year release cycle for updated language standards. C++11 had already been released, introducing plenty of attractive innovations that significantly refreshed the language. However, not everyone had the luxury of using all these new features in their working code, and we had to stick to the dull C++03, longing for the new standard.</p>
+<p>Despite the diversity of new features introduced into the language, I observed the same recurring pattern from project to project: helper files, helper containers implementing the same things, filling the voids in the STL. I’m not even talking about niched structures and algorithms – more about things that are essential for comfortably developing software in C++. I observe how different companies on various projects construct the same makeshift solutions just because they are natural and in demand. And STL has nothing to offer.</p>
+<p>In this article, I wanted to gather the most prominent examples of what I’ve seen and used in development. However, in the process of collecting all the absent features in C++, I unexpectedly discovered that some of them had been already covered by the new language standards, either fully or partially. Therefore, this article is more of a reflection and complains about what was missing for a long time but eventually made its way into the language, and what still remains absent in the standard. The article doesn’t pretend to be anything pretentious; rather, it’s just a chat about everyday C++.</p>
+<p><strong>Disclaimer</strong>: In this article, I may interchange concepts such as C++, STL, language, language standard, etc., as in the context of the article, it’s not crucial, and the discussion revolves around &quot;all of that stuff.&quot;</p>
+<h1>What was missing for a long time</h1>
+<h2><code>std::string::starts_with</code>, <code>std::string::ends_with</code></h2>
+<p>The phantom pain of every other C++ enthusiast. We had been waiting for these things for so long, and they took their sweet time getting to us. I bet you’ve seen something similar in the hidden corners of your project’s codebase:</p>
+<pre><code class="language-cpp">inline bool starts_with(const std::string &amp;s1, const std::string &amp;s2)
+{
+    return s2.size() &lt;= s1.size() &amp;&amp; s1.compare(0, s2.size(), s2) == 0;
+}
+</code></pre>
+<p>These methods were introduced into the language only with C++20, which is still not accessible to everyone. But the fortunate ones can finally find the prefix and the suffix of a string. Both, in fact:</p>
+<pre><code class="language-cpp">std::string s(&quot;c++20&quot;);
+
+bool res1 = s.starts_with(&quot;c++&quot;); // true
+bool res2 = s.starts_with(&quot;c#&quot;);  // false
+bool res3 = s.ends_with(&quot;20&quot;);    // true
+bool res4 = s.ends_with(&quot;27&quot;);    // false
+</code></pre>
+<h2><code>std::optional</code></h2>
+<p>“This class has been in the language for ages now, grandpa, take your pills!&quot; – you might say and you would be partially right because <code>std::optional</code> has been with us since the C++17 standard, and everyone has become quite attached to it. However, here is more of my personal pain: in the early years of my career, I worked on a project with a C++03 restriction and used a custom <code>optional</code> created by my colleague.</p>
+<p>Reading the code that implemented this custom <code>optional</code> class was kinda thrilling for me. I was a junior back then, and it left an impression on me. Surely, everything there was quite simple and straightforward, but the emotions were as if I were reading STL source code itself.</p>
+<p>I’m glad that now I can confidently write something like this on almost any project:</p>
+<pre><code class="language-cpp">std::optional&lt;Result&gt; getResult();
+
+const auto res = getResult();
+if (res) {
+    std::cout &lt;&lt; res &lt;&lt; std::endl;
+} else {
+    std::cout &lt;&lt; &quot;No result!&quot; &lt;&lt; std::endl;
+}
+</code></pre>
+<h2><code>std::expected</code></h2>
+<p>If you’re familiar with Rust, you know that the <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option&lt;T&gt;</code></a> class has a best companion — the <a href="https://doc.rust-lang.org/std/result/enum.Result.html#"><code>Result&lt;T, E&gt;</code></a> class. They are closely related, and each has a bunch of methods that convert one into the other.</p>
+<p>While <code>Option&lt;T&gt;</code> is equivalent to <code>optional&lt;T&gt;</code> in C++, <code>Result&lt;T, E&gt;</code> needs some clarification. It’s somewhat like <code>optional&lt;T&gt;</code>, but the absence of a result is interpreted as an error of type <code>E</code>. That is, an object of the <code>Result&lt;T, E&gt;</code> class can be in two states:</p>
+<ul>
+<li>Ok state: The object contains a valid value of type <code>T</code>.</li>
+<li>Error state: The object holds an error of type <code>E</code>.</li>
+</ul>
+<p>We can ask the object in which state it is and retrieve its content: either a value or an error.</p>
+<p>For a C++ programmer, this class might seem exotic, but in Rust, it holds great significance since the language lacks exceptions, and handling exceptional situations is made through returning error codes. In 99% of cases, this is done by returning a <code>Result&lt;T, E&gt;</code>.</p>
+<p>On the other hand, during my time with C++, I exclusively participated in projects where exceptions were forbidden for various reasons. In this context, C++ becomes similar to Rust in terms of error handling.</p>
+<p>I envied Rust for having such a nifty thing in a language library. C++ deserved a similar weapon. And yes, I wrote an equivalent of <code>Result&lt;T, E&gt;</code> for C++. The class had the dubious name <code>Maybe&lt;T, E&gt;</code>, which could mislead a Haskell programmer (in Haskell, <code>Maybe</code> is analogous to <code>optional</code>).</p>
+<p>But recently, I discovered that the C++ Standardization Committee has approved the <a href="https://en.cppreference.com/w/cpp/utility/expected"><code>std::expected&lt;T, E&gt;</code></a> class in the C++23 standard. MSVC has even <a href="https://learn.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance?view=msvc-170">implemented it</a> in VS 2022 17.3, and it is available under the <a href="https://learn.microsoft.com/en-us/cpp/build/reference/std-specify-language-standard-version?view=msvc-170"><code>/std:c++latest</code></a> compiler option. The name is even better than Result or Maybe, in my opinion.</p>
+<p>To appreciate the class in action, let’s look at code that parses a human-readable chess address into coordinates that are easier to manage within a chess engine. For example, for <code>&quot;a3&quot;</code> it should yield coordinates <code>[2; 0]</code>:</p>
+<pre><code class="language-cpp">struct ChessPosition
+{
+    int row; // stored as [0; 7], represents [1; 8]
+    int col; // stored as [0; 7], represents [a; h]
+};
+
+enum class ParseError
+{
+    InvalidAddressLength,
+    InvalidRow,
+    InvalidColumn
+};
+
+auto parseChessPosition(std::string_view address) -&gt; std::expected&lt;ChessPosition, ParseError&gt;
+{
+    if (address.size() != 2) {
+        return std::unexpected(ParseError::InvalidAddressLength);
+    }
+
+    int col = address[0] - 'a';
+    int row = address[1] - '1';
+
+    if (col &lt; 0 || col &gt; 7) {
+        return std::unexpected(ParseError::InvalidColumn);
+    }
+
+    if (row &lt; 0 || row &gt; 7) {
+        return std::unexpected(ParseError::InvalidRow);
+    }
+
+    return ChessPosition{ row, col };
+}
+
+...
+
+auto res1 = parseChessPosition(&quot;e2&quot;);  // [1; 4]
+auto res2 = parseChessPosition(&quot;e4&quot;);  // [3; 4]
+auto res3 = parseChessPosition(&quot;g9&quot;);  // InvalidRow
+auto res4 = parseChessPosition(&quot;x3&quot;);  // InvalidColumn
+auto res5 = parseChessPosition(&quot;e25&quot;); // InvalidAddressLength
+</code></pre>
+<h2><code>std::bit_cast</code></h2>
+<p>This is something I have had a sick relationship with. I don’t know why, but there were times when I needed to do some strange things like obtaining the bitwise representation of a <code>float</code> number. Of course, in my junior days, I used to not be afraid of UB (Undefined Behavior) and used anything that just seemed to work, at least here and for now. So, what options do we have for performing not really safe casting from one type to another?</p>
+<ul>
+<li>
+<p><code>reinterpret_cast</code>, where would we be without it? It’s so simple and tempting to write:</p>
+<pre><code class="language-cpp">uint32_t i = *reinterpret_cast&lt;uint32_t*&gt;(&amp;f);
+</code></pre>
+<p>and not worry about anything. But it’s UB;</p>
+</li>
+<li>
+<p>Back to basics — C-style cast. It’s the same as <code>reinterpret_cast</code>, but even simpler to write:</p>
+<pre><code class="language-cpp">uint32_t i = *(uint32_t*)&amp;f;
+</code></pre>
+<p>If the <a href="https://en.wikipedia.org/wiki/Fast_inverse_square_root">developers of Quake III weren’t afraid</a>, why should we be? But… <strong>it’s UB</strong>;</p>
+</li>
+<li>
+<p>The trick with <code>union</code>:</p>
+<pre><code class="language-cpp">union {
+    float f;
+    uint32_t i;
+} value32;
+</code></pre>
+<p>The code itself is not UB, but the problem is that reading from a union field into which you haven’t written anything before is also UB.</p>
+</li>
+</ul>
+<p>Nevertheless, I observed all these approaches in various types of deviations:</p>
+<ul>
+<li>Attempting to determine the sign of a <code>float</code> number by reading its most significant bit.</li>
+<li>Transforming a pointer into a number and back — hello embedded systems. I even saw an exotic case where an address was transformed into an ID.</li>
+<li>Mathematical tricks with the exponent or mantissa of a <code>float</code>.</li>
+</ul>
+<p>&quot;Why would anyone need the mantissa?&quot; you ask? And I would answer: behold my ancient <a href="https://github.com/AskePit/IEEE754Converter">GitHub project</a>, where I’ve created a small IEEE 754 converter, just for fun. I did it a long time ago for self-educational purposes, and I also wanted to steal the design of the standard Windows 7 calculator and see how well I could replicate it :)</p>
+<div class="centerer"><figure>
+    <img src="https://habrastorage.org/r/w1560/webt/wx/pp/a7/wxppa76kp0g5h9kkt2gv3ztmgjw.png" alt="caption">
+    <figcaption>caption</figcaption>
+</figure></div>
+<p>Well, bitwise tricks sometimes become necessary for someone, somewhere.</p>
+<p>The question is, how to trick your tricks safely? When I searched for the truth on StackOverflow, the answer was harsh but the only: &quot;use <code>memcpy</code>.&quot; From same good old StackOverflow I stole a small snippet to use <code>memcpy</code> conveniently:</p>
+<pre><code class="language-cpp">template &lt;class OUT, class IN&gt;
+inline OUT bit_cast(IN const&amp; in)
+{
+    static_assert(sizeof(OUT) == sizeof(IN), &quot;source and dest must be the same size&quot;);
+    static_assert(std::is_trivially_copyable&lt;OUT&gt;::value, &quot;destination type must be trivially copyable.&quot;);
+    static_assert(std::is_trivially_copyable&lt;IN&gt;::value, &quot;source type must be trivially copyable&quot;);
+
+    OUT out;
+    memcpy(&amp;out, &amp;in, sizeof(out));
+    return out;
+}
+</code></pre>
+<p>In C++20, they introduced <a href="https://en.cppreference.com/w/cpp/numeric/bit_cast"><code>std::bit_cast</code></a>, which does the same thing except that it’s also <code>constexpr</code> thanks to the magic that the standard obliged compilers to implement.</p>
+<p>Now we can touch the beautiful and make it not only beautiful but also correct from the language specification point of view:</p>
+<pre><code class="language-cpp">float q_rsqrt(float number)
+{
+    long i;
+    float x2, y;
+    const float threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    y = number;
+    i = std::bit_cast&lt;long&gt;(y);              // evil floating point bit-level hacking
+    i = 0x5f3759df - (i &gt;&gt; 1);               // what the heck?
+    y = std::bit_cast&lt;float&gt;(i);
+    y = y * (threehalfs - (x2 * y * y));     // 1st iteration
+    // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+    return y;
+}
+</code></pre>
+<p>You’re welcome, id Software.</p>
+<h1>What’s missing and may never be acquired at all</h1>
+<h2>Floating-Point Mathematics</h2>
+<p>We all know that you can’t just take two <code>float</code> numbers and check if they are equal. <code>1.0</code> and <code>0.999999999</code> won’t be equal to each other, even if they seem convincingly equal to you. There are no standard methods to solve this problem adequately in C++ — you have to manually compare the absolute difference of the numbers with some epsilon.</p>
+<p>Another thing that we can sometimes desire is rounding a number to a certain number of digits. We have <code>floor</code>, <code>ceil</code>, <code>round</code>, but they all round to an integer. Therefore, you have to go to StackOverflow and take some ready-made solutions.</p>
+<p>In the end, your codebase is extended with helpers like these:</p>
+<pre><code class="language-cpp">template&lt;class T&gt;
+bool almostEqual(T x, T y)
+{
+    return std::abs(x - y) &lt; std::numeric_limits&lt;T&gt;::epsilon();
+}
+
+template&lt;class T&gt;
+bool nearToZero(T x)
+{
+    return std::abs(x) &lt; std::numeric_limits&lt;T&gt;::epsilon();
+}
+
+template&lt;class T&gt;
+T roundTo(T x, uint8_t digitsAfterPoint)
+{
+    const uint32_t delim = std::pow(10, digitsAfterPoint);
+    return std::round(x * delim) / delim;
+}
+</code></pre>
+<p>What else can be said — it’s not critical, but a bit sad.</p>
+<h2><code>EnumArray</code></h2>
+<p>Consider you have an enumeration:</p>
+<pre><code class="language-cpp">enum class Unit
+{
+    Grams,
+    Meters,
+    Liters,
+    Items
+};
+</code></pre>
+<p>This is a common scenario where you need a dictionary with an enum key, storing configuration or information about each enumeration element. I encounter such cases frequently in my work. The straightforward solution can be easily implemented using standard STL containers:</p>
+<pre><code class="language-cpp">std::unordered_map&lt;Unit, const char*&gt; unitNames {
+    { Unit::Grams, &quot;g&quot; },
+    { Unit::Meters, &quot;m&quot; },
+    { Unit::Liters, &quot;l&quot; },
+    { Unit::Items, &quot;pcs&quot; },
+};
+</code></pre>
+<p>What can we note about this piece of code?</p>
+<ul>
+<li><code>std::unordered_map</code>  is not the most trivial container. And it’s not the most memory-efficient</li>
+<li>Dictionaries or configs like this can be quite common in a project, and in the vast majority of cases, they will be small in size. The average number of elements in an enumeration rarely exceeds a few dozen, and most often it’s just a few. Hash tables such as <code>std::unordered_map</code> or trees such as <code>std::map</code> start to look like overkill;</li>
+<li>An enumeration is, essentially, a number. It is very tempting to consider it as a numeric index.</li>
+</ul>
+<p>This last point quickly leads us to the idea that we could create a container that interfaces like a dictionary but under the hood is a <code>std::array</code>. A proxy-container. The indices of the array are the elements of our enumeration, and the array’s data are the values of the &quot;map&quot;.</p>
+<p>All that remains is to figure out how the array will know its size — i.e., how to count the number of elements in the enumeration. The simplest old-school method is to add a special element, Count, to the end of the enumeration. Let’s stick with this method, as it’s not particularly exotic—I often see it in codebases—so it’s kinda ok to use it:</p>
+<pre><code class="language-cpp">enum class Unit
+{
+    Grams,
+    Meters,
+    Liters,
+    Items,
+
+    Count
+};
+</code></pre>
+<p>The implementation of the proxy-container itself is quite simple:</p>
+<pre><code class="language-cpp">template&lt;typename Enum, typename T&gt;
+class EnumArray
+{
+public:
+    EnumArray(std::initializer_list&lt;std::pair&lt;Enum, T&gt;&gt;&amp;&amp; values);
+
+    T&amp; operator[](Enum key);
+    const T&amp; operator[](Enum key) const;
+
+private:
+    static constexpr size_t N = std::to_underlying(Enum::Count);
+    std::array&lt;T, N&gt; data;
+};
+</code></pre>
+<p>The constructor with <code>std::initializer_list</code> is necessary to allow constructing our config in the same way we formed <code>std::unordered_map</code>:</p>
+<pre><code class="language-cpp">EnumArray&lt;Unit, const char*&gt; unitNames {
+    { Unit::Grams, &quot;g&quot; },
+    { Unit::Meters, &quot;m&quot; },
+    { Unit::Liters, &quot;l&quot; },
+    { Unit::Items, &quot;pcs&quot; },
+};
+
+std::cout &lt;&lt; unitNames[Unit::Items] &lt;&lt; std::endl; // Outputs &quot;pcs&quot;
+</code></pre>
+<p>The beauty of this:</p>
+<ul>
+<li>We use all the benefits of both <code>std::array</code> and <code>std::unordered_map</code>. The convenience of a dictionary interface combined with the speed and simplicity (in a good sense) of an array under the hood;</li>
+<li>Cache-friendly—data is stored sequentially in memory, in contrast to <code>std::unordered_map</code> and <code>std::map</code>;</li>
+<li>The size of the array is known at compile-time, and if we improve the container further, almost all its methods can be made <code>constexpr</code>.</li>
+</ul>
+<p>Limitations of this approach:</p>
+<ul>
+<li>
+<p>Mandatory <code>Count</code> in the enumeration;</p>
+</li>
+<li>
+<p>The enumeration cannot have custom-typed values like:</p>
+<pre><code class="language-cpp">enum class Type
+{
+    A = 4,
+    B = 12,
+    C = 518,
+    D
+}
+</code></pre>
+<p>Only the default order starting from zero;</p>
+</li>
+<li>
+<p>Memory is allocated for <em>all elements</em> of the enumeration in the array. If you fill the <code>EnumArray</code> with only some values, the rest will contain default-constructed objects;</p>
+</li>
+<li>
+<p>Another limitation—type <code>T</code> must be default-constructed.</p>
+</li>
+</ul>
+<p>I’m usually okay with such limitations, so I typically use this container without any issues.</p>
+<h2>Early Return</h2>
+<p>Let’s take a look at a typical function with some boundary checks:</p>
+<pre><code class="language-cpp">std::string applySpell(Spell* spell)
+{
+    if (!spell)
+    {
+        return &quot;No spell&quot;;
+    }
+
+    if (!spell-&gt;isValid())
+    {
+        return &quot;Invalid spell&quot;;
+    }
+
+    if (this-&gt;isImmuneToSpell(spell))
+    {
+        return &quot;Immune to spell&quot;;
+    }
+
+    if (this-&gt;appliedSpells.contains(spell))
+    {
+        return &quot;Spell already applied&quot;;
+    }
+
+    appliedSpells.append(spell);
+    applyEffects(spell-&gt;getEffects());
+    return &quot;Spell applied&quot;;
+}
+</code></pre>
+<p>Is it familiar to you? Poor three lines at the bottom – that’s the actual work of the method. The rest – checks to see if the work can be performed. It’s a bit annoying. Especially if you’re a fan of the Allman style, and your every curly brace loves to be alone.</p>
+<p>It would be nice to make it cleaner, without all that boilerplate. C++ has <code>assert</code>, for example, which is kinda similar to what we’re doing here – a check is performed on a certain condition, and if necessary, some measures are taken under the hood. Admittedly, <code>assert</code> is simpler – it doesn’t need to return anything. But nevertheless, we could construct something similar:</p>
+<pre><code class="language-cpp">#define early_return(cond, ret)      \
+    do {                             \
+        if (static_cast&lt;bool&gt;(cond)) \
+        {                            \
+            return ret;              \
+        }                            \
+    } while (0)
+
+#define early_return_void(cond)      \
+    do {                             \
+        if (static_cast&lt;bool&gt;(cond)) \
+        {                            \
+            return;                  \
+        }                            \
+    } while (0)
+</code></pre>
+<p>FFFUUU, macros! Bjorn Stroustrup doesn’t like macros. If he sends me a direct message asking for an apology, I’ll understand, and I’ll apologize. I’m not a big fan of C++ macros either.</p>
+<div class="centerer"><figure>
+    <img src="https://habrastorage.org/r/w1560/webt/w8/6x/pm/w86xpmee3uluqssn39hf6f2uh34.png" alt="caption">
+    <figcaption>caption</figcaption>
+</figure></div>
+<p>But yep, there are macros in the proposed code, even two. Actually, we can reduce them to one by using a variadic macro:</p>
+<pre><code class="language-cpp">#define early_return(cond, ...)      \
+    do {                             \
+        if (static_cast&lt;bool&gt;(cond)) \
+        {                            \
+            return __VA_ARGS__;      \
+        }                            \
+    } while (0)
+</code></pre>
+<p>There’s only one macro left, but it’s still a macro. And nope, the miracle will hardly happen: it can’t be turned into a non-macro – as soon as we try to move it into a function, we lose the ability to influence the control flow of our current function. It’s a pity, but that’s the reality. But just look how we can rewrite our original example:</p>
+<pre><code class="language-cpp">std::string applySpell(Spell* spell)
+{
+    early_return(!spell, &quot;No spell&quot;);
+    early_return(!spell-&gt;isValid(), &quot;Invalid spell&quot;);
+    early_return(this-&gt;isImmuneToSpell(spell), &quot;Immune to spell&quot;);
+    early_return(this-&gt;appliedSpells.contains(spell), &quot;Spell already applied&quot;);
+
+    appliedSpells.append(spell);
+    applyEffects(spell-&gt;getEffects());
+    return &quot;Spell applied&quot;;
+}
+</code></pre>
+<p>This will work even if the function returns <code>void</code>:</p>
+<pre><code class="language-cpp">void applySpell(Spell* spell)
+{
+    early_return(!spell);
+    early_return(!spell-&gt;isValid());
+    early_return(this-&gt;isImmuneToSpell(spell));
+    early_return(this-&gt;appliedSpells.contains(spell));
+
+    appliedSpells.append(spell);
+    applyEffects(spell-&gt;getEffects());
+}
+</code></pre>
+<p>It’s shorter, and I think it’s generally better. If this feature were supported by the standard, it could be a language construct rather than a macro. Although, for the sake of justice and fun, I’ll say that the C++ <a href="https://en.cppreference.com/w/cpp/error/assert"><code>assert</code></a> is also a macro.</p>
+<p>If you prefer the logical behavior of the <code>assert</code> more – <em>assert the expected, trigger error otherwise</em> – then we can simply invert the entire logic and name the macro according to the new behavior:</p>
+<pre><code class="language-cpp">#define ensure_or_return(cond, ...)   \
+    do {                              \
+        if (!static_cast&lt;bool&gt;(cond)) \
+        {                             \
+            return __VA_ARGS__;       \
+        }                             \
+    } while (0)
+
+void applySpell(Spell* spell)
+{
+    ensure_or_return(spell);
+    ensure_or_return(spell-&gt;isValid());
+    ensure_or_return(!this-&gt;isImmuneToSpell(spell));
+    ensure_or_return(!this-&gt;appliedSpells.contains(spell));
+
+    appliedSpells.append(spell);
+    applyEffects(spell-&gt;getEffects());
+}
+</code></pre>
+<p>The naming is probably bad, but you get the idea. And I would be satisfied to see either of these constructs in C++.</p>
+<h2>Unordered Erase</h2>
+<p>I suppose the most commonly used collection in C++ is <code>vector</code>. And we all remember well that a vector is good at everything except inserting and deleting in the middle of the collection. This takes O(n) time, so every time I have to delete something from the middle of the vector, I feel a bit sad because the vector has to shift half of its content to the left.</p>
+<p>There is an idiomatic technique that can turn O(n) into O(1) at the cost of elements’ order violation. And if you are willing to pay this price, it is definitely more advantageous to use this simple trick:</p>
+<pre><code class="language-cpp">std::vector&lt;int&gt; v {
+    17, -2, 1084, 1, 17, 40, -11
+};
+
+// remove the number 1 from the vector
+std::swap(v[3], v.back()); 
+v.pop_back();
+
+// get [17, -2, 1084, -11, 17, 40]
+</code></pre>
+<p>Whoa, what was that? First, we swapped the last element of the vector with the one marked for deletion, and then simply discarded the tail element from the vector. Both operations are ridiculously cheap. Simple and nice.</p>
+<p>It is not clear for me why the vector interface does not provide such a simple alternative to the regular erase method. <a href="https://doc.rust-lang.org/std/vec/struct.Vec.html#method.swap_remove">It exists</a> in Rust, for instance.</p>
+<p>So, for now we should live with another helper function in our codebase:</p>
+<pre><code class="language-cpp">template&lt;typename T&gt;
+void unorderedErase(std::vector&lt;T&gt;&amp; v, int index)
+{
+    std::swap(v[index], v.back());
+    v.pop_back();
+}
+</code></pre>
+<h1>Conclusion</h1>
+<p>Half of the article was nullified by C++ itself in the process of writing it because modern C++20 and C++23 standards covered about half of the desires described in this complaint book. And all in all, a wishlist from language users will never run out because as many people, as many wishes, and you can’t fit them all into the standard library or the language itself.</p>
+<p>I tried to mention only those points that, in my humble opinion, seem to be less subjective and would be worthy of inclusion in the language standard. At least in my work, these features are more or less in demand on a daily basis. You may rightly have a different opinion on my list, and I, in turn, would be happy to read in the comments about your pain and the features you didn’t get, to understand how language users would like to see the future of C++.</p>
+<script type="text/javascript" src="../theme-script.js"></script>
+</body>
+</html>
