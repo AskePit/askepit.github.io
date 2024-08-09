@@ -2,7 +2,7 @@
 <html>
 <head lang="en">
 	<meta charset="UTF-8">
-    <title>Git in conditions of extreme branch atomicity</title>
+    <title>What we lack in C++</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&display=swap');
     </style>
@@ -12,7 +12,15 @@
     <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
 </head>
 <body>
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
 <div class="theme-switcher">
     <label class="switch">
         <input type="checkbox" name="theme">
@@ -21,7 +29,6 @@
     <p><span style="font-size: 20px;">theme</span></p>
 </div>
 <h1>What we lack in C++</h1>
-<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 <p>C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language’s standard library. How did we end up with these helper files, and when will this ever end?</p>
 <h2>Features that do not exist</h2>
 <p>For over a decade, I’ve been professionally involved in C++ development. I entered the field in 2013, just when the C++ standardization committee got into gear and adopted the three-year release cycle for updated language standards. C++11 had already been released, introducing plenty of attractive innovations that significantly refreshed the language. However, not everyone had the luxury of using all these new features in their working code, and we had to stick to the dull C++03, longing for the new standard.</p>
