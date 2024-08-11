@@ -1,0 +1,37 @@
+body {
+    --title-font: 'Playfair Display';
+    --header-font: 'Quicksand';
+    --text-font: 'Crimson Pro';
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: 60px;
+    font-weight: 700;
+}
+
+h2 {
+    font-family: var(--header-font);
+    font-size: 45px;
+    font-weight: 400;
+    text-transform: uppercase;
+}
+
+h3 {
+    font-family: var(--header-font);
+    font-size: 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+ul, li, p {
+    font-family: var(--text-font);
+    font-size: 22px;
+    font-weight: 400;
+}
+
+figcaption {
+    font-family: var(--header-font);
+    font-size: 24px;
+    font-weight: 300;
+}

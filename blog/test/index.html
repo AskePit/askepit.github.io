@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+    <title>test test test</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+    </style>
+    <link rel="stylesheet" href="styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="typography1.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <!-- <link rel="stylesheet alternate" href="../styles_dark.css" id="dark-styles" title="Dark" type="text/css"/> -->
+    <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" name="typo">
+        <span class="slider round"></span>
+    </label>
+    <p id="typo-capture"><span style="font-size: 20px;">typo 1</span></p>
+</div>
+<h1>Voronoi, Manhattan</h1>
+<h2>Distances: plethora of them</h2>
+<p>But how is such a variation of the diagram built, and what is this &quot;Manhattan distance&quot; thing? I went to Wikipedia again to find the answers. In short, the <a href="https://en.wikipedia.org/wiki/Taxicab_geometry">Manhattan distance</a> is an alternative way to calculate the distance between two points.</p>
+<h3>Bonus</h3>
+<p>Do you know what? C++ is the best since C++20.</p>
+<p>How do we usually calculate the distance from point A to point B? We draw a straight line between the points and measure its length. This length is the distance between A and B. This is the <em>Euclidean distance</em>, and its formula is well-known:</p>
+<p>$$
+\rho(x,y) = \sqrt{(x_2-x_1)^2+(y_2-y_1)^2}
+$$</p>
+<p>But what if point A is you, and B is a public toilet in a city with square blocks? If you draw a straight line between A and B on the map, the line will go through buildings. Even if you’re in a hurry, you won’t break through all the buildings in your way. Google Maps or a navigator will give you a route of straight segments with some turns—left and right.</p>
+<p>Look at these three paths from one point to another:</p>
+<div class="centered"><figure>
+    <img src="https://habrastorage.org/webt/27/xl/lq/27xllqm4er9pzb9drjkug1sofyg.jpeg" alt="Three Manhattan Distances of Equal Length">
+    <figcaption>Three Manhattan Distances of Equal Length</figcaption>
+</figure></div>
+<p>All three paths are the <em>shortest</em> paths from one point to another by Manhattan metric. And there are even more of these shortest paths. All these shortest paths have the same length. In the case of the points in the image, it’s 12 units. This is the Manhattan distance. It is achieved by a large number of options but has a specific value that can be calculated by the formula:</p>
+<p>$$
+\rho(x,y) = |x_2-x_1|+|y_2-y_1|
+$$</p>
+<p>Manhattan distance is also called taxicab distance or L1 distance. It got the Manhattan name because the street layout of Manhattan has a pronounced block structure. Also, it’s called taxicab distance because a taxi in Manhattan can only move along the streets, not through buildings, obviously. Also, Manhattan distances are how a rook moves on a chessboard.</p>
+<p>So, I figured out that depending on the metric we use to measure the distance, the Voronoi diagram would look different. And it turns out there are an infinite number of metrics. That is, there are an infinite number of ways to calculate distance? In general, yes, there’s even a general formula called the <a href="https://en.wikipedia.org/wiki/Minkowski_distance">Minkowski distance</a>:</p>
+<p>$$
+\rho_p(x,y) = (|x_2-x_1|^p+|y_2-y_1|^p)^{1/p}
+$$</p>
+<p>where $p$ is the so-called <em>order</em>.</p>
+<p>Now, follow my hands: if you substitute $p=1$ into the formula, you get the Manhattan distance formula; and if you substitute $p=2$, you get</p>
+<p>$$
+\rho_p(x,y) = (|x_2-x_1|^2+|y_2-y_1|^2)^{0.5}
+$$</p>
+<p>which is essentially</p>
+<p>$$
+\rho(x,y) = \sqrt{(x_2-x_1)^2+(y_2-y_1)^2}
+$$</p>
+<p>i.e., Euclidean distance.</p>
+<p>Thus, the Manhattan distance is the Minkowski distance of the first order, and Euclidean distance is the Minkowski distance of the second order. We can increase the order to infinity. Literally—to $\infty$. With $p=\infty$, the formula degenerates into the so-called <a href="https://en.wikipedia.org/wiki/Chebyshev_distance">Chebyshev distance</a>:</p>
+<p>$$
+\rho_p(x,y) = \lim_{p \to \infty}(|x_2-x_1|^p+|y_2-y_1|^p)^{1/p} = \max(|x_2-x_1|, |y_2-y_1|)
+$$</p>
+<p>However, as a non-mathematician, I don’t quite understand how $lim_{p \to \infty}$ turns this formula into $max$. If someone in the comments can explain this to me in a straightforward way, I would be very grateful.</p>
+<p>There is a high probability that I will want to use different metrics, so now I have a universal function for this in my arsenal:</p>
+<pre><code class="language-cpp">double distance(Point a, Point b, SpaceMetric metric = SpaceMetric::Euqlid)
+{
+	switch (metric)
+	{
+	default:
+	case SpaceMetric::Euqlid:
+		return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2));
+	case SpaceMetric::Manhattan:
+		return abs(b.x - a.x) + abs(b.y - a.y);
+	case SpaceMetric::Chebyshev:
+		return std::max(abs(b.x - a.x), abs(b.y - a.y));
+	}
+}
+</code></pre>
+<p>Or, if you know the metric at compile time, and it won’t change at runtime, it’s even better to make it like this:</p>
+<pre><code class="language-cpp">template&lt;SpaceMetric METRIC = SpaceMetric::Euqlid&gt;
+double distance_t(Point a, Point b)
+{
+	if constexpr (METRIC == SpaceMetric::Manhattan)
+	{
+		return abs(b.x - a.x) + abs(b.y - a.y);
+	}
+	else if constexpr (METRIC == SpaceMetric::Chebyshev)
+	{
+		return std::max(abs(b.x - a.x), abs(b.y - a.y));
+	}
+	else // SpaceMetric::Euqlid
+	{
+		return sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2));
+	}
+}
+</code></pre>
+<h3>Bonus</h3>
+<p>In the <a href="https://en.wikipedia.org/wiki/Minkowski_distance">Wikipedia article</a> on the Minkowski distance, there’s an interesting thought experiment:</p>
+<div class="centered"><figure>
+    <img src="https://habrastorage.org/webt/bi/rz/h6/birzh6jdwojf_832e3heysczpcg.png" alt="Chessboard Distances">
+    <figcaption>Chessboard Distances</figcaption>
+</figure></div>
+<p>It shows how the distance between two points differs for an ant, a king, and a rook on a chessboard. The ant moves with Euclidean distances, and its distance will be equal to the classical hypotenuse formula for legs of lengths 4 and 3; i.e., the ant will cover the distance in 5 units. The king moves with Chebyshev metric, so he can cheat—his diagonal moves are equal to horizontal and vertical ones, so he will reach the finish in 4 steps. The rook moves with our beloved Manhattan metric and closes the top three, reaching the finish in 7 steps.</p>
+<script type="text/javascript" src="typography-change-script.js"></script>
+</body>
+</html>
