@@ -3,6 +3,7 @@
     position: fixed;
     top: 80px;
     right: 100px;
+    text-align: right;
 }
 
 /* The switch - the box around the slider */
@@ -10,6 +11,11 @@
     position: fixed;
     top: 190px;
     right: 100px;
+    text-align: right;
+}
+
+.typography-switcher p, .theme-switcher p {
+    text-align: center;
 }
 
 .switch {
@@ -66,7 +72,7 @@ input:checked + .slider:before {
 }
 
 /* Rounded sliders */
-    .slider.round {
+.slider.round {
     border-radius: 34px;
 }
 

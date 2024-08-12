@@ -1,7 +1,7 @@
 let typoSwitcher = document.querySelector("input[name=typo]");
 
-typoVariants = [2, 3, 6, 7]
-typoVariantsNames = ['news', 'book', 'modest', 'tight']
+typoVariants = [3, 2, 6, 7]
+typoVariantsNames = ['book', 'magazine', 'modern', 'tight']
 typo = 0
 
 function switchTypo() {

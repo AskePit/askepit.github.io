@@ -29,7 +29,7 @@ h2 {
 
 h3 {
     font-family: var(--subheader-font);
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
     /* text-transform: uppercase; */
 
@@ -39,8 +39,8 @@ h3 {
 
 ul, li, p {
     font-family: var(--text-font);
-    font-size: 22px;
-    font-weight: 400;
+    font-size: 21px;
+    font-weight: 350;
     
     margin-top: 10px;
 }

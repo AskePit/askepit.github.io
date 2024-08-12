@@ -2,7 +2,7 @@ body {
     --title-font: 'Oswald';
     --header-font: 'Oswald';
     --subheader-font: 'Oswald';
-    --text-font: 'Old Standard TT';
+    --text-font: 'Crimson Pro';
 }
 
 h1 {
@@ -34,8 +34,8 @@ h3 {
 
 ul, li, p {
     font-family: var(--text-font);
-    font-size: 20px;
-    font-weight: 400;
+    font-size: 21px;
+    font-weight: 350;
 
     margin-top: 10px;
 }
