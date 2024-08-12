@@ -1,14 +1,18 @@
-let switcher = document.querySelector("input[name=typo]");
+let typoSwitcher = document.querySelector("input[name=typo]");
 
-typo = 1
+typoVariants = [2, 3, 6, 7]
+typoVariantsNames = ['news', 'book', 'modest', 'tight']
+typo = 0
 
-window.onload = () => {
-    switcher.addEventListener('change', function() {
+function switchTypo() {
+    typoSwitcher.addEventListener('change', function() {
         typo += 1
-        if (typo > 7) {
-            typo = 1
+        if (typo >= typoVariants.length) {
+            typo = 0
         }
-        document.getElementById('typography').href = 'typography' + typo + '.css';
-        document.getElementById('typo-capture').innerHTML = 'typo ' + typo;
+        document.getElementById('typography').href = 'typography' + typoVariants[typo] + '.css';
+        document.getElementById('typo-capture').innerHTML = typoVariantsNames[typo];
     });
 }
+
+window.addEventListener("load", switchTypo);

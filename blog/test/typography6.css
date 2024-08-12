@@ -1,32 +1,43 @@
 body {
     --title-font: 'Raleway';
     --header-font: 'STIX Two Text';
+    --subheader-font: 'STIX Two Text';
     --text-font: 'STIX Two Text';
 }
 
 h1 {
     font-family: var(--title-font);
-    font-size: 60px;
+    font-size: 62px;
     font-weight: 300;
     text-transform: uppercase;
 }
 
 h2 {
     font-family: var(--header-font);
-    font-size: 45px;
+    font-size: 40px;
     font-weight: 600;
+    /* text-transform: uppercase; */
+
+    margin-top: 0px;
+    margin-bottom: 24px;
 }
 
 h3 {
-    font-family: var(--header-font);
-    font-size: 30px;
+    font-family: var(--subheader-font);
+    font-size: 28px;
     font-weight: 800;
+    /* text-transform: uppercase; */
+
+    margin-top: 50px;
+    margin-bottom: 0px;
 }
 
 ul, li, p {
     font-family: var(--text-font);
     font-size: 20px;
     font-weight: 400;
+
+    margin-top: 10px;
 }
 
 figcaption {

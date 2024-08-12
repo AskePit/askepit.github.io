@@ -1,33 +1,48 @@
+@font-face {
+    font-family: ShipporiMincho;
+    src: url(ShipporiMincho-ExtraBold.woff);
+}
+
 body {
-    --title-font: 'Playfair Display';
-    --header-font: 'Quicksand';
+    --title-font: ShipporiMincho;
+    --header-font: 'Inter';
+    --subheader-font: 'Noto Sans';
     --text-font: 'Crimson Pro';
 }
 
 h1 {
     font-family: var(--title-font);
     font-size: 60px;
-    font-weight: 700;
+    font-weight: 800;
+    /* text-transform: uppercase; */
 }
 
 h2 {
     font-family: var(--header-font);
-    font-size: 45px;
-    font-weight: 400;
+    font-size: 35px;
+    font-weight: 200;
     text-transform: uppercase;
+
+    margin-top: 0px;
+    margin-bottom: 24px;
 }
 
 h3 {
-    font-family: var(--header-font);
-    font-size: 30px;
-    font-weight: 600;
-    text-transform: uppercase;
+    font-family: var(--subheader-font);
+    font-size: 26px;
+    font-weight: 700;
+    /* text-transform: uppercase; */
+
+    margin-top: 50px;
+    margin-bottom: 0px;
 }
 
 ul, li, p {
     font-family: var(--text-font);
     font-size: 22px;
     font-weight: 400;
+    
+    margin-top: 10px;
 }
 
 figcaption {

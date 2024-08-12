@@ -1,33 +1,53 @@
+@font-face {
+    font-family: ShipporiMincho;
+    src: url(ShipporiMincho-Regular.woff);
+}
+
+@font-face {
+    font-family: ShipporiMinchoBold;
+    src: url(ShipporiMincho-ExtraBold.woff);
+}
+
 body {
-    --title-font: 'Shippori Mincho';
+    --title-font: ShipporiMinchoBold;
     --header-font: 'Oxygen';
-    --text-font: 'Shippori Mincho';
+    --subheader-font: 'Oxygen';
+    --text-font: ShipporiMincho;
 }
 
 h1 {
     font-family: var(--title-font);
     font-size: 60px;
     font-weight: 700;
+    /* text-transform: uppercase; */
 }
 
 h2 {
     font-family: var(--header-font);
-    font-size: 45px;
+    font-size: 39px;
     font-weight: 400;
     text-transform: uppercase;
+
+    margin-top: 0px;
+    margin-bottom: 24px;
 }
 
 h3 {
-    font-family: var(--header-font);
-    font-size: 30px;
+    font-family: var(--subheader-font);
+    font-size: 28px;
     font-weight: 600;
     text-transform: uppercase;
+    
+    margin-top: 50px;
+    margin-bottom: 0px;
 }
 
 ul, li, p {
     font-family: var(--text-font);
     font-size: 20px;
     font-weight: 400;
+    
+    margin-top: 10px;
 }
 
 figcaption {

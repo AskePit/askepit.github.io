@@ -5,6 +5,13 @@
     right: 100px;
 }
 
+/* The switch - the box around the slider */
+.typography-switcher {
+    position: fixed;
+    top: 190px;
+    right: 100px;
+}
+
 .switch {
     position: relative;
     display: inline-block;

@@ -1,6 +1,7 @@
 body {
     --title-font: 'Noto Sans';
     --header-font: 'Noto Sans';
+    --subheader-font: 'Noto Sans';
     --text-font: 'Noto Serif';
 }
 
@@ -15,18 +16,28 @@ h2 {
     font-family: var(--header-font);
     font-size: 45px;
     font-weight: 600;
+    /* text-transform: uppercase; */
+
+    margin-top: 0px;
+    margin-bottom: 24px;
 }
 
 h3 {
-    font-family: var(--header-font);
+    font-family: var(--subheader-font);
     font-size: 30px;
     font-weight: 800;
+    /* text-transform: uppercase; */
+
+    margin-top: 50px;
+    margin-bottom: 0px;
 }
 
 ul, li, p {
     font-family: var(--text-font);
     font-size: 20px;
     font-weight: 400;
+
+    margin-top: 10px;
 }
 
 figcaption {
