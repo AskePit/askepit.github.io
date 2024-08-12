@@ -11,29 +11,7 @@ body {
     }
 }
 
-h1 {
-    font-family: 'Oswald';
-    font-size: 60px;
-    font-weight: 200;
-    text-transform: uppercase;
-}
-
-h2 {
-    font-family: 'Oswald';
-    font-size: 45px;
-    font-weight: 400;
-}
-
-h3 {
-    font-family: 'Oswald';
-    font-size: 30px;
-    font-weight: 500;
-}
-
 ul, li, p {
-    font-family: 'Old Standard TT';
-    font-size: 24px;
-    font-weight: 400;
     text-align: justify;
     text-justify: inter-word;
 }
@@ -68,9 +46,6 @@ figure {
 
 figcaption {
     align-self: flex-end;
-    font-family: 'Oswald';
-    font-size: 24px;
-    font-weight: 300;
 }
 
 .centered {

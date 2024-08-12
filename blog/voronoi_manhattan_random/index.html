@@ -4,11 +4,11 @@
 	<meta charset="UTF-8">
     <title>Voronoi, Manhattan, random</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&display=swap');
     </style>
     <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography3.css" id="typography" type="text/css"/>
     <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
-    <!-- <link rel="stylesheet alternate" href="../styles_dark.css" id="dark-styles" title="Dark" type="text/css"/> -->
     <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
 </head>
 <body>
@@ -27,6 +27,13 @@ MathJax = {
         <span class="slider round"></span>
     </label>
     <p><span style="font-size: 20px;">theme</span></p>
+</div>
+<div class="typography-switcher">
+    <label class="switch">
+        <input type="checkbox" name="typo">
+        <span class="slider round"></span>
+    </label>
+    <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
 </div>
 <h1>Voronoi, Manhattan, random</h1>
 <p>This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets.</p>
@@ -652,5 +659,6 @@ mergeArray.insert(
 <p>To some extent, the article was needed for myself as well—to refresh, structure, and rethink the experience, code, and algorithms gained during development, which will undoubtedly be useful to me in the future.</p>
 <p>Once again, it emphasizes a well-known truth—even the simplest indie game is hard. A game with random generation is hard squared. Making games is not always fun. But in the process of their development, you gain experience that you can’t get anywhere else. Even if the project fades or fails, your experience remains with you, and in the future, you can apply it to projects that lie ahead. Or write a retrospective article, as I did.</p>
 <script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
 </body>
 </html>

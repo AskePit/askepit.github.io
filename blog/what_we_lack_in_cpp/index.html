@@ -4,11 +4,11 @@
 	<meta charset="UTF-8">
     <title>What we lack in C++</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&display=swap');
     </style>
     <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography3.css" id="typography" type="text/css"/>
     <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
-    <!-- <link rel="stylesheet alternate" href="../styles_dark.css" id="dark-styles" title="Dark" type="text/css"/> -->
     <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
 </head>
 <body>
@@ -27,6 +27,13 @@ MathJax = {
         <span class="slider round"></span>
     </label>
     <p><span style="font-size: 20px;">theme</span></p>
+</div>
+<div class="typography-switcher">
+    <label class="switch">
+        <input type="checkbox" name="typo">
+        <span class="slider round"></span>
+    </label>
+    <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
 </div>
 <h1>What we lack in C++</h1>
 <p>C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language’s standard library. How did we end up with these helper files, and when will this ever end?</p>
@@ -440,5 +447,6 @@ void unorderedErase(std::vector&lt;T&gt;&amp; v, int index)
 <p>Half of the article was nullified by C++ itself in the process of writing it because modern C++20 and C++23 standards covered about half of the desires described in this complaint book. And all in all, a wishlist from language users will never run out because as many people, as many wishes, and you can’t fit them all into the standard library or the language itself.</p>
 <p>I tried to mention only those points that, in my humble opinion, seem to be less subjective and would be worthy of inclusion in the language standard. At least in my work, these features are more or less in demand on a daily basis. You may rightly have a different opinion on my list, and I, in turn, would be happy to read in the comments about your pain and the features you didn’t get, to understand how language users would like to see the future of C++.</p>
 <script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
 </body>
 </html>

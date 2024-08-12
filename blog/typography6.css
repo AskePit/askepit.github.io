@@ -1,0 +1,47 @@
+body {
+    --title-font: 'Raleway';
+    --header-font: 'STIX Two Text';
+    --subheader-font: 'STIX Two Text';
+    --text-font: 'Crimson Pro';
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: 62px;
+    font-weight: 300;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-family: var(--header-font);
+    font-size: 40px;
+    font-weight: 600;
+    /* text-transform: uppercase; */
+
+    margin-top: 0px;
+    margin-bottom: 24px;
+}
+
+h3 {
+    font-family: var(--subheader-font);
+    font-size: 28px;
+    font-weight: 800;
+    /* text-transform: uppercase; */
+
+    margin-top: 50px;
+    margin-bottom: 0px;
+}
+
+ul, li, p {
+    font-family: var(--text-font);
+    font-size: 21px;
+    font-weight: 350;
+
+    margin-top: 10px;
+}
+
+figcaption {
+    font-family: var(--header-font);
+    font-size: 24px;
+    font-weight: 300;
+}
