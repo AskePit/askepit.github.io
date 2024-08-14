@@ -25,6 +25,16 @@ code {
     padding-right: 0.3em;
 }
 
+h2 code {
+    font-size: 36px;
+    font-weight: 1000;
+}
+
+h3 code {
+    font-size: 28px;
+    font-weight: 1000;
+}
+
 pre code {
     padding-left: 0em;
     padding-right: 0em;
