@@ -2,7 +2,7 @@ body {
     --title-font: 'Oswald';
     --header-font: 'Oswald';
     --subheader-font: 'Oswald';
-    --text-font: 'Crimson Pro';
+    --text-font: 'Spectral';
 }
 
 h1 {
@@ -51,8 +51,9 @@ h6 {
 
 ul, li, p {
     font-family: var(--text-font);
-    font-size: 21px;
-    font-weight: 350;
+    font-size: 19px;
+    font-weight: 400;
+    line-height: 27px;
 
     margin-top: 20px;
 }

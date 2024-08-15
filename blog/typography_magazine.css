@@ -7,7 +7,7 @@ body {
     --title-font: ShipporiMincho;
     --header-font: 'Inter';
     --subheader-font: 'Noto Sans';
-    --text-font: 'Crimson Pro';
+    --text-font: 'Spectral';
 }
 
 h1 {
@@ -51,8 +51,8 @@ h6 {
 
 ul, li, p {
     font-family: var(--text-font);
-    font-size: 21px;
-    font-weight: 350;
+    font-size: 20px;
+    font-weight: 300;
     
     margin-top: 20px;
 }
