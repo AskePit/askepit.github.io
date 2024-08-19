@@ -1,0 +1,149 @@
+* {
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+body {
+    max-width: 700px;
+    margin: 0 auto;
+    background-color: #154247;
+    text-align: center;
+}
+
+table {
+    position: relative;
+    display: inline-block;
+    text-align: center;
+}
+
+td {
+    min-width: 70px;
+    /*border: 1px solid;*/
+}
+
+#dealer_hand {
+    margin-top: 50px;
+    height: 280px;
+    padding: 0 250px 0 0;
+    text-align: center;
+    position: relative;
+}
+
+#player_hand {
+    height: 260px;
+    padding: 0 100px 0 100px;
+    text-align: center;
+    position: relative;
+}
+
+.card {
+    --card-ratio: calc(800.0/1267.0);
+    --card-height: 25vh;
+    --card-width: calc(var(--card-height) * var(--card-ratio));
+
+    width: var(--card-width);
+    height: var(--card-height);
+
+    background-size: contain;
+    background-position: center center;
+    border-radius: 10px;
+    box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    display: inline-block;
+}
+
+*:focus {
+    outline: none;
+}
+
+#buttons {
+    line-height: 0;
+    display: inline-flex;
+    text-align: center;
+}
+
+.button {
+    position: relative;
+    display: inline-block;
+    width: 70px;
+    height: 50px;
+    margin-top: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    /*border-radius: 0 5px 5px 0;*/
+    box-shadow: inset 0px 0px 1px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0);
+    color: rgb(157, 174, 62);
+
+    font-family: Open Sans; 
+    font-size: 24pt;
+    line-height: 0;
+    font-weight: bold;
+}
+
+.button:hover {
+    box-shadow: inset 0px 0px 3px rgba(0, 0, 0, 0.5);
+}
+
+.button:active {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0px 0px 20px 2px rgba(0, 0, 0, 0.15);
+}
+
+.button:disabled {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0px 0px 20px 2px rgba(0, 0, 0, 0.1);
+}
+
+#add {
+    border-radius: 0 5px 5px 0;
+}
+
+#control {
+    border-radius: 5px 0px 0px 5px;
+    border-right: 0px;
+    font-size: 18pt;
+}
+
+@font-face {
+    font-family: "Homemade Apple";
+    src: url("HomemadeApple.ttf") /* TTF file for CSS3 browsers */
+}
+
+.score_label {
+    position: relative;
+    display: inline-block;
+
+    color: #90b070;
+
+    font-family: 'Homemade Apple'; 
+    font-size: 40pt;
+}
+
+.result_label {
+    position: absolute;
+    top: 50vh;
+    left: 50%;
+    transform: translate(-50%, -50%) translate(0px, -35px);
+
+    width: 100%;
+    height: 20vh;
+
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #6A81B3;
+    border-left-width: 0px;
+    border-right-width: 0px;
+
+    color: #ffffff;
+
+    font-family: "Bellota";
+    font-size: 10vh;
+    font-weight: 700;
+
+    visibility: hidden;
+
+    text-align: center;
+    align-content: center;
+}
