@@ -87,7 +87,7 @@ def ex(command):
         exit()    
 
 os.chdir(repo)
-ex('git pull')
+ex('git fetch')
 
 for way in branches:
     for i in range(len(way)-1):
