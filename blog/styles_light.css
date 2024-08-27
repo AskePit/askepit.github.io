@@ -17,3 +17,19 @@ h2 code, h3 code {
 a, a code {
     color: #258ae7;
 }
+
+.code-keyword {
+    color: #a400de;
+}
+
+.code-comment {
+    color: #787878;
+}
+
+.code-literal {
+    color: #de8705;
+}
+
+.code-call {
+    color: black;
+}
