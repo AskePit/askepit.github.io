@@ -37,75 +37,79 @@ MathJax = {
     <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
 </div>
 <h1>Git in conditions of extreme branch atomicity</h1>
-<p>How are your branches organized in Git? What do they look like, and what size are they? Below, I’ll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.</p>
+<p>How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.</p>
 <h2>Advantage of Small Branches</h2>
 <p>How are your Git branches organized? What do they look like, and what size are they?</p>
-<p>My branches strive to be as small and atomic as possible. This is in contrast to the approach where you start a branch for a specific feature, then include refactoring of the entire project within its scope. Along the way, you fix a persistent bug you’ve discovered. And then suddenly you end up with a branch whose name doesn’t reflect what’s actually done in it. You, yourself, can’t even describe in one sentence what the branch is about. Testers struggle because it’s unclear what to test, and reviewers are hesitant to look at your PR/MR since they don’t want to descend into that hellish branch.</p>
-<p>I strictly maintain my branches to be small and laconic. Each branch performs a single specific task. Sometimes, I even split a branch into two or more when I realize it’s starting to spread in different directions.</p>
-<p>For example, suppose you needed to write a subsystem for your project and a GUI for that subsystem. It’s already clear that this will be two branches — one for the subsystem itself and one for the GUI:</p>
-<div class="centered"><figure>
-    <img src="https://habrastorage.org/webt/cq/ja/qm/cqjaqm5voffdfqpufgoqgp2ora8.png" alt="Branches">
-    <figcaption>Branches</figcaption>
-</figure></div>
+<p>My branches strive to be as small and atomic as possible. This is in contrast to the approach where you start a branch for a specific feature, then include refactoring of the entire project within its scope. Along the way, you fix a persistent bug you’ve discovered. And then suddenly you end up with a branch whose name doesn't reflect what's actually done in it. You, yourself, can't even describe in one sentence what the branch is about. Testers struggle because it's unclear what to test, and reviewers are hesitant to look at your PR/MR since they don't want to descend into that hellish branch.</p>
+<p>I strictly maintain my branches to be small and laconic. Each branch performs a single specific task. Sometimes, I even split a branch into two or more when I realize it's starting to spread in different directions.</p>
+<p>For example, suppose you needed to write a subsystem for your project and a GUI for that subsystem. It's already clear that this will be two branches — one for the subsystem itself and one for the GUI:</p>
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/cq/ja/qm/cqjaqm5voffdfqpufgoqgp2ora8.png" alt="Branches">
+        <figcaption>Branches</figcaption>
+    </figure>
+</div>
 <p>From the <code>master</code> branch, <code>subsystem</code> is branched, and <code>subsystem_ui</code> is built on top of it.</p>
-<p>While writing <code>subsystem</code>, you might have written a considerable number of core classes that aren’t related to your subsystem but are general-purpose classes that could be useful to all programmers on the project. It’s a good reason to split the branch in half and move these classes beyond the <code>subsystem</code> scope:</p>
-<div class="centered"><figure>
-    <img src="https://habrastorage.org/webt/xf/lj/li/xfljlifa4zsxel0izwcjij5_c0o.png" alt="Branches Split">
-    <figcaption>Branches Split</figcaption>
-</figure></div>
+<p>While writing <code>subsystem</code>, you might have written a considerable number of core classes that aren't related to your subsystem but are general-purpose classes that could be useful to all programmers on the project. It's a good reason to split the branch in half and move these classes beyond the <code>subsystem</code> scope:</p>
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/xf/lj/li/xfljlifa4zsxel0izwcjij5_c0o.png" alt="Branches Split">
+        <figcaption>Branches Split</figcaption>
+    </figure>
+</div>
 <p>Quite a clear picture. However, some of you might already feel uneasy because a problem related to this approach is emerging.</p>
 <h2>Problem with Small Branches</h2>
-<p>It’s not hard to see that with this approach, there might be situations where you just end up with long chains of dependent branches:</p>
-<div class="centered"><figure>
-    <img src="https://habrastorage.org/webt/1_/fo/qm/1_foqmivugdbetmhasn_rrw3g94.png" alt="">
-    <figcaption></figcaption>
-</figure></div>
-<p>Yes, this is a real case for me, especially during intense development periods at work. Testers are bombarded with emails, reviewers can’t catch up with the pile, and your tree of branches just keeps growing.</p>
+<p>It's not hard to see that with this approach, there might be situations where you just end up with long chains of dependent branches:</p>
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/1_/fo/qm/1_foqmivugdbetmhasn_rrw3g94.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+<p>Yes, this is a real case for me, especially during intense development periods at work. Testers are bombarded with emails, reviewers can't catch up with the pile, and your tree of branches just keeps growing.</p>
 <p>The key challenge in such a development mode is to ensure that all my depending-on-each-other branches remain up-to-date and to prevent them becoming old and full of conflicts with master. Your morning starts with coffee — my morning starts with merging master into the branches. Since master is continuously updated with significant changes from all colleagues, a few days of inactivity can result in a merge conflict nightmare, which tends to grow like a snowball.</p>
-<p>Moreover, in each branch in my tree, there’s an equal chance that I might add something, fix something, or make adjustments. And all these changes must make their way into the branches depending on the modified one.</p>
+<p>Moreover, in each branch in my tree, there's an equal chance that I might add something, fix something, or make adjustments. And all these changes must make their way into the branches depending on the modified one.</p>
 <h2>How to Simplify Your Life</h2>
-<p>I’m quite stubborn, but even for me, all the work of keeping branches in the proper state eventually became an annoying routine, consuming time and bringing no pleasure at all.</p>
-<p>Therefore, it’s natural that, like a typical programmer, at some point, I got annoyed with the routine enough to pythonize a small automation that made my life a little more enjoyable:</p>
-<pre><code class="language-python">import os
+<p>I'm quite stubborn, but even for me, all the work of keeping branches in the proper state eventually became an annoying routine, consuming time and bringing no pleasure at all.</p>
+<p>Therefore, it's natural that, like a typical programmer, at some point, I got annoyed with the routine enough to pythonize a small automation that made my life a little more enjoyable:</p>
+<pre><code class="language-python"><span class="code-keyword">import</span> os
 
-# CONFIG
-repo = 'mah_project'
+<span class="code-comment"># CONFIG</span>
+repo = <span class="code-literal">'mah_project'</span>
 
 branches = [
-    ['master', 'inventory_mechanics', 'ingame_market'],
-    ['master', 'remove_legacy_classes', 'new_item_types_project_migration'],
-    ['inventory_mechanics', 'configs_refactor', 'new_item_types_project_migration'],
-    ['inventory_mechanics', 'new_item_types', 'new_item_types_project_migration'],
+    [<span class="code-literal">'master'</span>, <span class="code-literal">'inventory_mechanics'</span>, <span class="code-literal">'ingame_market'</span>],
+    [<span class="code-literal">'master'</span>, <span class="code-literal">'remove_legacy_classes'</span>, <span class="code-literal">'new_item_types_project_migration'</span>],
+    [<span class="code-literal">'inventory_mechanics'</span>, <span class="code-literal">'configs_refactor'</span>, <span class="code-literal">'new_item_types_project_migration'</span>],
+    [<span class="code-literal">'inventory_mechanics'</span>, <span class="code-literal">'new_item_types'</span>, <span class="code-literal">'new_item_types_project_migration'</span>],
 ]
 
-# CODE
-def ex(command):
-    print(command)
-    err = os.system(command)
-    if err != 0:
-        print('UNSUCCESS. ABORT')
-        exit()    
+<span class="code-comment"># CODE</span>
+<span class="code-keyword">def</span> <span class="code-call">ex</span>(command):
+    <span class="code-call">print</span>(command)
+    err = os.<span class="code-call">system</span>(command)
+    <span class="code-keyword">if</span> err != <span class="code-literal">0</span>:
+        <span class="code-call">print</span>(<span class="code-literal">'UNSUCCESS. ABORT'</span>)
+        <span class="code-call">exit</span>()
 
-os.chdir(repo)
-ex('git fetch')
+os.<span class="code-call">chdir</span>(repo)
+<span class="code-call">ex</span>(<span class="code-literal">'git fetch'</span>)
 
-for way in branches:
-    for i in range(len(way)-1):
+<span class="code-keyword">for</span> way <span class="code-keyword">in</span> branches:
+    <span class="code-keyword">for</span> i <span class="code-keyword">in</span> <span class="code-call">range</span>(<span class="code-call">len</span>(way)-<span class="code-literal">1</span>):
         src = way[i]
-        dst = way[i+1]
-        print(f'\n{src} -&gt; {dst}')
+        dst = way[i+<span class="code-literal">1</span>]
+        <span class="code-call">print</span>(f<span class="code-literal">'\n{src} -&gt; {dst}'</span>)
 
-        ex(f'git checkout {dst}')
-        ex('git pull')
-        ex(f'git merge origin/{src}')
-        ex('git push')
-
+        <span class="code-call">ex</span>(f<span class="code-literal">'git checkout {dst}'</span>)
+        <span class="code-call">ex</span>(<span class="code-literal">'git pull'</span>)
+        <span class="code-call">ex</span>(f<span class="code-literal">'git merge origin/{src}'</span>)
+        <span class="code-call">ex</span>(<span class="code-literal">'git push'</span>)
 </code></pre>
 <p>In short, the script works as follows: in the branches variable, you list all the paths you take from one branch to another during merges. Note that branches is an array of arrays. Since your branch web is, in general, a directed graph, you cannot traverse it with just one path. You’ll probably need several paths.</p>
 <p>The script simply goes through all your branches and merges the previous branch in the chain into each of them. For example, <code>master</code> will merge into <code>inventory_mechanics</code>, <code>inventory_mechanics</code> will merge into <code>ingame_market</code>, and so on. According to the merges, the same will happen for the other three chains, covering the entire branch graph.</p>
 <p>Yes, the script is simple and contains no magic. Yes, it will stop at the first merge conflict, which you still have to resolve yourself. Yes, after resolving another conflict, you need to restart the script. But how pleasant it is when all you need to do is run the following in the command line:</p>
-<pre><code class="language-bash">py chain_merge.py
-</code></pre>
+<pre><code class="language-bash">py chain_merge.py</code></pre>
 <p>and for a moment, engage in something more enjoyable or meaningful.</p>
 <script type="text/javascript" src="../theme-script.js"></script>
 <script type="text/javascript" src="../typography-change-script.js"></script>

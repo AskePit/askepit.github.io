@@ -61,7 +61,7 @@ figcaption {
     align-self: flex-end;
 }
 
-.centered {
+.image {
     display: flex;
     flex-direction: row;
     justify-content: center;
