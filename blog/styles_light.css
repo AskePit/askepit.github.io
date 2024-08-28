@@ -34,3 +34,11 @@ a, a code {
     color: #39728E;
     /* font-weight: 550; */
 }
+
+.code-diff-add {
+    background-color: #00e79433;
+}
+
+.code-diff-remove {
+    background-color: #f61b6a33;
+}

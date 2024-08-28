@@ -187,18 +187,18 @@ cargo check && cargo test</code></pre>
 
 cargo check && cargo test && cargo fmt</code></pre>
 <p>Insert an extra space into the code and try committing this change to see what <code>cargo fmt</code> does. Now, here's where things don't go as planned. Firstly, the commit with an extra space gets through. Secondly, Git shows that there are not staged changes; let's see what they are:</p>
-<pre><code class="language-diff">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
+<pre><code class="language-rust">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
                  <span class="code-keyword">let</span> addr_str = format!(<span class="code-literal">"{}{}"</span>, c_char, r_char);
                  <span class="code-keyword">let</span> addr = Address::<span class="code-call">parse</span>(&addr_str);
 
--                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });
-+                assert_eq!(
-+                    addr,
-+                    Address {
-+                        row: r_id <span class="code-keyword">as</span> u8,
-+                        col: c_id <span class="code-keyword">as</span> u8
-+                    }
-+                );
+<span class="code-diff-remove">-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });</span>
+<span class="code-diff-add">+                assert_eq!(</span>
+<span class="code-diff-add">+                    addr,</span>
+<span class="code-diff-add">+                    Address {</span>
+<span class="code-diff-add">+                        row: r_id <span class="code-keyword">as</span> u8,</span>
+<span class="code-diff-add">+                        col: c_id <span class="code-keyword">as</span> u8</span>
+<span class="code-diff-add">+                    }</span>
+<span class="code-diff-add">+                );</span>
              }
          }</code></pre>
 <p>Right, our code indeed needed some formatting according to <code>cargo fmt</code>. Formatting is done, but it missed the commit, and that's a problem.</p>
@@ -216,18 +216,18 @@ cargo check \
 && cargo fmt \
 && git add .</code></pre>
 <p>Let's roll back the mess we made with <code>git reset --hard HEAD~1</code> and try the procedure again: insert an extra space somewhere in the code and attempt to commit it. Check what happened: <code>git status</code> shows everything is clean, and the commit history shows our commit, whose diff looks like this:</p>
-<pre><code class="language-diff">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
+<pre><code class="language-rust">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
                  <span class="code-keyword">let</span> addr_str = format!(<span class="code-literal">"{}{}"</span>, c_char, r_char);
                  <span class="code-keyword">let</span> addr = Address::<span class="code-call">parse</span>(&addr_str);
 
--                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });
-+                assert_eq!(
-+                    addr,
-+                    Address {
-+                        row: r_id <span class="code-keyword">as</span> u8,
-+                        col: c_id <span class="code-keyword">as</span> u8
-+                    }
-+                );
+<span class="code-diff-remove">-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });</span>
+<span class="code-diff-add">+                assert_eq!(</span>
+<span class="code-diff-add">+                    addr,</span>
+<span class="code-diff-add">+                    Address {</span>
+<span class="code-diff-add">+                        row: r_id <span class="code-keyword">as</span> u8,</span>
+<span class="code-diff-add">+                        col: c_id <span class="code-keyword">as</span> u8</span>
+<span class="code-diff-add">+                    }</span>
+<span class="code-diff-add">+                );</span>
              }
          }</code></pre>
 <p>Hooray! Our <code>git add .</code> inside the hook worked, and we became even more invincible – our code will always be formatted, even if we don't follow the formatting rules during development. Isn't it a miracle?</p>
