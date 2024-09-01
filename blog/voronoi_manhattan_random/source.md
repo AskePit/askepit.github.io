@@ -1,3 +1,5 @@
+# Voronoi, Manhattan, random
+
 This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets.
 
 So, we had one programmer, one artist, an absolute lack of understanding of the workflow, an unfamiliar game engine, and a desire to create something. If you're curious about the mixup of Voronoi diagrams, a special case of Minkowski distance, polygon transformations, procedural generation, and noise—all wrapped up in a beautifully stylized package—this is the right place for you to read.

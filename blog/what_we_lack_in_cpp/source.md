@@ -1,3 +1,5 @@
+# What we lack in C++
+
 C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language's standard library. How did we end up with these helper files, and when will this ever end?
 
 # Features that do not exist
@@ -122,29 +124,28 @@ auto res5 = parseChessPosition("e25"); // InvalidAddressLength
 This is something I have had a sick relationship with. I don't know why, but there were times when I needed to do some strange things like obtaining the bitwise representation of a `float` number. Of course, in my junior days, I used to not be afraid of UB (Undefined Behavior) and used anything that just seemed to work, at least here and for now. So, what options do we have for performing not really safe casting from one type to another?
 
 - `reinterpret_cast`, where would we be without it? It's so simple and tempting to write:
+```cpp
+uint32_t i = *reinterpret_cast<uint32_t*>(&f);
+```
 
-  ```cpp
-  uint32_t i = *reinterpret_cast<uint32_t*>(&f);
-  ```
-
-  and not worry about anything. But it's UB;
+and not worry about anything. But it's UB;
 
 - Back to basics — C-style cast. It's the same as `reinterpret_cast`, but even simpler to write:
 
-  ```cpp
-  uint32_t i = *(uint32_t*)&f;
-  ```
+```cpp
+uint32_t i = *(uint32_t*)&f;
+```
 
   If the [developers of Quake III weren't afraid](https://en.wikipedia.org/wiki/Fast_inverse_square_root), why should we be? But... **it's UB**;
 
 - The trick with `union`:
-  ```cpp
-  union {
-      float f;
-      uint32_t i;
-  } value32;
-  ```
-  The code itself is not UB, but the problem is that reading from a union field into which you haven't written anything before is also UB.
+```cpp
+union {
+    float f;
+    uint32_t i;
+} value32;
+```
+The code itself is not UB, but the problem is that reading from a union field into which you haven't written anything before is also UB.
 
 Nevertheless, I observed all these approaches in various types of deviations:
 
@@ -320,16 +321,16 @@ Limitations of this approach:
 - Mandatory `Count` in the enumeration;
 - The enumeration cannot have custom-typed values like:
 
-  ```cpp
-  enum class Type
-  {
-      A = 4,
-      B = 12,
-      C = 518,
-      D
-  }
-  ```
-  Only the default order starting from zero;
+```cpp
+enum class Type
+{
+    A = 4,
+    B = 12,
+    C = 518,
+    D
+}
+```
+Only the default order starting from zero;
 - Memory is allocated for *all elements* of the enumeration in the array. If you fill the `EnumArray` with only some values, the rest will contain default-constructed objects;
 - Another limitation—type `T` must be default-constructed.
 

@@ -1,10 +1,4 @@
----
-tags:
-  - article
-  - rust
-  - git
----
-![[Pasted image 20240117234616.png]]
+# Utilizing git to make rust development even sweatier
 
 Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore?
 

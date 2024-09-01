@@ -1,7 +1,8 @@
+
 <!DOCTYPE html>
 <html>
 <head lang="en">
-	<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Utilizing git to make rust development even sweatier</title>
     <style>
@@ -187,18 +188,18 @@ cargo check && cargo test</code></pre>
 
 cargo check && cargo test && cargo fmt</code></pre>
 <p>Insert an extra space into the code and try committing this change to see what <code>cargo fmt</code> does. Now, here's where things don't go as planned. Firstly, the commit with an extra space gets through. Secondly, Git shows that there are not staged changes; let's see what they are:</p>
-<pre><code class="language-rust">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
+<pre><code class="language-diff">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
                  <span class="code-keyword">let</span> addr_str = format!(<span class="code-literal">"{}{}"</span>, c_char, r_char);
                  <span class="code-keyword">let</span> addr = Address::<span class="code-call">parse</span>(&addr_str);
 
-<span class="code-diff-remove">-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });</span>
-<span class="code-diff-add">+                assert_eq!(</span>
-<span class="code-diff-add">+                    addr,</span>
-<span class="code-diff-add">+                    Address {</span>
-<span class="code-diff-add">+                        row: r_id <span class="code-keyword">as</span> u8,</span>
-<span class="code-diff-add">+                        col: c_id <span class="code-keyword">as</span> u8</span>
-<span class="code-diff-add">+                    }</span>
-<span class="code-diff-add">+                );</span>
+-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });
++                assert_eq!(
++                    addr,
++                    Address {
++                        row: r_id <span class="code-keyword">as</span> u8,
++                        col: c_id <span class="code-keyword">as</span> u8
++                    }
++                );
              }
          }</code></pre>
 <p>Right, our code indeed needed some formatting according to <code>cargo fmt</code>. Formatting is done, but it missed the commit, and that's a problem.</p>
@@ -216,18 +217,18 @@ cargo check \
 && cargo fmt \
 && git add .</code></pre>
 <p>Let's roll back the mess we made with <code>git reset --hard HEAD~1</code> and try the procedure again: insert an extra space somewhere in the code and attempt to commit it. Check what happened: <code>git status</code> shows everything is clean, and the commit history shows our commit, whose diff looks like this:</p>
-<pre><code class="language-rust">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
+<pre><code class="language-diff">@@ -<span class="code-literal">57,7</span> +<span class="code-literal">57</span>,<span class="code-literal">13</span> @@ <span class="code-keyword">mod</span> tests {
                  <span class="code-keyword">let</span> addr_str = format!(<span class="code-literal">"{}{}"</span>, c_char, r_char);
                  <span class="code-keyword">let</span> addr = Address::<span class="code-call">parse</span>(&addr_str);
 
-<span class="code-diff-remove">-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });</span>
-<span class="code-diff-add">+                assert_eq!(</span>
-<span class="code-diff-add">+                    addr,</span>
-<span class="code-diff-add">+                    Address {</span>
-<span class="code-diff-add">+                        row: r_id <span class="code-keyword">as</span> u8,</span>
-<span class="code-diff-add">+                        col: c_id <span class="code-keyword">as</span> u8</span>
-<span class="code-diff-add">+                    }</span>
-<span class="code-diff-add">+                );</span>
+-                assert_eq!(addr, Address { row: r_id <span class="code-keyword">as</span> u8, col: c_id <span class="code-keyword">as</span> u8 });
++                assert_eq!(
++                    addr,
++                    Address {
++                        row: r_id <span class="code-keyword">as</span> u8,
++                        col: c_id <span class="code-keyword">as</span> u8
++                    }
++                );
              }
          }</code></pre>
 <p>Hooray! Our <code>git add .</code> inside the hook worked, and we became even more invincible – our code will always be formatted, even if we don't follow the formatting rules during development. Isn't it a miracle?</p>
@@ -235,10 +236,8 @@ cargo check \
 <p>What other interesting <code>cargo</code> utilities do we know that can make our code better and cleaner? <code>cargo clippy</code> is a linter, a tool for static code analysis to identify and warn about suspicious or suboptimal code.</p>
 <p>Remembering the quirks of <code>cargo fmt</code>, let's go to the <a href="https://doc.rust-lang.org/stable/clippy/usage.html"><code>cargo clippy</code> documentation</a> right away to find out what pitfalls await us. We learn that in a typical situation, clippy returns exit code 0 (successful execution) even if it found and displayed warnings. This is not suitable for us – we'll see warnings on the screen, but our train will already leave, and the commit will be made despite the presence of warnings. We need to make clippy take warnings more seriously and return a failure, so the commit is rejected by the hook.</p>
 <p>In the documentation, we find an approach that suits us:</p>
-<div class="blockquote">
-	<p>gt; For <a href="https://doc.rust-lang.org/stable/clippy/continuous_integration/index.html">CI</a>, all warnings can be elevated to errors which will in turn fail the build and cause Clippy to exit with a code other than <code>0</code>.</p>
-	<p>gt;</p>
-</div>
+<blockquote>For <a href="https://doc.rust-lang.org/stable/clippy/continuous_integration/index.html">CI</a>, all warnings can be elevated to errors which will in turn fail the build and cause Clippy to exit with a code other than <code>0</code>.
+</blockquote>
 <p><code>cargo clippy -- -Dwarnings</code></p>
 <p>Okay, let's add this to our hook:</p>
 <pre><code class="language-bash">#!/bin/sh
