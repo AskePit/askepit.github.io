@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Multithreading in games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_book.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" name="theme">
+        <span class="slider round"></span>
+    </label>
+    <p><span style="font-size: 20px;">theme</span></p>
+</div>
+<div class="typography-switcher">
+    <label class="switch">
+        <input type="checkbox" name="typo">
+        <span class="slider round"></span>
+    </label>
+    <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
+</div>
+<h1>Multithreading in games</h1>
+<p>Modern games are rich in content, gameplay mechanics, and interactivity. A lot happens on the screen all at once—the world feels alive, responsive, and even without active player involvement, life continues to simmer, with multiple events unfolding simultaneously.</p>
+<p>Let’s dive into the details of how this diversity of in-game events is implemented and find out what role multithreading plays in all this, and how many cores a typical game needs.</p>
+<h2>Gameplay</h2>
+<p>If you want to understand how 99% of game engines handle any game at the highest level of abstraction, here’s the simplest and most understandable code:</p>
+<pre><code class="language-cpp"><span class="code-keyword">while(true</span>)
+{
+    <span class="code-comment">// calculate dt</span>
+    <span class="code-keyword">double</span> dt = ...
+
+    <span class="code-comment">// game tick</span>
+    <span class="code-call">handleInput</span>();
+    <span class="code-call">update</span>(dt);
+    <span class="code-call">render</span>();
+}</code></pre>
+<p>The most important thing from a gameplay perspective here is the <code>update()</code> function, which does something like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">update</span>(<span class="code-keyword">double</span> dt)
+{
+    <span class="code-call">updateGameTime</span>(dt);
+    <span class="code-call">updateWeather</span>(dt);
+    <span class="code-call">updatePlayer</span>(dt);
+    <span class="code-call">updateMonsters</span>(dt);
+    <span class="code-call">updateProjectiles</span>(dt);
+    <span class="code-call">updateHud</span>(dt);
+    <span class="code-call">updateSkills</span>(dt);
+    ...
+}</code></pre>
+<blockquote>Game developers, don’t kick me too hard for such a naive example—I’m just trying to explain things simply :)</blockquote>
+<p>So what happens is: every game tick, which usually lasts a few tens of milliseconds (that’s the dt), all game subsystems are simulated for this tiny interval into the future. The game time progresses by a couple of seconds; the sun shifts by a few tenths of a degree; the player moves a small distance on the level; some monster manages to take a bullet that has been flying towards it for several dozen ticks.</p>
+<p>As you can see, a lot happens all at once. But wait—where is the multithreading in this code?</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/bj/cm/ni/bjcmnico0j4k-nur2bfyfwoqudu.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Upon closer examination, it turns out that these events do <i>not</i> happen simultaneously. Yes, a person won’t notice the switch, and it will feel like there’s parallel execution of many things, but no—the gameplay world is predominantly a single-threaded affair.</p>
+<p>To be more precise, multithreading in gameplay code is not a requirement at all. Not only is it not necessary, but for a number of reasons, it can even be somewhat detrimental.</p>
+<h2>Why There Are No Threads in Gameplay Code</h2>
+<h3>Global Game State</h3>
+<p>Forgive me, fellow developers, for saying this, but game code is a realm of singletons and global state. Game levels, time managers, skill trees, audio players, HUDs, player inventories, current game progression, quest trees, diaries—these vital game components are usually represented as a single instance.</p>
+<p>What’s worse—these components are needed by everyone, from everywhere. What’s even worse—they are needed by everyone, from everywhere, simultaneously. To be precise, if gameplay tasks were executed in parallel across different threads, all your global objects would be needed by everyone, from everywhere, really simultaneously.</p>
+<p>At some point, two parallel tasks will need the player’s inventory—now one thread competes with another for exclusive access to the inventory. One thread will get to the inventory first, leaving the other one to just stand by and wait to avoid causing a <a href="https://en.wikipedia.org/wiki/Race_condition">data race</a>. And this happens every time, all the time. Your threads will be idle, waiting for other threads to release unique game resources, and it will all devolve into a single-threaded execution, but in a particularly twisted form. You might even lose speed, as thread creation and context switching are not cheap operations.</p>
+<p>Wikipedia, in its articles on singletons and global variables, directly points out how poorly they pair with multithreading:</p>
+<blockquote><i>...code using global variables will not be <a href="https://en.wikipedia.org/wiki/Thread_safety">thread-safe</a>...</i>
+
+<a href="https://en.wikipedia.org/wiki/Global_variable">Global variable</a> article</blockquote>
+<blockquote><i>...In multithreaded programs, this can cause <a href="https://en.wikipedia.org/wiki/Race_condition">race conditions</a>...</i>
+
+<a href="https://en.wikipedia.org/wiki/Singleton_pattern">Singleton pattern</a> article</blockquote>
+<h3>Dependencies</h3>
+<p>Let’s imagine that game systems don’t have shared data that needs to be contested. Then, theoretically, we could run all systems in parallel across different threads:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">update</span>(<span class="code-keyword">double</span> dt)
+{
+    <span class="code-keyword">static</span> std::vector&lt;std::thread&gt; jobs;
+
+    <span class="code-comment">// Launch threads</span>
+    jobs.<span class="code-call">emplace_back</span>(updateGameTime, dt);
+    jobs.<span class="code-call">emplace_back</span>(updateWeather, dt);
+    jobs.<span class="code-call">emplace_back</span>(updatePlayer, dt);
+    jobs.<span class="code-call">emplace_back</span>(updateMonsters, dt);
+    jobs.<span class="code-call">emplace_back</span>(updateProjectiles, dt);
+    jobs.<span class="code-call">emplace_back</span>(updateHud, dt);
+    jobs.<span class="code-call">emplace_back</span>(updateSkills, dt);
+
+    <span class="code-comment">// Wait for threads completion</span>
+    <span class="code-keyword">for</span> (<span class="code-keyword">auto</span>& job : jobs) {
+        job.<span class="code-call">join</span>();
+    }
+    jobs.<span class="code-call">clear</span>();
+}</code></pre>
+<p>But even without the need to share common data, gameplay systems tend to require data that another gameplay system should prepare/update. In other words, we encounter systems that depend on each other. For example, some sounds are played as a result of animations—classic case being footstep sounds. The weather system depends on the game time system. The player movement system depends on the system that processes raw input from the keyboard/mouse/controller. Ultimately, we have a picture where all systems are tightly interwoven with one another; the operation of one system depends on another, and the entire chain of systems should ideally be executed in a specific order.</p>
+<p>Okay, so what happens if we disregard the execution order of systems that depend on each other? Let’s imagine a game about an ecosystem, animals, and their behavior. Animals should behave according to the time of day and weather conditions: during heavy rain, they should seek shelter; in the scorching heat of the day, their health should start to decrease until they find a water source. The weather changes every in-game hour.</p>
+<p>Current game situation: it is 13:59 game time, it’s sweltering heat, and the animal is on the brink of death with very little health left. It’s time to simulate the next game tick, and we start the simulation of three game systems in parallel: game time, weather, and animal behavior. Since we are running the systems simultaneously, we don’t know in which order events will occur: will the weather calculation happen first, followed by the game time update—or the other way around? Now, it’s uncertain, and the order will be different every time, randomly.</p>
+<p>In this particular tick, the threads executed in such a way that the weather was calculated first: it looked at the game time (which hadn’t changed yet!) and decided that, since the hour hadn’t passed, the weather should remain the same. Then, a moment later, the game time thread managed to update the time to 14:01, but for the final thread, which determines the fate of the animal, this no longer matters—since the heat persisted, the creature’s last bit of HP was drained, and it died.</p>
+<p>However, if the time had changed first, followed by the weather, and then the animal behavior calculation, the weather might have changed to a breeze or rain, and the animal would have survived.</p>
+<p>"But the maximum lag between systems here would be only one tick!" — you might say, and you’d be right—it’s not the biggest problem. The worse issue is that we’ve made the game’s behavior nondeterministic—i.e., the same conditions can lead to different outcomes each time. Under the same conditions, your animal might survive once and not the next time. And if you happen to encounter a tricky bug related to a specific order of system execution, good luck reproducing and debugging in this multithreaded mess.</p>
+<h3>The Bottom Line</h3>
+<p>So, is there no multithreading in gameplay code? It seems that way. If you become a game logic programmer, you’ll deal with multithreading only in rare cases. Personally, I’ve explicitly created threads in gameplay code almost never in my six years of game development experience and have only seen colleagues do it a few times.</p>
+<p>For the same reason, for example, Blueprints in Unreal Engine operate exclusively in the <a href="https://forums.unrealengine.com/t/multi-threading-in-blueprints/403701">main thread</a>.</p>
+<p>But you know what?..</p>
+<h2>I Lied to You</h2>
+<p>Yes, it’s not all that straightforward, and gameplay can indeed have threads. You just can’t forbid people from using them. Let’s start with the most obvious manifestations of threads in game logic.</p>
+<h3>ECS</h3>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/e4/gj/ic/e4gjic0lmvrow-9_8ptyzlvb698.png" alt="This guy is eager to tell you how wrong you are and that ECS "actually" exists in game development">
+        <figcaption>This guy is eager to tell you how wrong you are and that ECS "actually" exists in game development</figcaption>
+    </figure>
+</div>
+
+<p>So, ECS—everyone has written about it, and it might seem that in the gaming industry it’s the de facto standard. If you’re a serious game engine, you just can’t not use ECS by default. In reality, this isn’t entirely true, but let’s break it down step by step.</p>
+<p>What is ECS? I won’t dive into the details, but I’ll try to briefly explain how it differs from the classic component-based approach. Typically, in Unreal Engine or Unity, your game entities are actors with components attached to them, containing logic and data:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/_z/ev/dd/_zevddiwenmxaasffjpuvauxe5a.png" alt="Two actors in a component-based approach">
+        <figcaption>Two actors in a component-based approach</figcaption>
+    </figure>
+</div>
+
+<p>This is processed by the engine in the <code>update()</code> function like so (apologies, but I’ll switch from C++ to pseudocode for clarity):</p>
+<pre><code class="language-python">func <span class="code-call">update</span>(dt):
+	<span class="code-keyword">for</span> actor <span class="code-keyword">in</span> scene.actors:
+		<span class="code-keyword">for</span> component <span class="code-keyword">in</span> actor:
+			component.<span class="code-call">update</span>(dt);</code></pre>
+<p>In the ECS paradigm, entities are architecturally represented in a more sophisticated manner:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/1y/en/zo/1yenzoyp_nqhnk5hwwswl_fogwm.png" alt="Two actors in ECS approach">
+        <figcaption>Two actors in ECS approach</figcaption>
+    </figure>
+</div>
+
+<p>There are no actors—instead, there are entities. They are similar to actors in that an entity is associated with a set of components it references. However, unlike the components from the previous example, ECS components contain only data—no logic. Logic is handled by systems. The processing of all this looks something like this:</p>
+<pre><code class="language-python">func <span class="code-call">update</span>(dt):
+	<span class="code-keyword">for</span> system <span class="code-keyword">in</span> ecs.systems:
+		<span class="code-keyword">for</span> entity <span class="code-keyword">in</span> ecs.<span class="code-call">getAllEntitiesFor</span>(system):
+			system.<span class="code-call">update</span>(entity.<span class="code-call">getComponents</span>(), dt);</code></pre>
+<p>For example, the <code>AIMovementSystem</code> will process <i>all</i> entities in the game that have <code>AI</code> and <code>Position</code> components when it’s their turn to update.</p>
+<p>— Where are the threads?</p>
+<p>Yes, we don’t see them yet, but because systems (i.e., behavior) are separated from components (i.e., data), we have greater potential for parallel execution. ECS developers often allow for the parallelization of system simulation in two directions:</p>
+<ul>
+	<li>Each system can be processed in parallel (external <code>for</code> loop)</li>
+	<li>Each set of components can be processed in parallel (internal <code>for</code> loop)</li>
+</ul>
+<p>— Why couldn’t we parallelize the two <code>for</code> loops in the pseudocode for the component-based approach in the same way?</p>
+<p>That’s precisely the point. We could parallelize them in the same manner. But since, regardless of the approach—whether it’s EC or ECS—we still have global state and dependencies that we discussed at the beginning, parallelization ends up being very limited. ECS, however, has more explicit information about dependencies between systems and which systems require shared components, and which have no component intersections. If there’s no dependency of one system on another, and no component overlaps—there’s room for maneuver and parallelization, and ECS developers generally attempt to parallelize such cases across different threads.</p>
+<p>However, if we create a rule that the movement calculation system must run after the input system, or that the audio system must run only after the animation system, the parallelization opportunities for the external <code>for</code> loop (iterating over systems) significantly diminish, or even disappear entirely. Additionally, we cannot run two systems in parallel if both require at least one shared component.</p>
+<p>Parallelizing the internal <code>for</code> loop (iterating over entities within a system) is also challenging, as it’s possible only if the system isn’t tied to any unique game resources, which isn’t a very common situation.</p>
+<p>— So why does ECS exist if it doesn’t provide the benefits we’re seeking?</p>
+<p>It does offer benefits—but not where we might expect. Because multithreading isn’t the main killer feature of ECS, but rather a pleasant bonus. The primary advantage of ECS is evident in the diagram I provided earlier—notice how neatly and orderly the components are laid out in memory. They fit neatly into the cache, resulting in a streamlined, fast, cache-friendly approach that delivers significant CPU performance boosts.</p>
+<blockquote><b>Note:</b> Some implementations of ECS architecture might differ, and components in memory might be organized differently. For example, in Archetype-based ECS implementations, you can read more <a href="https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-are-the-different-ways-to-implement-an-ecs">here</a>.</blockquote>
+<h4>A Brief Off-Topic on ECS in Engines</h4>
+<p>Regarding ECS as the flagship technology in the industry—it’s certainly cutting-edge, but game engines generally offer ECS solutions as an optional feature, for cases where developers hit performance bottlenecks with large numbers of objects. Unity offers <a href="https://unity.com/dots">DOTS</a>, and Unreal has <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/mass-entity-in-unreal-engine/?application_version=5.0">Mass Entity</a>. The only engine I know that is built strictly and exclusively around the ECS approach is <a href="https://bevyengine.org/">Bevy</a>. There was also <a href="https://github.com/amethyst/amethyst">Amethyst</a>, but it folded a couple of years ago and recommended migrating to Bevy. Both engines are built in Rust. <a href="https://godotengine.org/">Godot</a> has actually distanced itself from ECS and released a <a href="https://godotengine.org/article/why-isnt-godot-ecs-based-game-engine/">article</a> explaining why it doesn’t and won’t use ECS.</p>
+<h3>Heavy Computations</h3>
+<p>Moving forward in the search for multithreading in games, we'll dive into more specific algorithms suited to particular games and situations. This usually concerns tasks that involve heavy computation, are resource-intensive, and ideally, can be computed in the background. Additionally, there shouldn’t be significant dependencies on the global state of the game. The task is broken down into several independent subtasks that can be executed in parallel, and then the results are combined.</p>
+<p>It's important to understand that we’ll be discussing specific cases, so there won't be general recommendations or best practices on how to effectively incorporate multithreading—this highly depends on the particular situation, and developers will need to adapt and synchronize with the rest of the gameplay code as they go. Various heuristics might come into play:</p>
+<ul>
+	<li><b>Want to read data from a global object but don't want threads constantly battling over shared data?</b> Try copying a slice of the data at the start of the threads. Often, this isn’t too costly and eliminates the burden of synchronization between threads.</li>
+	<li><b>Want threads to read and write to a global object without significant synchronization overhead or data races?</b> Welcome to the intriguing world of <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm">lock-free data structures</a>—it’s complex and challenging but efficient.</li>
+	<li><b>If <code>C</code> depends on <code>B</code>, which depends on <code>A</code>, so you can’t run them in parallel?</b> It’s unfortunate, but see if you can parallelize <code>A</code>, <code>B</code>, and <code>C</code> individually, i.e., run <code>A1</code>, <code>A2</code>, and <code>A3</code> in parallel.</li>
+	<li>And so on.</li>
+</ul>
+<h4>AI Tasks in RTS and Turn-Based Strategies</h4>
+<p>In turn-based strategies, a significant part of the gameplay involves the AI opponents' turns. Often, calculating their moves can take <i>a lot</i> of resources and time. In games like <a href="https://en.wikipedia.org/wiki/Civilization_(series">Civilization</a>), the opponent’s turn can take several seconds, which is normal. Naturally, developers strive to minimize the time it takes for the computer's turn, and this is primarily achieved through parallelizing everything possible. Threads are heavily utilized here.</p>
+<h4>Procedural Generation</h4>
+<p>World generation is another heavyweight task that can be handed off to multithreading. Again, it depends on the specific game and situation, but if you have a virtually endless world like <a href="https://en.wikipedia.org/wiki/Minecraft">Minecraft</a>, you can generate the next part of the world in the background as the player approaches the edge of existing biomes. This way, if the player suddenly ventures further into uncharted territory, there won’t be noticeable lag due to the <i>urgent</i> need to generate content.</p>
+<h4>Maintenance</h4>
+<p>In online games, and even in offline ones, maintenance procedures are occasionally performed—these are administrative tasks meant to repair/clean/optimize the game or game world. This could involve collecting and removing corpses, resetting NPC states, increasing farmable resources, optimizing terrain, buildings, and surroundings, recalculating navmeshes, or processing financial transactions—both in-game currency and monetization operations.</p>
+<p>Various degrees of complex workarounds and hacks might also be involved to prevent inevitable crashes or excessive memory consumption due to leaks. Game objects that have entered an invalid state might be repaired (or <i>attempted</i> to be repaired).</p>
+<p>All these operations are best performed in a separate thread in the background to avoid taking up CPU time from the main thread handling the core game simulation.</p>
+<h2>Game or Engine?</h2>
+<p>Now, belatedly, let's address the question—are we talking about the game or the game engine? We’ve raised this question in a timely manner because throughout this discussion, I've aimed to focus on <i>gameplay</i> code, i.e., not delving into what the <i>engine</i> does under the hood but sticking to the code written <i>for the game</i>.</p>
+<p>However, it’s challenging to draw a clear line between the two. The executable file you run to play a game contains machine code for both the <i>engine</i> and the <i>gameplay</i> code written on that engine.</p>
+<p>Why is the Boundary Blurred? In Unreal Engine, for example, you can create custom components for actors that are specific to your game. Yet, the engine provides an extensive set of general-purpose components that the engine developers have already created for you. The question arises: is the engine’s MovementComponent considered engine code, while your custom PonyAnnigilatorComponent is game code? It’s somewhat both and neither. The boundary is indeed blurred. The same applies to ECS: while you write your game-specific systems, the engine will almost certainly include foundational systems like Movement or TransformHierarchy.</p>
+<p>Sometimes, game-specific features are even hardcoded into the engine. This isn’t uncommon; I’ve worked on a game where an open-source engine was forked, and a significant portion of the game code was written directly in the engine code.</p>
+<p>Nevertheless, we can still identify parts that are distinctly engine code and parts that are strictly game code. Here's a monumental diagram illustrating the architecture of a typical game engine, as described by Jason Gregory in his book <a href="https://www.gameenginebook.com/">Game Engine Architecture</a>:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/nh/iz/hm/nhizhm6mzwr4idmjfoywkiszuy8.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Impressive, isn’t it? So, technically, only the very top level of abstraction—Game-Specific Subsystems—can be attributed to the game itself. The submerged part of the iceberg is the game engine, which everything relies on.</p>
+<p>Also, on the diagram, you can spot one of the low-level building blocks that support the machinery of game systems—the "Threading Library," which provides convenient platform-independent thread management mechanisms. This building block is here for a reason, as game engine code, unlike gameplay code, tends to make extensive use of threads.</p>
+<p>It's also worth explaining that in an engine, threads are generally created in advance in a fixed quantity, forming a Thread Pool. Initially, all created threads are simply asleep, waiting for someone to need multithreading. This is because creating and destroying threads is an expensive operation that requires non-trivial actions from the operating system; thus, having fewer threads is better.</p>
+<p>On top of this thread pool, a Task or Job system is usually built, allowing you to abstract away from the thread pool and simply ask the system: "I want to run this piece of code in a separate thread." The system will then wake up one of the threads in the pool and make it work.</p>
+<p>Let's walk through some typical places in the engine where threading can be applied.</p>
+<h3>Audio</h3>
+<p>Audio rendering is easily offloaded to a constantly running separate thread, since the results of this system generally don't depend on other systems.</p>
+<p>You simply send sounds that need to be played to this thread, and everything else will be handled in the background.</p>
+<h3>Physics</h3>
+<p>This is not as straightforward as audio because physics needs to synchronize with game simulation and rendering. Nevertheless, offloading physics calculations to a separate thread is a common practice, as physical computations are some of the most resource-intensive, and there's a benefit to using a dedicated thread.</p>
+<p>The physics engine operates in two main stages:</p>
+<ul>
+	<li>Detects collisions between objects;</li>
+	<li>Resolves each collision—calculates the new velocities and directions of the colliding objects. Each such resolution is handled by a solver.</li>
+</ul>
+<p>For the second stage, you can go further and launch multiple threads for each solver so that they can be computed in parallel. Then, the engine will wait for all threads to complete, and the synchronization phase with the game simulation will follow.</p>
+<h3>Database</h3>
+<p>The database is another typical candidate for running in a separate thread. Database queries can be heavy, and we definitely don't want them blocking the main thread. Similarly, the database itself is often a crucial resource, and it needs to operate quickly without interruptions. For online games, such as a hypothetical MMO, the main database is essentially equivalent to the "save file" in a single-player game. And this "save file" is massive, resource-hungry, and critical to the entire operation of the game. Therefore, separating the main game thread from the database thread is usually a mutually beneficial practice, ensuring that neither interferes with the other.</p>
+<p>Interestingly, when I was working on an MMO, I found it fascinating that, from the perspective of gameplay code, reading from the database is more expensive than writing to it. When you write to the database, you send the data to the database thread, and then you continue with your work. However, when you try to read something from the database, you have to request the data, wait for the database thread to process the request, and then wait for the data to come back to the main thread—definitely not cheap.</p>
+<h3>Server-Client</h3>
+<p>Returning to online games. If a typical single-player game has one single application that you usually run on your computer or console, the client-server approach radically changes the rules from a development perspective. Now there are multiple applications—a single (ideally) server and many clients connecting to the server from hundreds of players' machines around the world.</p>
+<p>The game code is now "split" into two parts:</p>
+<ul>
+	<li>Server — this is the original game, but it lacks rendering, graphical interface, and input;</li>
+	<li>Client — this is the rendering, graphical interface, and input that the server lacks. In every other respect, the client is entirely dependent on the server, which authoritatively tells it what is actually happening in the game. Any client’s attempts to speculate about the game state are called "speculations" because, at best, the client can only predict or guess what’s happening.</li>
+</ul>
+<p>So, the server, besides being the original game simulation, is also a <i>server</i> by its very nature. That is, an application that accepts connections from clients and services them throughout the connection process. How exactly the server handles this connection and service is up to the implementation details of each server. But one of the simplest approaches is to create a thread for each individual connection. In real life, this is not the most practical approach since there won't be enough threads for everyone, but in the implementation of client-server interactions, multithreading can be a useful tool, especially if the server load is high.</p>
+<h3>Logging</h3>
+<p>Logging has a situation somewhat similar to audio rendering—no one reads from this subsystem, only writes to it. You write to the log and forget about it. The logger, running in a separate thread, will handle everything in the background: adding the entry to the buffer, flushing it when needed, and physically writing a batch of data to disk, to a database, sending it over the network, or whatever else is necessary.</p>
+<h3>Rendering</h3>
+<p>I won’t pretend to be even remotely competent in rendering, but from experience, there is almost always a dedicated render thread where the work of forming the next frame in the game and interacting with the GPU takes place. Rendering, like physics, needs to synchronize with the game simulation occurring in the main thread at some point.</p>
+<h3>GPU</h3>
+<p>When we talk about multithreading, we’re in 99% of cases referring to CPU cores. But GPUs also have cores. Moreover, they are hundreds of times more numerous than CPU cores. On GPUs, the number of cores is counted in <i>thousands</i>. Graphics cards are literally synonymous with multithreading and parallelization.</p>
+<p>Why do GPUs have so many cores? I’m not the biggest expert in rendering, so I’ll outline it broadly. GPUs execute shaders. Shader code is code that needs to be executed <i>simultaneously</i> for every pixel to produce the final result. This is if we’re talking about pixel shaders. Shaders of other types perform different calculations, but one thing remains the same—a shader will be executed by the GPU <i>in parallel</i> for each pixel/vertex/triangle.</p>
+<p>This, by the way, defines rendering programmers as a special caste, because writing shader code is quite different from what you see in regular CPU development. It's no small feat to write <i>one</i> piece of code that will be executed for each pixel and result in a coherent yet <i>different</i> result for each pixel.</p>
+<blockquote><b>Note:</b> When I refer to "pixel" in the context of shader code, I’m using an imprecise term, as it’s not exactly the pixel on your monitor. What shaders operate on should be correctly termed as "fragments," and pixel shaders should be referred to as "fragment shaders."</blockquote>
+<p>It’s also worth mentioning compute shaders—shaders designed for arbitrary, non-graphical computations. These shaders are used to offload work that is typically done on the CPU to the GPU, achieving significant gains due to the GPU’s order-of-magnitude greater number of cores. Plus, consider mining as a typical non-graphical process, which GPUs handle much better than CPUs due to their vast number of cores.</p>
+<h3>You Name It</h3>
+<p>Clearly, game engines make extensive use of threads; and there are many systems where multithreading is applied to varying degrees that we can't possibly cover all in a single article.</p>
+<h2>Conclusions</h2>
+<p>So, what have we concluded, and what does this article give us? I think everyone will find something of their own in it, but here’s a summary from my side:</p>
+<ul>
+	<li>Threads in games are not where they might seem;</li>
+	<li>Multithreading does not always make the code faster. Sometimes it can even make things worse compared to a single-threaded version;</li>
+	<li>Your games are likely to run faster on a processor with more cores. However, the increase in FPS will not be proportional to the increase in cores. Some games might perform at the same level as before;</li>
+	<li>GPUs handle a lot and a significant portion of multithreading is managed by them;</li>
+	<li>As a gameplay logic programmer, you may be surprised to discover that your work rarely goes beyond the main thread;</li>
+	<li>As a game engine programmer, you may be surprised to discover that your work frequently extends beyond the main thread;</li>
+	<li>Writing games is challenging even without threads;</li>
+	<li>The executable file of a game is about 85% (a completely arbitrary number) comprised of game engine code rather than the game itself;</li>
+	<li>The engine will, to a large extent (again, a completely arbitrary number), determine how intensively your final application will use multithreading;</li>
+	<li>An MMO game server is likely to benefit more from additional CPU cores compared to a single-player PC game, due to the need to handle a large load from numerous clients.</li>
+</ul>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>
