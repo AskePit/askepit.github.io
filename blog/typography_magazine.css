@@ -37,12 +37,20 @@ h3, h4, h5, h6 {
     margin-bottom: 0px;
 }
 
-ul, li, p {
+ul, li, p, blockquote {
     font-family: var(--text-font);
     font-size: 20px;
     font-weight: 300;
     
     margin-top: 15px;
+}
+
+blockquote {
+    font-size: 18px;
+}
+
+li + li {
+    margin-top: 2px;
 }
 
 figcaption {
@@ -51,4 +59,26 @@ figcaption {
     font-weight: 400;
 
     margin-top: 5px;
+}
+
+@media only screen and (max-width: 1000px) {
+    ul, li, p, blockquote {
+        font-size: 19px;
+    }
+    
+    blockquote {
+        font-size: 17px;
+    }
+
+    h1 {
+        font-size: 36px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+    
+    h3, h4, h5, h6 {
+        font-size: 20px;
+    }
 }

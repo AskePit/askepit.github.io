@@ -32,7 +32,7 @@ h3, h4, h5, h6 {
     margin-bottom: 0px;
 }
 
-ul, li, p {
+ul, li, p, blockquote {
     font-family: var(--text-font);
     font-size: 19px;
     font-weight: 360;
@@ -41,10 +41,40 @@ ul, li, p {
     margin-top: 18px;
 }
 
+blockquote {
+    font-size: 17px;
+}
+
+li + li {
+    margin-top: 2px;
+}
+
 figcaption {
     font-family: var(--subheader-font);
     font-size: 18px;
     font-weight: 600;
 
     margin-top: 5px;
+}
+
+@media only screen and (max-width: 1000px) {
+    ul, li, p, blockquote {
+        font-size: 16px;
+    }
+    
+    blockquote {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 36px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+    
+    h3, h4, h5, h6 {
+        font-size: 20px;
+    }
 }

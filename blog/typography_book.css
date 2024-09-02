@@ -7,7 +7,7 @@ body {
 
 h1 {
     font-family: var(--title-font);
-    font-size: 46px;
+    font-size: 48px;
     font-weight: 600;
     /* text-transform: uppercase; */
     font-variant: small-caps;
@@ -15,7 +15,7 @@ h1 {
 
 h2 {
     font-family: var(--header-font);
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 1000;
     /* text-transform: uppercase; */
 
@@ -25,35 +25,65 @@ h2 {
 
 h3, h4, h5, h6 {
     font-family: var(--subheader-font);
-    font-size: 21px;
+    font-size: 23px;
     font-weight: 600;
     /* text-transform: uppercase; */
     
-    margin-top: 28px;
+    margin-top: 40px;
     margin-bottom: 0px;
 }
 
-ul, li, p {
+ul, li, p, blockquote {
     font-family: var(--text-font);
     font-size: 21px;
     font-weight: 350;
     line-height: 26px;
     
-    margin-top: 15px;
+    margin-top: 22px;
 }
 
-h2 + p, h3 + p {
+blockquote {
+    font-size: 19px;
+}
+
+h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
     margin-top: 12px;
 }
 
-h2 + h3 {
-    margin-top: 12px;
+h2 + h3, h2 + h4, h2 + h5, h2 + h6 {
+    margin-top: 18px;
+}
+
+li + li {
+    margin-top: 2px;
 }
 
 figcaption {
     font-family: var(--subheader-font);
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 400;
 
     margin-top: 5px;
+}
+
+@media only screen and (max-width: 1000px) {
+    ul, li, p, blockquote {
+        font-size: 19px;
+    }
+    
+    blockquote {
+        font-size: 17px;
+    }
+
+    h1 {
+        font-size: 36px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+    
+    h3, h4, h5, h6 {
+        font-size: 20px;
+    }
 }

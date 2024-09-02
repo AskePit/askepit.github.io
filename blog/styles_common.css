@@ -5,12 +5,6 @@ body {
     padding: 0px calc((100vw - var(--column-width))/2);
 }
 
-@media only screen and (max-width: 1000px) {
-    body {
-        margin: 15px;
-    }
-}
-
 ul, li, p {
     text-align: justify;
     text-justify: inter-word;
@@ -73,4 +67,37 @@ a {
 
 img {
     max-width: 100%;
+}
+
+blockquote {
+    border-left: 4px solid;
+    margin: 0px;
+    padding-left: 18px;
+}
+
+.parse-error::before {
+    content: 'Error: ';
+    font-weight: 1000;
+    font-family: 'Fira Code';
+    background-color: white;
+    color: #d60000;
+    padding: 10px 0px 10px 10px;
+    margin: 10px;
+}
+
+.parse-error {
+    background-color: #d60000;
+    color: white;
+    padding: 10px;
+    font-size: 20px;
+    font-family: 'Fira Code';
+}
+
+@media only screen and (max-width: 1000px) {
+    body {
+        margin: 15px;
+    }
+    pre, code {
+        font-size: 14px;
+    }
 }
