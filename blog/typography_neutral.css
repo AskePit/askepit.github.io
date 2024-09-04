@@ -1,0 +1,73 @@
+body {
+    --title-font: ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;
+    --header-font: ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;
+    --subheader-font: ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;
+    --text-font: ui-sans-serif,-apple-system,system-ui,Segoe UI,Helvetica,Apple Color Emoji,Arial,sans-serif,Segoe UI Emoji,Segoe UI Symbol;
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: 2.25em;
+    font-weight: 700;
+    /* text-transform: uppercase; */
+    /* font-variant: small-caps; */
+}
+
+h2 {
+    font-family: var(--header-font);
+    font-size: 1.5em;
+    font-weight: 600;
+    /* text-transform: uppercase; */
+
+    margin-top: 50px;
+    margin-bottom: 0px;
+}
+
+h3, h4, h5, h6 {
+    font-family: var(--subheader-font);
+    font-size: 1.25em;
+    font-weight: 600;
+    /* text-transform: uppercase; */
+    
+    margin-top: 40px;
+    margin-bottom: 0px;
+}
+
+ul, li, p, blockquote {
+    font-family: var(--text-font);
+    font-size: 1rem;
+    line-height: 1.75;
+    
+    margin-top: 22px;
+}
+
+blockquote {
+    font-size: 14px;
+}
+
+pre, code {
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
+    font-size: .875em;
+    font-weight: 400;
+    line-height: 1.75;
+}
+
+h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
+    margin-top: 12px;
+}
+
+h2 + h3, h2 + h4, h2 + h5, h2 + h6 {
+    margin-top: 18px;
+}
+
+li + li {
+    margin-top: 2px;
+}
+
+figcaption {
+    font-family: var(--subheader-font);
+    font-size: 16px;
+    font-weight: 400;
+
+    margin-top: 5px;
+}
