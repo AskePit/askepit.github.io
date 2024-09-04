@@ -58,10 +58,10 @@ MathJax = {
 <p>More about the concept can be found in <a href="https://www.ilyaboyko.com/work/rift-in-the-empire-2">this retrospective article</a> by Ilya.</p>
 <p>We decided to start with a small prototype level, just to see how it turns out. The requirements for the level were minimal:</p>
 <ul>
-	<li>Flat level, side view, the main character moves from left to right.</li>
-	<li>Several background layers creating a <a href="https://en.wikipedia.org/wiki/Parallax">parallax effect</a>.</li>
-	<li>Basic movement of the main character: walking, running, jumping, idle animation.</li>
-	<li>Several platforms to jump onto.</li>
+	<li><p>Flat level, side view, the main character moves from left to right.</p></li>
+	<li><p>Several background layers creating a <a href="https://en.wikipedia.org/wiki/Parallax">parallax effect</a>.</p></li>
+	<li><p>Basic movement of the main character: walking, running, jumping, idle animation.</p></li>
+	<li><p>Several platforms to jump onto.</p></li>
 </ul>
 <p>Tasks were set, the goal was clear, but we still hadn't chosen a game engine.</p>
 <h2>In Search of a Game Engine</h2>
@@ -69,16 +69,16 @@ MathJax = {
 <p>On the other hand, I wanted the engine, if I liked it, to be usable for future projects. The next project's requirements and the need for any serious computations were unknown. Therefore, the engine needed to allow writing part of the functionality in a mature compiled language like C++ or Rust if necessary.</p>
 <p>Engines considered and rejected:</p>
 <ul>
-	<li><a href="https://www.unrealengine.com/en-US">Unreal Engine</a>. I'm familiar with Unreal, but it felt like crushing a fly with a steam-roller for our tasks. Also, UE4 is massive in size, and UE5 size is over <s>9000!</s> a hundred gigabytes. I really didn't want to resort to it, although it was my backup option.</li>
-	<li><a href="https://unity.com/">Unity</a>. Can't say much. It's the most popular choice for 2D game development. But somehow, my heart wasn't in writing in C#. Also, for some entirely subjective reason, I had a skeptical attitude towards the engine.</li>
-	<li><a href="https://bevyengine.org/">Bevy</a>. A very young engine where you need to write the game entirely in Rust—that was appealing. But fatal flaws overshadowed everything: no editor, the engine brutally enforces the ECS approach, and the game's architecture must literally bend to fit this paradigm. So, you won't migrate to another engine at all—you just throw away all the code and start from scratch.</li>
+	<li><p><a href="https://www.unrealengine.com/en-US">Unreal Engine</a>. I'm familiar with Unreal, but it felt like crushing a fly with a steam-roller for our tasks. Also, UE4 is massive in size, and UE5 size is over <s>9000!</s> a hundred gigabytes. I really didn't want to resort to it, although it was my backup option.</p></li>
+	<li><p><a href="https://unity.com/">Unity</a>. Can't say much. It's the most popular choice for 2D game development. But somehow, my heart wasn't in writing in C#. Also, for some entirely subjective reason, I had a skeptical attitude towards the engine.</p></li>
+	<li><p><a href="https://bevyengine.org/">Bevy</a>. A very young engine where you need to write the game entirely in Rust—that was appealing. But fatal flaws overshadowed everything: no editor, the engine brutally enforces the ECS approach, and the game's architecture must literally bend to fit this paradigm. So, you won't migrate to another engine at all—you just throw away all the code and start from scratch.</p></li>
 </ul>
 <p>By process of elimination, the dark horse of the game engine world was chosen—Godot. Yes, the same one that many Unity developers rushed to port to, angered by Unity's new pricing policy. I, however, started Godot exploration a year and a half before these events, so I wasn’t affected by that sudden hype. I even experienced a mini-migration from version 3 to 4, which happened to be almost seamless for me.</p>
 <p>I can say right away that I haven't been disappointed with the choice, and the engine has never let me down. What can I say about Godot over time:</p>
 <ul>
-	<li>It has its own scripting language, <a href="https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html">GDScript</a>, similar to Python. It's simple and convenient.</li>
-	<li>As an alternative, you can code in C++ or C#. If desired, Godot has bindings for other languages, such as <a href="https://github.com/godot-rust/gdext">Rust</a>. Going ahead—in the end, C++ came in handy and useful for the project.</li>
-	<li>Godot is a simplicity itself. You literally take it and do it. No long documentation readings, no fuss. After the first basic <a href="https://docs.godotengine.org/en/stable/getting_started/first_2d_game/index.html">tutorial</a>, you just pick it up—and create the stuff.</li>
+	<li><p>It has its own scripting language, <a href="https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html">GDScript</a>, similar to Python. It's simple and convenient.</p></li>
+	<li><p>As an alternative, you can code in C++ or C#. If desired, Godot has bindings for other languages, such as <a href="https://github.com/godot-rust/gdext">Rust</a>. Going ahead—in the end, C++ came in handy and useful for the project.</p></li>
+	<li><p>Godot is a simplicity itself. You literally take it and do it. No long documentation readings, no fuss. After the first basic <a href="https://docs.godotengine.org/en/stable/getting_started/first_2d_game/index.html">tutorial</a>, you just pick it up—and create the stuff.</p></li>
 </ul>
 <p>Can I say something bad about Godot? Its logo is just awful.</p>
 
@@ -133,9 +133,9 @@ MathJax = {
 
 <p>The article is so comprehensive that for our project, only the most basic ideas were sufficient, just the initial steps of the algorithm:</p>
 <ul>
-	<li>Generating random points on a 2D plane</li>
-	<li>Constructing a Voronoi map based on these points</li>
-	<li>Assigning a biome type to each cell of the Voronoi map</li>
+	<li><p>Generating random points on a 2D plane</p></li>
+	<li><p>Constructing a Voronoi map based on these points</p></li>
+	<li><p>Assigning a biome type to each cell of the Voronoi map</p></li>
 </ul>
 <p>Everything else was too specialized, aiming to generate an image entirely procedurally without the need for an artist. What we needed was a simple biome stylization, where the artist would draw each biome’s textures, and we would simply apply them to the Voronoi map polygons. So, the article served mainly as an inspiring, motivational guide, giving a rough direction to follow, rather than a step-by-step guide of success.</p>
 <p>Additionally, I read about how Don't Starve developers generated their game’s world—I found an <a href="https://dontstarve.fandom.com/wiki/World_Generation">article</a> on the fandom-wiki for the game. It also mentioned that the starting point for their generation was a Voronoi map.</p>
@@ -317,9 +317,9 @@ $$</p>
 <p>So, if we go to a very small order of $p$, space begins to distort significantly, and the map starts to take on a surrealistic weird appearance.</p>
 <p>All in all, with such a primitive algorithm, I was able to play around with different types of Voronoi maps much as I wanted. And I’ve just become even more convinced in my desire to use the version with taxicab distances. But maybe we could use the algorithm we just used for our game implementation? Nope. It is not viable and has a number of fatal drawbacks, and it out of our consideration for several reasons:</p>
 <ul>
-	<li><b>The necessity of discrete space.</b> The algorithm assumes that our space consists of a finite number of coordinates or pixels. However, this is not always the case. An adequate algorithm should operate with polygons and output, in the end, a list of polygons describing the Voronoi map—thus, we get the boundaries of the regions, and we can then manipulate them as we see fit.</li>
-	<li><b>Can only fill regions with a solid color.</b> The algorithm does not draw the boundaries of the Voronoi regions, but just fills the regions with color. As a result, you cannot apply a texture to your regions or procedurally enhance them in any way—only a solid color fill without borders.</li>
-	<li><b>Speed.</b> The algorithm has terrible performance: its complexity is $O(n^2)$. And it is necessary to iterate over all existing coordinates in space, which greatly worsens the situation. For example, building a map of size 640x640 takes an average of 3.3 seconds, and 1024x1024—7-8 seconds on a PC designed for professional game development. This is horribly slow for such a primitive colorful picture.</li>
+	<li><p><b>The necessity of discrete space.</b> The algorithm assumes that our space consists of a finite number of coordinates or pixels. However, this is not always the case. An adequate algorithm should operate with polygons and output, in the end, a list of polygons describing the Voronoi map—thus, we get the boundaries of the regions, and we can then manipulate them as we see fit.</p></li>
+	<li><p><b>Can only fill regions with a solid color.</b> The algorithm does not draw the boundaries of the Voronoi regions, but just fills the regions with color. As a result, you cannot apply a texture to your regions or procedurally enhance them in any way—only a solid color fill without borders.</p></li>
+	<li><p><b>Speed.</b> The algorithm has terrible performance: its complexity is $O(n^2)$. And it is necessary to iterate over all existing coordinates in space, which greatly worsens the situation. For example, building a map of size 640x640 takes an average of 3.3 seconds, and 1024x1024—7-8 seconds on a PC designed for professional game development. This is horribly slow for such a primitive colorful picture.</p></li>
 </ul>
 <p>There is another similar but more efficient algorithm called the <a href="https://en.wikipedia.org/wiki/Jump_flooding_algorithm">Jump Flooding Algorithm</a>, but we will not consider it either, as it also colors the map in parts, not building polygons.</p>
 <h2>In Search of the Right Algorithm</h2>
@@ -387,8 +387,8 @@ $$</p>
 <p>I did not manage to modify the Fortune's Algorithm. Yes, at some point, I abandoned this idea because a lot of time had passed, the game needed to be developed, and I had nothing to show to Ilya. I needed to take action instead of stagnating with something I poorly understood.</p>
 <p>So yes, you can just throw away the entire previous chapter. Why did I even make you read it only to disappoint you at the end? Well, there is a reason:</p>
 <ul>
-	<li>You experienced my journey and my pain.</li>
-	<li>You might have learned as much interesting stuff as I did during this fascinating dive into a dead end.</li>
+	<li><p>You experienced my journey and my pain.</p></li>
+	<li><p>You might have learned as much interesting stuff as I did during this fascinating dive into a dead end.</p></li>
 </ul>
 <p>So, what did I do? As I mentioned earlier, I stumbled upon an <a href="https://github.com/JDragovich/manhattan-voronoi">implementation</a> of the Voronoi diagram in taxicab space, written in JavaScript. I looked at it for a long time, admired it, ran the project, saw that the code worked. The author even has a <a href="http://voronoi.joe-dragovich.co.uk.s3-website.eu-west-2.amazonaws.com/">demo page</a> showing the result of his library.</p>
 <p>Moreover, the algorithm's code in fact was in one file and consisted of only 800 lines. So, I decided to simply rewrite this code in C++. I had this thought when I first encountered the project, but back then it seemed unworthy. Now I didn't care anymore :) Many thanks to <a href="https://github.com/JDragovich">Joe Dragovich</a> for his project.</p>
@@ -432,20 +432,20 @@ mergeArray.<span class="code-call">insert</span>(
 <p>So, the C++ code was written and tested, functioning similarly to the original JavaScript. Now the question is: how to integrate this code into the game engine?</p>
 <p>As I mentioned earlier, Godot provides the opportunity to write code in different languages, including C++. This can be done using a technology called <a href="https://docs.godotengine.org/en/3.5/tutorials/scripting/gdnative/index.html">GDNative</a> in Godot 3 and <a href="https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/index.html">GDExtension</a> in Godot 4. The basic principle of operation is the same for both:</p>
 <ul>
-	<li>Write C++ classes or functions using <a href="https://github.com/godotengine/godot-cpp">C++ bindings</a> for the Godot engine.</li>
-	<li>Compile to obtain a DLL library.</li>
-	<li>When the game or game editor is launched, the DLL library is loaded by the engine.</li>
-	<li>Classes and functions written in C++ become available to the scene tree and GDScript.</li>
-	<li>Use the interface of these classes and functions in GDScript, and they'll execute fast, performant native code hidden under the hood.</li>
+	<li><p>Write C++ classes or functions using <a href="https://github.com/godotengine/godot-cpp">C++ bindings</a> for the Godot engine.</p></li>
+	<li><p>Compile to obtain a DLL library.</p></li>
+	<li><p>When the game or game editor is launched, the DLL library is loaded by the engine.</p></li>
+	<li><p>Classes and functions written in C++ become available to the scene tree and GDScript.</p></li>
+	<li><p>Use the interface of these classes and functions in GDScript, and they'll execute fast, performant native code hidden under the hood.</p></li>
 </ul>
 <p>Integrating C++ code didn't pose any particular issues, and the Godot documentation provides good examples of the entire process, so we can just move on further.</p>
 <h2>Map Generation</h2>
 <p>Now one of the key moments comes into scene. Now I had the ability to generate a Voronoi map in taxicab space. The process worked roughly as follows:</p>
 <ul>
-	<li>In Godot, I generated a certain number of random points.</li>
-	<li>The points and parameters of the 2D canvas were passed to the native code.</li>
-	<li>The native code provided me with ready-made polygons for the canvas.</li>
-	<li>I just had to draw the polygons on the screen.</li>
+	<li><p>In Godot, I generated a certain number of random points.</p></li>
+	<li><p>The points and parameters of the 2D canvas were passed to the native code.</p></li>
+	<li><p>The native code provided me with ready-made polygons for the canvas.</p></li>
+	<li><p>I just had to draw the polygons on the screen.</p></li>
 </ul>
 <p>Here's what I got in the end:</p>
 
@@ -478,8 +478,8 @@ mergeArray.<span class="code-call">insert</span>(
 <p>At this point, everything still looks schematic and not much like a game map. It's time to clean up unnecessary elements and add various decorations. It's worth noting that during these modifications, the Voronoi map will lose its properties, but for our purposes, it doesn't matter. The Voronoi map was only needed for the initial generation of our beautiful polygons. After that, we are free to do whatever we want with these polygons.</p>
 <p>What bothers us in the current version of the map:</p>
 <ul>
-	<li>The map is rectangular. Instead we want an island with irregular edges.</li>
-	<li>We want to differentiate the biomes, at least with colors, and preferably with textures.</li>
+	<li><p>The map is rectangular. Instead we want an island with irregular edges.</p></li>
+	<li><p>We want to differentiate the biomes, at least with colors, and preferably with textures.</p></li>
 </ul>
 <p>The simplest way to turn a square map into an island is to remove all the outer biomes that formed the perimeter of the map. Then the remaining biomes will form the silhouette of the island with irregular edges. Let's stick to this method for now. Each biome will be colored with a random color, resulting in the following picture:</p>
 
@@ -495,9 +495,9 @@ mergeArray.<span class="code-call">insert</span>(
 <h2>Creating Game Biomes</h2>
 <p>Our plan for the game world was ambitious:</p>
 <ul>
-	<li>We needed to create 4 different types of maps: forest, dungeons, infernal rift, and mountainous terrain.</li>
-	<li>Each map would be divided into biomes, with 3-4 variations of biomes on each map.</li>
-	<li>Each biome would have its own set of items and props. For example, a forest biome on a forest map should have many trees and mushrooms; while on a rocky biome, you might randomly find a sword stuck in the ground.</li>
+	<li><p>We needed to create 4 different types of maps: forest, dungeons, infernal rift, and mountainous terrain.</p></li>
+	<li><p>Each map would be divided into biomes, with 3-4 variations of biomes on each map.</p></li>
+	<li><p>Each biome would have its own set of items and props. For example, a forest biome on a forest map should have many trees and mushrooms; while on a rocky biome, you might randomly find a sword stuck in the ground.</p></li>
 </ul>
 <p>Ilya drew concepts showing how each map should ideally look:</p>
 
@@ -572,12 +572,12 @@ mergeArray.<span class="code-call">insert</span>(
 
 <p>The list of requirements included:</p>
 <ul>
-	<li>The borders between biomes should look as if covered with colorful grass strands.</li>
-	<li>The island's perimeter should have a special border.</li>
-	<li>The island should have a "thickness" in the form of a stylized downward slope.</li>
-	<li>Adjacent biomes should not be identical—there shouldn't be two grassy biomes neighboring each other with a strange useless border. You can refer back to the dreadful screenshot of the dungeon map I showed earlier to see how two tile-like biomes neighbor each other—it looks wrong and unnatural.</li>
-	<li>The random placement of objects on the map should be "normal" and visually pleasing.</li>
-	<li>I'll jump ahead and mention another problem that surfaced during the process, requiring a solution: sometimes, the Voronoi diagram generated polygons with extremely short edges, meaning two neighboring points of a polygon were so close that the distance between them approached just a few pixels. This resulted in unpleasant visual artifacts, which I'll show later. I'll just say for now that these points needed to be somehow fixed—either by removing one of the points or by somehow turning two points into one.</li>
+	<li><p>The borders between biomes should look as if covered with colorful grass strands.</p></li>
+	<li><p>The island's perimeter should have a special border.</p></li>
+	<li><p>The island should have a "thickness" in the form of a stylized downward slope.</p></li>
+	<li><p>Adjacent biomes should not be identical—there shouldn't be two grassy biomes neighboring each other with a strange useless border. You can refer back to the dreadful screenshot of the dungeon map I showed earlier to see how two tile-like biomes neighbor each other—it looks wrong and unnatural.</p></li>
+	<li><p>The random placement of objects on the map should be "normal" and visually pleasing.</p></li>
+	<li><p>I'll jump ahead and mention another problem that surfaced during the process, requiring a solution: sometimes, the Voronoi diagram generated polygons with extremely short edges, meaning two neighboring points of a polygon were so close that the distance between them approached just a few pixels. This resulted in unpleasant visual artifacts, which I'll show later. I'll just say for now that these points needed to be somehow fixed—either by removing one of the points or by somehow turning two points into one.</p></li>
 </ul>
 <p>In general, there was quite a list. Individually, those tasks introduced small visual changes to the biomes, but together, they made a significant difference between a set of flat polygons with stretched textures and a harmoniously perceived map with biomes.</p>
 <p>Let's go through each of these tasks.</p>
@@ -625,8 +625,8 @@ mergeArray.<span class="code-call">insert</span>(
 
 <p>The bold lines represent the world map, the solid thin lines represent the visible thickness slice, and the dashed thin lines represent the invisible thickness slice. The slice consists of quadrilaterals constructed as follows:</p>
 <ul>
-	<li>From two neighboring points on the map perimeter, we draw vertical segments downward with a constant height $h$.</li>
-	<li>We connect these vertical segments with two more segments to form a quadrilateral.</li>
+	<li><p>From two neighboring points on the map perimeter, we draw vertical segments downward with a constant height $h$.</p></li>
+	<li><p>We connect these vertical segments with two more segments to form a quadrilateral.</p></li>
 </ul>
 <p>Of course, we only want to draw the visible parts of the slice, and we don't want to draw the invisible parts. L — logic. I wanted to come up with an algorithm that would calculate the intersection of the map polygon with the slice polygons to determine whether a specific segment of the slice needed to be drawn or if it was invisible. However, during the enumeration of different map forms, I quickly encountered difficult cases:</p>
 
@@ -671,8 +671,8 @@ mergeArray.<span class="code-call">insert</span>(
 
 <p>So, diagram $a$ shows a map with five polygons. It's not necessarily a Voronoi map, or more likely, it's <i>not</i> a Voronoi map, but that doesn't matter—we can forget about the Voronoi map for the rest of the article. Now we are dealing purely with polygons which:</p>
 <ul>
-	<li>Are neighbors. They "stick" together, forming a seamless space filled with biomes.</li>
-	<li><b>Cannot</b> have gaps between neighboring polygons; otherwise, it's not a map but rather a mess. You can look at diagram $d$ to understand what I mean: the dark area represents the forbidden gap in space. Well, if we want, we can later create these holes in the map intentionally, but not for now—at this stage, gaping holes in space should not be present.</li>
+	<li><p>Are neighbors. They "stick" together, forming a seamless space filled with biomes.</p></li>
+	<li><p><b>Cannot</b> have gaps between neighboring polygons; otherwise, it's not a map but rather a mess. You can look at diagram $d$ to understand what I mean: the dark area represents the forbidden gap in space. Well, if we want, we can later create these holes in the map intentionally, but not for now—at this stage, gaping holes in space should not be present.</p></li>
 </ul>
 <p>Now, let's imagine that we want to move one of the points on the map, as shown in $b$. Remember that in our memory, the map is represented as a collection of independent polygons. Some polygons share edges—completely or partially, some polygons share points. However, each polygon is described in isolation and is self-sufficient. In diagram $c$, we slightly spread out all polygons in space to clearly see all their edges.</p>
 <p>Also, in diagram $c$, it becomes apparent that we can't just take and move one point of a specific polygon and consider the task done. Otherwise, we inevitably end up with diagram $d$, where the map is broken. The point was moved for the polygon 1, but the same point was shared with the polygon 2, and it also needed to be moved. So, if we carefully keep track of common points and move them all together, will the problem be solved? <i>No.</i> This is clearly seen with polygon 5. While it technically does not have the same point, the point we want to move lies <i>on one of the edges</i> of polygon 5. Therefore, polygon 5 implicitly contains this point.</p>
@@ -704,22 +704,29 @@ mergeArray.<span class="code-call">insert</span>(
 <p>Essentially, it all boiled down to the problem of <a href="https://en.wikipedia.org/wiki/Four_color_theorem">map coloring</a>. However, the four-color theorem makes it clear that, in general, you can't color a map with <i>three</i> colors in such a way that neighbors are unique. It requires at least four colors or more. Thus, our maps with 3-5 types of biomes had no opportunity for a foolproof and sensible coloring. All that was left was to try and color the map with as much diversity among neighbors as it really possible within circumstances.</p>
 <p>I asked for help from ChatGPT for an appropriate algorithm. It suggested a simple and straightforward solution based on a heuristic like:</p>
 <ul>
-	<li>Color ourselves.</li>
-	<li>Color uncolored neighbors, trying not to repeat biomes.</li>
-	<li>If, at some point, we get stuck and neighbors are duplicated, we can try to roll back one step and assign a different color to the previous polygon, then attempt to recolor all its neighbors.</li>
-	<li>If desired, the number of rollbacks can be increased if you can afford to store more temporary information.</li>
-	<li>Repeat until finished.</li>
+	<li><p>Color ourselves.</p></li>
+	<li><p>Color uncolored neighbors, trying not to repeat biomes.</p></li>
+	<li><p>If, at some point, we get stuck and neighbors are duplicated, we can try to roll back one step and assign a different color to the previous polygon, then attempt to recolor all its neighbors.</p></li>
+	<li><p>If desired, the number of rollbacks can be increased if you can afford to store more temporary information.</p></li>
+	<li><p>Repeat until finished.</p></li>
 </ul>
 <p>ChatGPT has provided me with code, which seemed to work, which is generally not guaranteed with ChatGPT—it was quite the little win. Of course, sometimes the map ended up with identical neighbors. In that case, we simply had to merge them, but these were isolated cases that did not harm the overall appearance of the generated map.</p>
 <h3>Normal Random</h3>
 <p>Here is where the real "fun" begins because the concept of "normal random" is vague and subject to discussion. I wanted more precise formulations from Ilya—something expressed in exact numbers. However, it wasn't simple because while we might have a rough mental image of how trees should be placed on the edge of a forest, translating that into numerical parameters isn't straightforward.</p>
 <p>We settled on creating tables for each map that described the distribution of items in each biome. For example, here's a table for a forest map:</p>
-<div class="parse-error">![[Screenshot 2024-04-24 124126.png]]</div>
+
+<div class="image">
+    <figure>
+        <img src="https://miro.medium.com/v2/resize:fit:4800/format:webp/1*Cr7PFG2xCFkE6kETL39-Qg.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
 <p>Yes, it's in layman's terms, vague, without formulas or an abundance of numbers, but it was a starting point. With this information, I found it easier to come up with ways to generate various items according to my preferences and understanding.</p>
 <p>I won't force you to scrutinize the table seriously and understand every detail. For our further discussion, it's enough to know that the distribution of items on the map is divided into two fundamentally different approaches:</p>
 <ul>
-	<li><b>Individual items generation.</b> A certain quantity of items should be generated for the entire biome (sometimes even for the entire map), sometimes within an acceptable range, and sometimes with specific individual conditions. For example, generating one sword stuck in the ground for the entire map with a 50% chance of appearing in either the stone or earth biome.</li>
-	<li><b>Item clusters generation.</b> This concerns the density of item distribution on a biome and the nature of this distribution.</li>
+	<li><p><b>Individual items generation.</b> A certain quantity of items should be generated for the entire biome (sometimes even for the entire map), sometimes within an acceptable range, and sometimes with specific individual conditions. For example, generating one sword stuck in the ground for the entire map with a 50% chance of appearing in either the stone or earth biome.</p></li>
+	<li><p><b>Item clusters generation.</b> This concerns the density of item distribution on a biome and the nature of this distribution.</p></li>
 </ul>
 <p>While the first type of generation is straightforward—you just take and generate items according to the rules dictated by the item—generating the second type of items was unclear for me. I had to thinking hard again.</p>
 <p>We will consider cluster generation using forest as an example, as it is the most illustrative example. If we master the generation of forests, groves, and clearings with different characteristics, we essentially master cluster generation thoroughly, as a realistically (to the extent possible in a stylized 2D game) generated forest is, in my opinion, the most visually demanding stuff.</p>
@@ -807,31 +814,31 @@ mergeArray.<span class="code-call">insert</span>(
 <p>Let's retrospect through all the steps to obtain our map with biomes. If you are reading this article because you are working on something similar and came here for ideas, this section will help you gather all the information dumped on you in the article.</p>
 <p>On the Godot side:</p>
 <ul>
-	<li>Set global map parameters: desired size, approximate number of biomes, types of biomes to be present on the map.</li>
-	<li>Generate random points across the entire expected map area.</li>
+	<li><p>Set global map parameters: desired size, approximate number of biomes, types of biomes to be present on the map.</p></li>
+	<li><p>Generate random points across the entire expected map area.</p></li>
 </ul>
 <p>Then, with the points in hand, we dive into C++ code, where we perform computationally expensive calculations for generating map polygons.</p>
 <p>In C++:</p>
 <ul>
-	<li>Based on points, create the Voronoi map.</li>
-	<li>Obtain a list of polygons from the Voronoi map.</li>
-	<li>Create a graph from the points for intermediate optimizations.</li>
-	<li>Remove points that are too close on the graph.</li>
-	<li>Transform the graph back into polygons.</li>
-	<li>Calculate neighbors for each polygon.</li>
-	<li>Assign a biome type to each polygon, trying to minimize the neighbouring of identical biomes.</li>
-	<li>Merge polygons with identical biomes that are neighbors.</li>
+	<li><p>Based on points, create the Voronoi map.</p></li>
+	<li><p>Obtain a list of polygons from the Voronoi map.</p></li>
+	<li><p>Create a graph from the points for intermediate optimizations.</p></li>
+	<li><p>Remove points that are too close on the graph.</p></li>
+	<li><p>Transform the graph back into polygons.</p></li>
+	<li><p>Calculate neighbors for each polygon.</p></li>
+	<li><p>Assign a biome type to each polygon, trying to minimize the neighbouring of identical biomes.</p></li>
+	<li><p>Merge polygons with identical biomes that are neighbors.</p></li>
 </ul>
 <p>The resulting set of polygons is returned to GDScript, where we handle their visual representation.</p>
 <p>Back to Godot:</p>
 <ul>
-	<li>Render each polygon, texture it according to its biome type.</li>
-	<li>Render polygon borders with a shader featuring grass.</li>
-	<li>Identify all islands on the map.</li>
-	<li>For islands, find their perimeter and draw each perimeter with a thick line.</li>
-	<li>Render a thickness slice for each island.</li>
-	<li>Generate collision for each island so the character cannot go beyond its boundaries.</li>
-	<li>Populate each biome with foliage according to your density tables. Here, I must mention that for the points distribution using the Bridson algorithm, we again dive into C++ code to calculate the distribution.</li>
+	<li><p>Render each polygon, texture it according to its biome type.</p></li>
+	<li><p>Render polygon borders with a shader featuring grass.</p></li>
+	<li><p>Identify all islands on the map.</p></li>
+	<li><p>For islands, find their perimeter and draw each perimeter with a thick line.</p></li>
+	<li><p>Render a thickness slice for each island.</p></li>
+	<li><p>Generate collision for each island so the character cannot go beyond its boundaries.</p></li>
+	<li><p>Populate each biome with foliage according to your density tables. Here, I must mention that for the points distribution using the Bridson algorithm, we again dive into C++ code to calculate the distribution.</p></li>
 </ul>
 <p>As a bonus and a tribute to the project, let's return to my drafts as an evidence of my hard work:</p>
 

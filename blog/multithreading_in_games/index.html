@@ -164,8 +164,8 @@ MathJax = {
 <p>— Where are the threads?</p>
 <p>Yes, we don’t see them yet, but because systems (i.e., behavior) are separated from components (i.e., data), we have greater potential for parallel execution. ECS developers often allow for the parallelization of system simulation in two directions:</p>
 <ul>
-	<li>Each system can be processed in parallel (external <code>for</code> loop)</li>
-	<li>Each set of components can be processed in parallel (internal <code>for</code> loop)</li>
+	<li><p>Each system can be processed in parallel (external <code>for</code> loop)</p></li>
+	<li><p>Each set of components can be processed in parallel (internal <code>for</code> loop)</p></li>
 </ul>
 <p>— Why couldn’t we parallelize the two <code>for</code> loops in the pseudocode for the component-based approach in the same way?</p>
 <p>That’s precisely the point. We could parallelize them in the same manner. But since, regardless of the approach—whether it’s EC or ECS—we still have global state and dependencies that we discussed at the beginning, parallelization ends up being very limited. ECS, however, has more explicit information about dependencies between systems and which systems require shared components, and which have no component intersections. If there’s no dependency of one system on another, and no component overlaps—there’s room for maneuver and parallelization, and ECS developers generally attempt to parallelize such cases across different threads.</p>
@@ -180,10 +180,10 @@ MathJax = {
 <p>Moving forward in the search for multithreading in games, we'll dive into more specific algorithms suited to particular games and situations. This usually concerns tasks that involve heavy computation, are resource-intensive, and ideally, can be computed in the background. Additionally, there shouldn’t be significant dependencies on the global state of the game. The task is broken down into several independent subtasks that can be executed in parallel, and then the results are combined.</p>
 <p>It's important to understand that we’ll be discussing specific cases, so there won't be general recommendations or best practices on how to effectively incorporate multithreading—this highly depends on the particular situation, and developers will need to adapt and synchronize with the rest of the gameplay code as they go. Various heuristics might come into play:</p>
 <ul>
-	<li><b>Want to read data from a global object but don't want threads constantly battling over shared data?</b> Try copying a slice of the data at the start of the threads. Often, this isn’t too costly and eliminates the burden of synchronization between threads.</li>
-	<li><b>Want threads to read and write to a global object without significant synchronization overhead or data races?</b> Welcome to the intriguing world of <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm">lock-free data structures</a>—it’s complex and challenging but efficient.</li>
-	<li><b>If <code>C</code> depends on <code>B</code>, which depends on <code>A</code>, so you can’t run them in parallel?</b> It’s unfortunate, but see if you can parallelize <code>A</code>, <code>B</code>, and <code>C</code> individually, i.e., run <code>A1</code>, <code>A2</code>, and <code>A3</code> in parallel.</li>
-	<li>And so on.</li>
+	<li><p><b>Want to read data from a global object but don't want threads constantly battling over shared data?</b> Try copying a slice of the data at the start of the threads. Often, this isn’t too costly and eliminates the burden of synchronization between threads.</p></li>
+	<li><p><b>Want threads to read and write to a global object without significant synchronization overhead or data races?</b> Welcome to the intriguing world of <a href="https://en.wikipedia.org/wiki/Non-blocking_algorithm">lock-free data structures</a>—it’s complex and challenging but efficient.</p></li>
+	<li><p><b>If <code>C</code> depends on <code>B</code>, which depends on <code>A</code>, so you can’t run them in parallel?</b> It’s unfortunate, but see if you can parallelize <code>A</code>, <code>B</code>, and <code>C</code> individually, i.e., run <code>A1</code>, <code>A2</code>, and <code>A3</code> in parallel.</p></li>
+	<li><p>And so on.</p></li>
 </ul>
 <h4>AI Tasks in RTS and Turn-Based Strategies</h4>
 <p>In turn-based strategies, a significant part of the gameplay involves the AI opponents' turns. Often, calculating their moves can take <i>a lot</i> of resources and time. In games like <a href="https://en.wikipedia.org/wiki/Civilization_(series">Civilization</a>), the opponent’s turn can take several seconds, which is normal. Naturally, developers strive to minimize the time it takes for the computer's turn, and this is primarily achieved through parallelizing everything possible. Threads are heavily utilized here.</p>
@@ -219,8 +219,8 @@ MathJax = {
 <p>This is not as straightforward as audio because physics needs to synchronize with game simulation and rendering. Nevertheless, offloading physics calculations to a separate thread is a common practice, as physical computations are some of the most resource-intensive, and there's a benefit to using a dedicated thread.</p>
 <p>The physics engine operates in two main stages:</p>
 <ul>
-	<li>Detects collisions between objects;</li>
-	<li>Resolves each collision—calculates the new velocities and directions of the colliding objects. Each such resolution is handled by a solver.</li>
+	<li><p>Detects collisions between objects;</p></li>
+	<li><p>Resolves each collision—calculates the new velocities and directions of the colliding objects. Each such resolution is handled by a solver.</p></li>
 </ul>
 <p>For the second stage, you can go further and launch multiple threads for each solver so that they can be computed in parallel. Then, the engine will wait for all threads to complete, and the synchronization phase with the game simulation will follow.</p>
 <h3>Database</h3>
@@ -230,8 +230,8 @@ MathJax = {
 <p>Returning to online games. If a typical single-player game has one single application that you usually run on your computer or console, the client-server approach radically changes the rules from a development perspective. Now there are multiple applications—a single (ideally) server and many clients connecting to the server from hundreds of players' machines around the world.</p>
 <p>The game code is now "split" into two parts:</p>
 <ul>
-	<li>Server — this is the original game, but it lacks rendering, graphical interface, and input;</li>
-	<li>Client — this is the rendering, graphical interface, and input that the server lacks. In every other respect, the client is entirely dependent on the server, which authoritatively tells it what is actually happening in the game. Any client’s attempts to speculate about the game state are called "speculations" because, at best, the client can only predict or guess what’s happening.</li>
+	<li><p>Server — this is the original game, but it lacks rendering, graphical interface, and input;</p></li>
+	<li><p>Client — this is the rendering, graphical interface, and input that the server lacks. In every other respect, the client is entirely dependent on the server, which authoritatively tells it what is actually happening in the game. Any client’s attempts to speculate about the game state are called "speculations" because, at best, the client can only predict or guess what’s happening.</p></li>
 </ul>
 <p>So, the server, besides being the original game simulation, is also a <i>server</i> by its very nature. That is, an application that accepts connections from clients and services them throughout the connection process. How exactly the server handles this connection and service is up to the implementation details of each server. But one of the simplest approaches is to create a thread for each individual connection. In real life, this is not the most practical approach since there won't be enough threads for everyone, but in the implementation of client-server interactions, multithreading can be a useful tool, especially if the server load is high.</p>
 <h3>Logging</h3>
@@ -249,16 +249,16 @@ MathJax = {
 <h2>Conclusions</h2>
 <p>So, what have we concluded, and what does this article give us? I think everyone will find something of their own in it, but here’s a summary from my side:</p>
 <ul>
-	<li>Threads in games are not where they might seem;</li>
-	<li>Multithreading does not always make the code faster. Sometimes it can even make things worse compared to a single-threaded version;</li>
-	<li>Your games are likely to run faster on a processor with more cores. However, the increase in FPS will not be proportional to the increase in cores. Some games might perform at the same level as before;</li>
-	<li>GPUs handle a lot and a significant portion of multithreading is managed by them;</li>
-	<li>As a gameplay logic programmer, you may be surprised to discover that your work rarely goes beyond the main thread;</li>
-	<li>As a game engine programmer, you may be surprised to discover that your work frequently extends beyond the main thread;</li>
-	<li>Writing games is challenging even without threads;</li>
-	<li>The executable file of a game is about 85% (a completely arbitrary number) comprised of game engine code rather than the game itself;</li>
-	<li>The engine will, to a large extent (again, a completely arbitrary number), determine how intensively your final application will use multithreading;</li>
-	<li>An MMO game server is likely to benefit more from additional CPU cores compared to a single-player PC game, due to the need to handle a large load from numerous clients.</li>
+	<li><p>Threads in games are not where they might seem;</p></li>
+	<li><p>Multithreading does not always make the code faster. Sometimes it can even make things worse compared to a single-threaded version;</p></li>
+	<li><p>Your games are likely to run faster on a processor with more cores. However, the increase in FPS will not be proportional to the increase in cores. Some games might perform at the same level as before;</p></li>
+	<li><p>GPUs handle a lot and a significant portion of multithreading is managed by them;</p></li>
+	<li><p>As a gameplay logic programmer, you may be surprised to discover that your work rarely goes beyond the main thread;</p></li>
+	<li><p>As a game engine programmer, you may be surprised to discover that your work frequently extends beyond the main thread;</p></li>
+	<li><p>Writing games is challenging even without threads;</p></li>
+	<li><p>The executable file of a game is about 85% (a completely arbitrary number) comprised of game engine code rather than the game itself;</p></li>
+	<li><p>The engine will, to a large extent (again, a completely arbitrary number), determine how intensively your final application will use multithreading;</p></li>
+	<li><p>An MMO game server is likely to benefit more from additional CPU cores compared to a single-player PC game, due to the need to handle a large load from numerous clients.</p></li>
 </ul>
 <script type="text/javascript" src="../theme-script.js"></script>
 <script type="text/javascript" src="../typography-change-script.js"></script>

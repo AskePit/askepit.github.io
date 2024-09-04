@@ -1,4 +1,10 @@
-# Multithreading in games
+---
+tags:
+  - article
+  - gamedev
+  - multithread
+title: Multithreading in games
+---
 
 Modern games are rich in content, gameplay mechanics, and interactivity. A lot happens on the screen all at once—the world feels alive, responsive, and even without active player involvement, life continues to simmer, with multiple events unfolding simultaneously.
 

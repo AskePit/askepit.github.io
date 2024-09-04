@@ -1,0 +1,1273 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Punk riff generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_book.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" name="theme">
+        <span class="slider round"></span>
+    </label>
+    <p><span style="font-size: 20px;">theme</span></p>
+</div>
+<div class="typography-switcher">
+    <label class="switch">
+        <input type="checkbox" name="typo">
+        <span class="slider round"></span>
+    </label>
+    <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
+</div>
+<h1>Punk riff generator</h1>
+<p>Once upon a time, maybe five years ago, I decided I wanted to play a sound in the browser. I don’t even remember the exact task or what I was trying to achieve—most likely just messing around with different samples, maybe programming a track. So I Googled how to do it, landed on a StackOverflow question/answer somewhat <a href="https://stackoverflow.com/questions/30482887/playing-a-simple-sound-with-web-audio-api">like this</a>. And there it was—my simple “playing a sound” query was met with a barrage of contexts, buffers, decoding… I felt so suffocated that I immediately waved it all off and decided I wasn’t that interested in the first place—certainly not at that cost. And I forgot about the whole thing for many years.</p>
+<p>How I got back to this topic, I don’t really remember either. But I suddenly wanted to play a simple sine wave in the browser, and if successful, maybe mess around with it a bit. Perhaps I was (un)healthily influenced by <a href="https://store.steampowered.com/app/257850/Hyper_Light_Drifter/">Hyper Light Drifter</a> with its <a href="https://en.wikipedia.org/wiki/Chiptune">chiptune</a> music.</p>
+<p>Then the idea started to develop spontaneously, and eventually turned into a mini-project called "Punk riff generator," which we'll discuss in this article. The project is based on a simple concept: generate and play four random chords in the browser that could later be used as the basis for a new punk song. Isn’t that just brilliant?</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/au/am/m6/auamm6vdqj6zgb4hbqpnom7v5uc.jpeg" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Let’s set the right mood for reading this article:</p>
+<ul>
+	<li><p>The article contains a couple dozen short audio tracks so you can feel the evolution of the sound we’re going to create with our own hands. And the evolution is something to behold!</p></li>
+	<li><p>The narrative will be accompanied by some slightly suffocating dives into sound theory, but I’ll try to explain things clearly.</p></li>
+	<li><p>I’ll boldly assume that you won’t need any musical background to understand what’s going on in the article. But that's not a guarantee! How accurate this assumption is will be revealed in the comments.</p></li>
+	<li><p>The article turned out to be a cleverly intertwined mix of mathematics, music theory, and programming. Read on and develop yourself in all directions. :)</p></li>
+</ul>
+<h2>Simple Sine Wave</h2>
+<p>So, my first impulse was to generate a sine wave in the browser. No sooner said than done—I went to <a href="https://stackoverflow.com/questions/34708980/generate-sine-wave-and-play-it-in-the-browser">Stack Overflow</a> as usual, copy-pasted the solution from there, dropped it into the script section of an HTML page, and got the desired signal:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943607&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Perfect, just what I wanted! Now let's take a look at the code behind generating this sound. In browser JS, sound is handled by the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>, and it was precisely its buffers and decoding that scared me off during my first attempt to explore browser audio a few years ago. The API is indeed quite low-level, which, by the way, makes it very flexible and full of possibilities. We'll get back to the API later, as it appears frequently in the source code, but for now, let’s ignore it and focus on the key piece of code that creates our sine wave:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">sineWaveAt</span>(sampleNumber, tone) {
+	<span class="code-keyword">const</span> time = sampleNumber / context.sampleRate
+	<span class="code-keyword">return</span> Math.<span class="code-call">sin</span>(<span class="code-literal">2</span> * Math.PI * tone * time)
+}</code></pre>
+<p>Just two lines of code, and the only recognizable part is the sine function. And now, to fully understand it, we need an explanatory team and a dive into the physics of sound and the intricacies of its digitization.</p>
+<h3>The Physics (and Math) of Sound</h3>
+<p>We've all heard that sound is vibrations, or a wave with a certain frequency. This is, of course, a very abstract explanation, leaving many questions unanswered: why a wave specifically? What kind of wave is it? Can we see it, touch it?</p>
+<p><i>Why</i> sound is a wave is primarily a question for our ears. The eardrum catches vibrations transmitted through the air (or water) and knows how to interpret them as a certain sensation—what we call hearing. So it’s more accurate to say that it's not the sound that is a wave; it's the wave reaching the ear that the brain interprets as sound.</p>
+<p>How can we visualize such vibrations? The simplest way is to imagine a sine wave graph; or a cosine wave, if you prefer—they’re not much different for our purposes. A sine wave is, in a sense, an example of the purest sound in a vacuum: a note without timbre, color, or impurities. Let's try plotting the canonical sine wave $y=sin(x)$:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/tv/hp/ip/tvhpipi6titfjhwkl55kavuy2om.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>You’re probably familiar with this graph from school, and you remember that it extends infinitely to the left and right along the $x$ axis—here, time is in seconds. The $y$ axis represents the amplitude of the wave. To put it simply, you can think of the $y$ axis as the signal’s volume. Amplitude is a bit tricky since it's not clear what to compare its values to, so for simplicity, let’s assume that if the sound is within the $[-1;1]$ range, it’s a full-bodied, standard-volume sound. I’d appreciate it if someone in the comments could formally characterize the $y$ axis values.</p>
+<p>The sine wave graph, while infinite, has a clearly defined repeating pattern—its period. For $y=sin(x)$, the period is $2\pi$ seconds:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/se/mc/ol/semcoloue9csux8fjgfnwvyxgug.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>And here’s the problem with the $y=sin(x)$ wave: if one oscillation of this signal lasts $2\pi \approx 6.28$ seconds, then the frequency of such a signal is $1/2\pi\approx0.16Hz$. Meanwhile, humans can only hear sounds in the frequency range from 20Hz to 20000Hz at best. So, our $y=sin(x)$ signal is some kind of extreme case of <a href="https://en.wikipedia.org/wiki/Infrasound">infrasound</a>, and it’s unlikely that any living creature could hear it.</p>
+<p>What can we do to make the wave audible? A sine wave can be stretched along both axes, with the sine formula slightly enhanced with coefficients:</p>
+<p class="latex">$$
+y=a∗sin(hx)
+$$</p>
+<p>where:</p>
+<p>$a$ is the scale on the $y$ axis. The larger $a$ is, the taller and, accordingly, louder the sine wave becomes.</p>
+<p>$h$ is the scale on the $x$ axis. The larger $h$ is, the shorter the period of the sine wave, the more compressed the graph, and the higher the frequency (the pitch gets squeakier).</p>
+<p>To make our $h$ coefficient conveniently measurable in Hertz (i.e., oscillations per second), it’s helpful to make it a multiple of $2\pi$:</p>
+<p class="latex">$$
+y=a∗sin(2πhx)
+$$</p>
+<p>Now we’re getting somewhere. Let’s look at an example with two sine waves:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/x5/dl/kd/x5dlkdkpwwrx4iv-sjaafxs4w-c.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>What can we say about these graphs, armed with the theory we’ve just covered? Can we, out of curiosity, deduce their exact formulas? Let’s start with something simple—amplitude. The green graph has a vertical range of $[-1; 1]$, so the amplitude is one, just like a regular sine wave without obvious coefficients. The blue graph is compressed vertically, with extremum points at -0.75 and 0.75, so its $a=0.75$.</p>
+<p>Now, let’s examine the horizontal properties of the graphs. Notice the point $x=0.01$. In the interval $[0; 0.01]$, exactly one period of the blue graph and four periods of the green graph fit. In other words, in 0.01 seconds, the two waves manage to make 1 and 4 oscillations, respectively. A bit of simple math tells us that this equals $1/0.01=100$ and $4/0.01 = 400$ oscillations per second, respectively.</p>
+<p>And now we know how these two sine waves look in formulaic terms:</p>
+<p class="latex">$$
+y_{green}=sin(2 \pi 400x)
+$$</p>
+<p class="latex">$$
+y_{blue}=0.75sin(2 \pi 100x)
+$$</p>
+<p>Don’t forget what $2\pi$ does here—it’s the period of oscillation, giving the numbers 100 and 400 the ability to be interpreted as "oscillations per second." Or, more simply, the wave’s frequency in Hertz.</p>
+<p>So we end up with the green wave as a 400Hz sound at 100% volume, and the blue wave as a 100Hz sound at 75% volume.</p>
+<p>Hertz are great, but could we say what notes these are? And this is where we smoothly transition from the theory of <i>sound</i> to the theory of <i>music</i>.</p>
+<h3>The Physics (and Math) of Music</h3>
+<p>It's well-known that there are only seven notes. A more accurate statement, however, would be:</p>
+<ul>
+	<li><p>There are only seven notes,</p></li>
+	<li><p>But this applies to Western music,</p></li>
+	<li><p>Actually, there are not exactly seven, but more like twelve,</p></li>
+	<li><p>And no one will stop you from going beyond these twelve notes, which happens all the time.</p></li>
+</ul>
+<p>So, what are these 12 notes, and why aren't there just seven—after all, there's <i>do re mi fa sol la ti</i>? Well, take a look:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/fo/hp/d2/fohpd2qj9ugxzhuqqbyn8doojdc.png) Don’t ask why this is the case or what logic is behind it. Most likely, it just happened historically. It’s worth noting that there are actually an infinite number of notes: after you play these 12 notes on the piano, you can continue and play the same 12 notes again but in a different octave. This works both ways—leftward, toward the lower, bass notes, and rightward, toward the higher ones" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Each note has its own frequency, measured in Hertz, and these values can be found in online tables. Since I needed to quickly code the frequencies of the notes I was planning to work with, I turned to <a href="https://chatgpt.com/">ChatGPT</a> to handle the tedious part for me:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/dr/-o/7p/dr-o7pbqeaid-mn8clt5q5aj0ik.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Why these particular values have been established as the named notes upon which all Western music is built—that's more a question of human perception and culture, which traces back to ancient Greece, and we probably won’t delve too deep into that topic. Suffice it to say that the standard frequency is typically taken as the A4 note (A above middle C), which has been assigned a frequency of 440Hz, and the other notes are derived from it based on specific ratios that are pleasing to the ear.</p>
+<p>The sine wave we managed to generate in our project, by the way, is an E4 note with a frequency of 329.63Hz.</p>
+<hr>
+<p>Alright, now that we've dived in and resurfaced from the theory, we can turn back to our two-line code and see if it makes any more sense now:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">sineWaveAt</span>(sampleNumber, tone) {
+	<span class="code-keyword">const</span> time = sampleNumber / context.sampleRate
+	<span class="code-keyword">return</span> Math.<span class="code-call">sin</span>(<span class="code-literal">2</span> * Math.PI * tone * time)
+}</code></pre>
+<p>The last line now more or less makes sense because:</p>
+<p>Expectation: $y=a*sin(2\pi h x)$</p>
+<p>Reality: <code>Math.sin(2 <i> Math.PI </i> tone * time)</code></p>
+<p>Here, <code>tone</code> is the frequency in Hertz, and <code>time</code> is our $x$, since, let’s not forget, the $x$-axis represents time. But how did we form the <code>time</code> variable, and where did <code>sampleNumber</code> and <code>sampleRate</code> come from? And here, once again, we must briefly dive into theory—the theory of sound digitization.</p>
+<h3>Sound Digitization</h3>
+<p>Here, the theory will be a bit simpler and quicker. A sound wave is an analog signal, meaning it can be divided and scaled infinitely. But to represent such a signal in digital form, it is <a href="https://en.wikipedia.org/wiki/Sampling_(signal_processing">sampled</a>), i.e., broken down into a finite set of points. For example, our sine wave might look something like this when sampled:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/yv/hc/3o/yvhc3owmfwnx_7flznhze4m0tea.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>You’ve probably seen numbers like 44.1kHz or 48kHz when talking about CD or DVD quality sound. These numbers (yes, frequencies again, but different ones) indicate how many points a one-second signal will be divided into. For instance, a sampling rate of 44.1kHz means splitting one second of signal into 44,100 points. So, point #44100 will represent the sound at 1 second, #66150 at 1.5 seconds, #88200 at 2 seconds, and so on.</p>
+<hr>
+<p>Now, let’s return to the code!</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">sineWaveAt</span>(sampleNumber, tone) {
+	<span class="code-keyword">const</span> time = sampleNumber / context.sampleRate
+	<span class="code-keyword">return</span> Math.<span class="code-call">sin</span>(<span class="code-literal">2</span> * Math.PI * tone * time)
+}</code></pre>
+<p>How did we calculate time? The Web Audio API has its own audio context that supports a specific sample rate stored in the <code>sampleRate</code> variable. To calculate the time xxx, we need to know the sample number for which we want to get the value of our sine wave: <code>sampleNumber</code>. Finally, dividing the sample number by the sample rate gives us the exact time in seconds.</p>
+<p>We’ve finally figured out that two-line code! All for me to tell you that the Web Audio API has a special oscillator node that can generate a sine wave signal of any frequency on its own, and we didn’t have to manually mess with these formulas. But look how much we’ve learned!</p>
+<h2>Oscillator</h2>
+<p>As mentioned, we have a ready-made <a href="https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode">oscillator node</a> at our disposal that generates a periodic sound wave of any given frequency. So, manually forming a sine wave like we did above is mainly for educational purposes.</p>
+<p>You can set the frequency in Hz for the <code>OscillatorNode</code> object to produce a sound of any pitch. But what’s more interesting, and something we haven’t encountered yet, is that you can specify not just a sine wave but also square, triangle, and sawtooth waveforms. Here’s an illustrative image from <a href="https://en.wikipedia.org/wiki/Square_wave#/media/File:Waveforms.svg">Wikipedia</a>:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ic/hp/mh/ichpmhu3wclyzk3oca9zjqnzyzu.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Here’s a short snippet so you can compare them by ear. The sequence will play a sine wave, triangle wave, square wave, and sawtooth wave:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1866971985&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>For those who played 8-bit consoles, you might feel a slight sense of déjà vu—this is roughly how developers on the NES would vary the timbre of game melodies, ranging from very soft, smooth sounds to sharp, ear-piercing ones.</p>
+<p>Now let’s create our oscillator node and compare its usage with what we wrote in the <code>sineWaveAt</code> function:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>();
+oscillator.frequency.value = toneInHz</code></pre>
+<p>In the most minimalist form, that’s all: you create a node, set its pitch—done! However, creating and configuring a node doesn’t immediately produce sound in the browser. To hear the oscillator, its signal needs to be routed somewhere. Here’s where we’ll delve deeper into the Web Audio API, which I didn’t do for the previous example since the <code>sineWaveAt</code> code was essentially a dead end.</p>
+<p>As I briefly mentioned, the Web Audio API provides us with an <code>AudioContext</code>. Essentially, it is a global object with all the necessary methods to create nodes and connect them to each other. Nodes can be:</p>
+<ul>
+	<li><p><b>Sound sources</b>, like our <code>OscillatorNode</code>. There’s also a node that can play an mp3 file, for example.</p></li>
+	<li><p><b>Sound processors</b>. These are nodes for various equalization, echo, volume adjustments, etc.</p></li>
+	<li><p><b>Sound destinations</b>. In fact, there is only one such node, which acts as a virtual speaker that receives the final sound and it’s what you’ll hear through your speakers or headphones.</p></li>
+</ul>
+<p>The main idea and principle of the Web Audio API are: you create the nodes you need, connect them to each other so that the sound passes through and is processed in the correct order, and finally route the final signal to the destination node, <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode"><code>AudioContext.destination</code></a>.</p>
+<p>In our case, the setup is fairly straightforward: we have an oscillator node, and we connect it to <code>AudioContext.destination</code>, and you’ll hear the sound in the browser. However, I’d advise against listening to it right away since there’s a catch. The volume of the oscillator is very high because the signal it produces is in the familiar range of $y \in [-1; 1]$, which means “full volume”.</p>
+<p>The volume of the signal needs to be significantly reduced, and the oscillator node itself doesn’t provide any settings for this. The volume is controlled by a separate node, <a href="https://developer.mozilla.org/en-US/docs/Web/API/GainNode"><code>GainNode</code></a>. It has one main setting — <a href="https://developer.mozilla.org/en-US/docs/Web/API/GainNode/gain"><code>gain</code></a>. This controls the volume in the range of $[0; 1]$. I settled on $0.25$.</p>
+<p>So, schematically, we should get something like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/vo/_9/5w/vo_95w5g93uu8ydll1r9jzxixew.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Expressed in code:</p>
+<pre><code class="language-javascript">context = <span class="code-keyword">new</span> <span class="code-call">AudioContext</span>();
+
+<span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>()
+oscillator.frequency.value = tone
+
+<span class="code-keyword">const</span> gain = context.<span class="code-call">createGain</span>()
+gain.gain.value = <span class="code-literal">0.25</span>
+
+oscillator.<span class="code-call">connect</span>(gain)
+gain.<span class="code-call">connect</span>(context.destination)
+
+oscillator.<span class="code-call">start</span>(context.currentTime)</code></pre>
+<p>We created the context, set up and configured the two nodes, connected everything, and finally started the oscillator with the <code>start</code> command. Only after this “kick” will the oscillator start generating sound, which will follow our straightforward setup: the Gain node will receive the sound from the oscillator, attenuate it to a quarter of its original volume, and pass the result to the output.</p>
+<p>The result will be exactly the same as before. So, to mix things up, let’s set the oscillator to use a triangular waveform:</p>
+<pre><code class="language-javascript">oscillator.type = <span class="code-literal">"triangle"</span>;</code></pre>
+<p>Now, the result sounds like this:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1866972435&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<h2>Playing a Melody</h2>
+<p>Now that we have our signal, let's use it to play a simple melody. I chose the opening part of the song <a href="https://www.youtube.com/watch?v=0J2QdDbelmY">Seven Nation Army</a> for this purpose. I assume most people can play these notes in their heads, so I won’t include a snippet of the song here.</p>
+<p>When it comes to playing a sequence of sounds, we inevitably encounter the concept of a timeline in all its manifestations, along with related questions:</p>
+<ul>
+	<li><p>How long should each sound be played?</p></li>
+	<li><p>In what unit should the duration of notes be measured?</p></li>
+	<li><p>How to set the tempo of the song? And if you want to speed up or slow down the overall tempo, how to maintain the correct duration of notes relative to each other?</p></li>
+	<li><p>How to divide the song into measures, and how does the number of measures depend on the tempo of the song?</p></li>
+</ul>
+<p>There are many questions, so we will address them step by step. Let’s start with how such issues are resolved by real musicians. They use musical notation — a melody is written on a staff, which contains all the necessary information related to the temporal characteristics of the song. Our snippet on the staff might look something like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/cw/8i/_y/cw8i_yrrynkg0pt8w7mofp0tsxs.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>See the seven sequentially written notes? As an interesting exercise, try to play Seven Nation Army in your head and follow each note on the staff. Give yourself a thumbs up if you managed. Now, let’s break down what is written here and why.</p>
+<p>First, let’s note the interesting notation $4/4$ after the treble clef. It means that you can stomp your feet, clap your hands, and repeatedly shout “one, two, three, four!” to this song. If you catch the groove and do it in the right tempo, it will be a lot of fun.</p>
+<p>$♩=110$ at the top indicates the tempo of the song, which tells you how fast to clap and shout. Tempo is measured in bpm or beats per minute. Literally, 110 bpm means: if you continuously play a quarter note (♩), you will play exactly 110 of them in one minute.</p>
+<p>But who is this ♩? It’s easier to first show how all types of notes fit into a $4/4$ measure:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ur/xh/pc/urxhpc-mwz0grfttuof98j7m8fq.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Different notes fit differently into the “one, two, three, four!” measure. In the first measure, we have a <i>whole note</i> — it lasts for the entire measure, all four beats. In the second measure, we have <i>half notes</i>, two of them — one lasts for “one, two”, and the other lasts for “three, four!”. Subsequent measures feature <i>quarter notes</i>, <i>eighth notes</i>, and <i>sixteenth notes</i>. I assume you get the principle.</p>
+<p>The ♩ we are interested in is the quarter note. It is interesting because in a $4/4$ measure, it is played exactly 4 times, symbolizing each “one”, “two”, “three”, and “four”. The tempo of 110 bpm is related to the number of such notes in a minute. And no one expects you to manually calculate all these durations and count up to 110. Musicians generally know that a song with a more or less typical, moderate tempo is 110-125 bpm; 90 bpm is something slow; 70 bpm is sluggishly slow; 150 bpm is something fast and lively; and 200 bpm is extreme. And there’s always a metronome that can be set to the desired bpm, ticking out quarter notes so you can play in a steady tempo even without a drummer.</p>
+<blockquote><b>Note:</b> Don’t get confused by flags! The notation ♫ is just two grouped notes ♪♪. Similarly, ♬=𝅘𝅥𝅯𝅘𝅥𝅯. Notes with flags can be grouped into very long sequences.</blockquote>
+<blockquote><b>Interesting Fact:</b> In the Chechen Republic, as of 2024, <a href="https://news.ru/society/v-chechne-bolshe-ne-budet-slishkom-bystroj-i-medlennoj-muzyki/">music with a tempo below 80 bpm and above 160 bpm was legally banned</a>.</blockquote>
+<p>You might have noticed that in the musical notation of Seven Nation Army, some notes have suspicious dots next to them. These dots increase the note duration by 1.5 times. So,</p>
+<p>♩.=♩♪♩.=♩♪♩.=♩♪</p>
+<p>Complicated? Perhaps, but musicians are used to it.</p>
+<p>Also, in the near future, we will need pauses. These are like notes, but their absence. The duration of a pause is how long the silence lasts. They also come in <i>whole</i>, <i>half</i>, <i>quarter</i>, <i>eighth</i>, <i>sixteenth</i>, etc., variations and can be combined with dots that extend the pause by 1.5 times:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/nz/et/y0/nzety0ldfr8lf2tf_v_9188fyym.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<hr>
+<p>We now face the task of programming all these concepts. The theory may seem overwhelming, but if we start with the concept of bpm, it becomes quite straightforward:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> BPM = <span class="code-literal">110</span>
+<span class="code-keyword">const</span> BPS = BPM / <span class="code-literal">60</span>
+
+<span class="code-keyword">const</span> FOURTH = <span class="code-literal">1</span> / BPS
+<span class="code-keyword">const</span> EIGHT = FOURTH / <span class="code-literal">2</span>
+<span class="code-keyword">const</span> HALF = FOURTH * <span class="code-literal">2</span>
+<span class="code-keyword">const</span> WHOLE = HALF * <span class="code-literal">2</span>
+
+<span class="code-keyword">const</span> FOURTH_DOT = FOURTH * <span class="code-literal">1.5</span>
+<span class="code-keyword">const</span> EIGHTH_DOT = EIGHTH * <span class="code-literal">1.5</span>
+<span class="code-keyword">const</span> SIXTEENTH_DOT = SIXTEENTH * <span class="code-literal">1.5</span>
+<span class="code-keyword">const</span> HALF_DOT = HALF * <span class="code-literal">1.5</span></code></pre>
+<p>These are the constants we need to start creating. Here’s what we’ve done:</p>
+<ul>
+	<li><p>Set the BPM as required by the song at 110.</p></li>
+	<li><p>Converted BPM (beats per <b>minute</b>) to BPS (beats per <b>second</b>) by dividing BPM by 60.</p></li>
+	<li><p>Knowing that a beat is exactly a quarter note, we convert BPS to SPB (seconds per beat) by simply inverting the value. Now we have the number of seconds a quarter note should last.</p></li>
+	<li><p>We can easily calculate the durations of other notes in seconds based on the quarter note.</p></li>
+	<li><p>Notes with dots are simply multiplied by 1.5.</p></li>
+</ul>
+<p>Now, let’s imagine how four repetitions of our Seven Nation Army phrase might look:</p>
+<pre><code class="language-javascript"><span class="code-keyword">for</span> (i = <span class="code-literal">0</span>; i &lt; <span class="code-literal">4</span>; ++i) {
+	<span class="code-call">playSineWave</span>(E4, FOURTH_DOT)
+	<span class="code-call">playSineWave</span>(E4, EIGHT)
+	<span class="code-call">playSineWave</span>(G4, EIGHTH_DOT)
+	<span class="code-call">playSineWave</span>(E4, EIGHTH_DOT)
+	<span class="code-call">playSineWave</span>(D4, EIGHT)
+	<span class="code-call">playSineWave</span>(C4, HALF)
+	<span class="code-call">playSineWave</span>(B3, HALF)
+}</code></pre>
+<p>Yes, this definitely resembles what happens on a musical staff: we play each note sequentially, specifying its pitch and duration. All that remains is to write our yet-to-be-existent <code>playSineWave</code> function.</p>
+<pre><code class="language-javascript"><span class="code-keyword">let</span> timeline = <span class="code-literal">0.0</span>
+
+<span class="code-keyword">function</span> <span class="code-call">playSineWave</span>(tone, seconds) {
+    <span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>()
+
+    oscillator.type = <span class="code-literal">"triangle"</span>
+    oscillator.frequency.value = tone <span class="code-comment">// value in hertz</span>
+
+    <span class="code-keyword">const</span> gain = context.<span class="code-call">createGain</span>()
+    gain.gain.value = <span class="code-literal">0.25</span>
+    oscillator.<span class="code-call">connect</span>(gain)
+
+    gain.<span class="code-call">connect</span>(context.destination)
+
+    oscillator.<span class="code-call">start</span>(context.currentTime + timeline)
+    oscillator.<span class="code-call">stop</span>(context.currentTime + timeline + seconds)
+
+    timeline += seconds
+}</code></pre>
+<p>In theory, we have already seen this: sequentially connecting the Oscillator, Gain, and Destination nodes. The main trick here is determining when to start and, importantly, when to stop the oscillator. The <code>timeline</code> variable helps with this. Imagine a slider moving across a musical timeline during playback, as in any music player. The <code>timeline</code> variable acts as this slider. In the last line of <code>playSineWave</code>, this slider is incremented by the duration of the current note. Thus, we start and stop the oscillator at the <code>timeline</code> time and stop it after <code>seconds</code> seconds.</p>
+<p>It's important to understand that <code>start</code> and <code>stop</code> methods are not synchronous methods with waiting for completion, but asynchronous schedulers. In <code>start</code>, you schedule when in the future the oscillator will start; in <code>stop</code>, you schedule when the oscillator will stop. Essentially, our external <code>for</code> loop, which iterates through the entire song, will execute in milliseconds at the start of the program and plan the future playback of all sounds. Only then will the audio context, in the background, play everything you have programmed. This is why, without the monotonically increasing <code>timeline</code>, your code will run in the most horrific way—playing all 28 notes (4 cycles of 7 notes) simultaneously. We definitely don’t want that, as our ears cannot handle it.</p>
+<p>And here is the result of our efforts:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943595&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<h2>Eliminating Clicks</h2>
+<p>You might have noticed unpleasant clicks when changing each note. When searching for a solution, Google presents an <a href="https://alemangui.github.io/ramp-to-value">article</a> on one of the first pages that explains the nature of this phenomenon and suggests a simple solution: gradually reduce the volume of the signal to 0 milliseconds before the end of each note. In other words, applying a micro fade-out to each note. Here’s how I implemented it:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> startTime = context.currentTime + timeline
+<span class="code-keyword">const</span> endTime = startTime + seconds
+
+gain.gain.<span class="code-call">setTargetAtTime</span>(<span class="code-literal">0</span>, endTime - DAMPING_START, DAMPING_DURATION);
+oscillator.<span class="code-call">start</span>(startTime)
+oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)</code></pre>
+<p>I chose <code>DAMPING_START</code> and <code>DAMPING_DURATION</code> experimentally to eliminate clicks while ensuring that the notes don’t "stumble" and create pauses:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943586&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<h2>Power Chord</h2>
+<p>The next goal is to get a bit closer to rock music. Instead of playing melodies one note at a time, we will play them as <a href="https://en.wikipedia.org/wiki/Power_chord">power chords</a>. What are these? They are three notes played simultaneously. Most rock riffs are played using these chords 90% of the time. To put it simply, power chords create that sweet "chug-chug" sound.</p>
+<p>On the musical staff, this twist might look a bit intimidating:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/4y/og/4d/4yog4dhdpj3ubht7dqjnx38y_a4.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>But there's no need to worry—the musical staff isn’t quite suited for these things, but in <a href="https://ru.wikipedia.org/wiki/%D0%A2%D0%B0%D0%B1%D1%83%D0%BB%D0%B0%D1%82%D1%83%D1%80%D0%B0">guitar tablature</a>, it looks simpler:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ui/fq/h0/uifqh0cmpukns3rdyfknabvb4ai.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>We won't delve into how to read these numbers. Just know that on a guitar, power chords have a <a href="https://www.google.com/search?q=power+chord+hand+position&sca_esv=f30a9b7fa8506153&sca_upv=1&udm=2&biw=1920&bih=945&sxsrf=ADLYWILQKROGqHn1yF9mwX7bu5CLYLenbQ%3A1720433937466&ei=Eb2LZt79G8qB9u8P39eJiAk&ved=0ahUKEwieys7tm5eHAxXKgP0HHd9rApEQ4dUDCBA&uact=5&oq=power+chord+hand+position&gs_lp=Egxnd3Mtd2l6LXNlcnAiGXBvd2VyIGNob3JkIGhhbmQgcG9zaXRpb24yBRAAGIAESN4TUN4EWP8OcAF4AJABAJgBWqAB5QWqAQE5uAEDyAEA-AEBmAIKoAL0BcICBhAAGAgYHpgDAIgGAZIHAjEwoAeBCA&sclient=gws-wiz-serp">consistent shape</a> regardless of where you play it on the fretboard (with some exceptions, but still), so this finger positioning allows you to slide along the fretboard and create infernal rock sounds.</p>
+<p>Our current implementation of the <code>playSineWave</code> function allows playing only one sound at a time, so it’s time to enhance this function. Let's start again with the outer loop and how we would like to see it:</p>
+<pre><code class="language-javascript"><span class="code-keyword">for(let</span> i = <span class="code-literal">0</span>; i &lt; <span class="code-literal">4</span>; ++i) {
+	<span class="code-call">playSound</span>([E3, B3, E4], FOURTH_DOT)
+	<span class="code-call">playSound</span>([E3, B3, E4], EIGHTH)
+	<span class="code-call">playSound</span>([G3, D4, G4], EIGHTH_DOT)
+	<span class="code-call">playSound</span>([E3, B3, E4], EIGHTH_DOT)
+	<span class="code-call">playSound</span>([D3, A3, D4], EIGHTH)
+	<span class="code-call">playSound</span>([C3, G3, C4], HALF)
+	<span class="code-call">playSound</span>([B2, Fsh3, B3], HALF)
+}</code></pre>
+<p>First of all, we’ll rename the <code>playSineWave</code> function to something more fitting: <code>playSound</code>. The main improvement is that instead of playing a single sound, the function will now accept an array of notes. Essentially, the function will remain the same, except that instead of creating just one oscillator, it will create N oscillators—one for each note in the provided array:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">playSound</span>(notes, seconds) {
+    <span class="code-keyword">const</span> gain = context.<span class="code-call">createGain</span>()
+    gain.gain.value = VOLUME
+    gain.<span class="code-call">connect</span>(context.destination)
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; notes.length; i++) {
+        <span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>()
+
+        oscillator.type = <span class="code-literal">"triangle"</span>
+        oscillator.frequency.value = notes[i]
+        oscillator.<span class="code-call">connect</span>(gain)
+
+        <span class="code-keyword">const</span> startTime = context.currentTime + timeline
+        <span class="code-keyword">const</span> endTime = startTime + seconds
+
+        gain.gain.<span class="code-call">setTargetAtTime</span>(<span class="code-literal">0</span>, endTime - DAMPING_START, DAMPING_DURATION)
+        oscillator.<span class="code-call">start</span>(startTime)
+        oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)
+    }
+
+    timeline += seconds
+}</code></pre>
+<p>The <code>GainNode</code> remains a single one because there’s no need for a separate gain node for each oscillator. You might reasonably wonder why we’re creating a new gain node every time in <code>playSound</code>—after all, it would be sufficient to have just one gain node for the entire program. And this is a valid point. We'll address it:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> gain = context.<span class="code-call">createGain</span>();
+
+...
+
+<span class="code-keyword">function</span> <span class="code-call">playSound</span>(notes, seconds) {
+    <span class="code-keyword">const</span> startTime = context.currentTime + timeline
+    <span class="code-keyword">const</span> endTime = startTime + seconds
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; notes.length; i++) {
+        <span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>()
+        oscillator.type = <span class="code-literal">"sine"</span>
+        oscillator.frequency.value = notes[i]
+        oscillator.<span class="code-call">connect</span>(compressor)
+
+        oscillator.<span class="code-call">start</span>(startTime)
+        oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)
+    }
+
+    gain.gain.<span class="code-call">setTargetAtTime</span>(<span class="code-literal">0</span>, endTime - DAMPING_START, DAMPING_DURATION);
+    gain.gain.<span class="code-call">setTargetAtTime</span>(VOLUME, endTime + DAMPING_DURATION, DAMPING_DURATION);
+
+    timeline += seconds
+}</code></pre>
+<p>We also moved <code>startTime</code> and <code>endTime</code> out of the loop. However, our fade-out workaround breaks with the introduction of a single gain node—now we need to restore the volume after applying the fade-out effect. Previously, this worked because when we reduced the gain node's volume to zero, the node was no longer needed, and we simply (and wastefully) created a new one each time.</p>
+<p>With this seemingly simple improvement, our Seven Nation Army now sounds a bit different:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943580&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>This could serve as an introduction to an unknown game on your favorite 8-bit console. It doesn’t sound like a guitar at all and lacks the power. We need to try processing the oscillator's sound to make it heavier and more distinctive. If it starts to resemble a guitar simulation from <a href="https://ru.wikipedia.org/wiki/Guitar_Pro">Guitar Pro 5</a>, I will be satisfied.</p>
+<h2>Distortion</h2>
+<p>The key factor that makes a guitar sound heavy is the <a href="https://en.wikipedia.org/wiki/Distortion_(music">distortion</a>) effect and its variants. Distortion is what gives the "crunch" sound. Guitarists typically use special pedals to apply this effect to their guitar sound.</p>
+<blockquote>— But you said that power chords are the "crunch"? — Power chords <i>play</i> the "crunch," but distortion is what <i>creates</i> the "crunch." As heard in the previous audio track, power chords alone couldn't turn our melody into hardcore because it lacked the distortion effect.</blockquote>
+<p>Since we don’t have a magical analog guitar pedal to give us distortion, we’ll need to implement it programmatically. Unfortunately, the Web Audio API doesn’t provide a built-in distortion node, so we’ll have to come up with a solution ourselves.</p>
+<p>What is distortion by its nature? The name suggests it's a type of signal "distortion," which makes a clean, smooth sound become loud, overloaded, gritty, and roaring. But what algorithm or function can turn a sine wave into something that growls and buzzes?</p>
+<p>Distortion is commonly implemented using a transforming mathematical function that is (beware, mathematical jargon!):</p>
+<ul>
+	<li><p>Smooth</p></li>
+	<li><p>Monotonic</p></li>
+	<li><p>Increasing</p></li>
+	<li><p>Non-linear</p></li>
+</ul>
+<p>Why these characteristics? They are well explained, for instance, in <a href="https://alexanderleon.medium.com/web-audio-series-part-2-designing-distortion-using-javascript-and-the-web-audio-api-446301565541">this article</a>. This article also suggests that a <a href="https://ru.wikipedia.org/wiki/%D0%A1%D0%B8%D0%B3%D0%BC%D0%BE%D0%B8%D0%B4%D0%B0">sigmoid function</a> fits these characteristics well. This family of mathematical functions is described by various formulas, but they all share a graph that resembles the letter $S$.</p>
+<p>Choose the sigmoid function that suits you best:</p>
+<p class="latex">$$
+y = \frac{kx}{1+|kx|}
+$$</p>
+<p class="latex">$$
+y = \frac{2}{\pi}arctan(\frac{\pi}{2}kx)
+$$</p>
+<p class="latex">$$
+y = tanh(kx)
+$$</p>
+<p class="latex">$$
+y = \frac{2}{1+e^{-kx}}-1
+$$</p>
+<p class="latex">$$
+y = \frac{(3 + k)*arctan(5sinh(0.25x))}{\pi + k|x|}
+$$</p>
+<p class="latex">$$
+y=1.3arctan(tanh(\frac{kx}{2}))
+$$</p>
+<p>No matter which complexity of formula you choose, their graphs will look quite similar, with only nuances in shape and behavior when changing the variable $k$:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/uv/l7/im/uvl7imvr242ogh-mimwicbbbsx4.gif" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>How can we apply these transforming functions to our signal? We would like to get a formula whose graph we can display and observe how the signal changes with the distortion effect applied.</p>
+<p>To simplify, let's assume we are dealing with a canonical sine wave $y = \sin(x)$. In this case, we need to somehow apply a sigmoid transformation to the sine wave. This sounds complicated. The algebra from Wikipedia suggests that the resulting distorted signal can be obtained through the <a href="https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BC%D0%BF%D0%BE%D0%B7%D0%B8%D1%86%D0%B8%D1%8F_%D1%84%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D0%B9">composition of two functions</a>: in our case, sigmoid and sine, which mathematically is written as $(f \circ \sin)(x)$ if we consider the sigmoid as $f$. Here, Wikipedia reassures us that the notation with a circle is equivalent to $f(\sin(x))$. This is clear: where previously in the sigmoid formula there was $x$, now there should be our signal formula, i.e., $\sin(x)$. By making simple substitutions, we get the desired distortion of the sinusoidal signal:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/3g/oh/bd/3gohbdr405awmgt4ukhigibfyha.gif" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Thus, we see distortion in action—it's a sine wave tending towards a <a href="https://en.wikipedia.org/wiki/Pulse_wave">periodic square wave</a>.</p>
+<hr>
+<p>The Web Audio API provides a <a href="https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode"><code>WaveShaperNode</code></a> that allows you to apply a transformation function to any signal. We will use this to distort the sound produced by the oscillators.</p>
+<p>The node can be given any graph in discrete form: as a <code>Float32Array</code>. Here’s how it works:</p>
+<ul>
+	<li><p>The graph is always considered as a function with $x$ in the range $[-1; 1]$.</p></li>
+	<li><p>The <code>Float32Array</code> can be of any length. The longer the array, the higher the sampling frequency of your transformation graph. The node will interpret the first element of the array as $x=-1$, the middle element as $x=0$, and the last element as $x=1$.</p></li>
+	<li><p>The numbers in the array are the $y$ values.</p></li>
+	<li><p>The node will apply this transformation graph to any signal it receives, just as we manually applied the sigmoid to the sine wave on the graph.</p></li>
+</ul>
+<p>We need to insert another node into the chain:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/jn/b2/oo/jnb2oovyk-ei6cqevist6fouglo.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>I settled on a sigmoid of the form</p>
+<p class="latex">$$
+y = \frac{(3 + k)*arctan(5sinh(0.25x))}{\pi + k|x|}
+$$</p>
+<p>and created a function that returns the transformation in the format required by the <code>WaveShaperNode</code>:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">makeDistortionCurve</span>(k = <span class="code-literal">20</span>) {
+    <span class="code-keyword">const</span> n_samples = <span class="code-literal">256</span>
+    <span class="code-keyword">const</span> curve = <span class="code-keyword">new</span> <span class="code-call">Float32Array</span>(n_samples);
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; n_samples; ++i ) {
+        <span class="code-keyword">const</span> x = i * <span class="code-literal">2</span> / n_samples - <span class="code-literal">1</span>;
+        curve[i] = (<span class="code-literal">3</span> + k)*Math.<span class="code-call">atan</span>(Math.<span class="code-call">sinh</span>(x*<span class="code-literal">0.25</span>)*<span class="code-literal">5</span>) / (Math.PI + k * Math.<span class="code-call">abs</span>(x));
+    }
+    <span class="code-keyword">return</span> curve;
+}</code></pre>
+<p>The signal is sampled at 256 points. This number was determined experimentally after everything was up and running — this small number of points proved to be sufficient for applying distortion quite accurately. The line <code>const x = i * 2 / n_samples - 1;</code> is the conversion from the range [0; 256] to the range <code>[-1; 1]</code>, which is the range where our transformation function operates. The parameter <code>k</code> is the coefficient that adjusted the steepness of the sigmoid curves in the graphs. The higher the <code>k</code>, the more aggressive the sound. It’s analogous to the gain knob on a distortion guitar pedal.</p>
+<p>Let me provide the rest of the application code in its entirety so you don't get lost in all these code snippets and can keep the overall picture in mind:</p>
+<pre><code class="language-javascript"><span class="code-keyword">let</span> context;
+<span class="code-keyword">let</span> distortion;
+<span class="code-keyword">let</span> gain;
+
+<span class="code-keyword">function</span> <span class="code-call">makeDistortionCurve</span>(k = <span class="code-literal">20</span>) {
+	...
+}
+
+async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
+    context = <span class="code-keyword">new</span> <span class="code-call">AudioContext</span>();
+
+    gain = context.<span class="code-call">createGain</span>();
+    gain.gain.value = VOLUME
+
+    distortion = context.<span class="code-call">createWaveShaper</span>();
+    distortion.curve = <span class="code-call">makeDistortionCurve</span>(<span class="code-literal">50</span>);
+
+    distortion.<span class="code-call">connect</span>(gain)
+    gain.<span class="code-call">connect</span>(context.destination)
+}
+
+<span class="code-keyword">let</span> timeline = <span class="code-literal">0.0</span>
+
+<span class="code-keyword">const</span> VOLUME = <span class="code-literal">0.25</span>
+
+<span class="code-keyword">function</span> <span class="code-call">playSound</span>(notes, seconds) {
+    <span class="code-keyword">const</span> startTime = context.currentTime + timeline
+    <span class="code-keyword">const</span> endTime = startTime + seconds
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> noteIndex = <span class="code-literal">0</span>; noteIndex &lt; notes.length; noteIndex++) {
+        <span class="code-keyword">const</span> oscillator = context.<span class="code-call">createOscillator</span>();
+        oscillator.type = <span class="code-literal">"sine"</span>;
+        oscillator.frequency.<span class="code-call">setValueAtTime</span>(notes[noteIndex], context.currentTime);
+        oscillator.<span class="code-call">connect</span>(distortion);
+
+        oscillator.<span class="code-call">start</span>(startTime)
+        oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)
+    }
+
+    timeline += seconds
+}
+
+<span class="code-keyword">const</span> button = document.<span class="code-call">querySelector</span>(<span class="code-literal">"button"</span>);
+
+button.onclick = async () =&gt; {
+    <span class="code-keyword">if</span> (!context) {
+        <span class="code-keyword">await</span> <span class="code-call">init</span>();
+    }
+
+	<span class="code-keyword">const</span> BPM = <span class="code-literal">110</span>
+	<span class="code-keyword">const</span> BPS = BPM / <span class="code-literal">60</span>
+
+	<span class="code-keyword">const</span> FOURTH = <span class="code-literal">1</span> / BPS
+	<span class="code-keyword">const</span> EIGHT = FOURTH / <span class="code-literal">2</span>
+	<span class="code-keyword">const</span> HALF = FOURTH * <span class="code-literal">2</span>
+	<span class="code-keyword">const</span> WHOLE = HALF * <span class="code-literal">2</span>
+
+	<span class="code-keyword">const</span> FOURTH_DOT = FOURTH * <span class="code-literal">1.5</span>
+	<span class="code-keyword">const</span> EIGHTH_DOT = EIGHTH * <span class="code-literal">1.5</span>
+	<span class="code-keyword">const</span> SIXTEENTH_DOT = SIXTEENTH * <span class="code-literal">1.5</span>
+	<span class="code-keyword">const</span> HALF_DOT = HALF * <span class="code-literal">1.5</span>
+
+	<span class="code-keyword">for</span>(<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; <span class="code-literal">4</span>; ++i) {
+		<span class="code-call">playSound</span>([E3, B3, E4], FOURTH_DOT)
+		<span class="code-call">playSound</span>([E3, B3, E4], EIGHTH)
+		<span class="code-call">playSound</span>([G3, D4, G4], EIGHTH_DOT)
+		<span class="code-call">playSound</span>([E3, B3, E4], EIGHTH_DOT)
+		<span class="code-call">playSound</span>([D3, A3, D4], EIGHTH)
+		<span class="code-call">playSound</span>([C3, G3, C4], HALF)
+		<span class="code-call">playSound</span>([B2, Fsh3, B3], HALF)
+	}
+    timeline = <span class="code-literal">0</span>
+};</code></pre>
+<p>Let’s go through the main points:</p>
+<ul>
+	<li><p>There is a button somewhere on the web page.</p></li>
+	<li><p>When clicked, we initialize everything needed to start:</p>
+<p>- Create the context</p>
+<p>- Create and configure gain and distortion nodes. This is where we apply <code>makeDistortionCurve</code> to set the sigmoid for the distortion node.</p>
+<p>- Set up the chain distortion -&gt; gain -&gt; context.destination</p></li>
+	<li><p>We start our loop with 4 repetitions of the melody</p></li>
+	<li><p>The melody is still played by the <code>playSound</code> function, which looks the same as before with a few exceptions:</p>
+<p>- The oscillator output is now fed to the distortion node, not the gain node as before.</p>
+<p>- The trick with the gain level on the gain node is gone, as it turns out that with the distortions we’re applying now, clicks are no longer audible. What was a workaround is now unnecessary — it has disappeared by itself.</p></li>
+</ul>
+<p>Let’s run our program in anticipation of some heavy overdrive!:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1866972396&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Well, it’s not great, but it’s something. It’s definitely distortion, but it sounds very plasticky and has significant frequency issues. Why is that? The simplest answer is that we created an artificial synthesized sound, and its frequency characteristics, or <a href="https://en.wikipedia.org/wiki/Frequency_response">frequency response</a>, are quite different from those of a guitar string sound processed through a distortion effect. The sound of a string and the sound of our pure sine wave are different. Hence, the result after distortion is also different, and unfortunately, worse.</p>
+<h2>Equalization</h2>
+<p>What can we do about this? The first thing that comes to mind is adjusting the frequencies to make the sound closer to what we would like to hear.</p>
+<blockquote>— But the original sine wave had only one frequency, how did multiple frequencies appear? — Firstly, a power chord itself consists of three notes, so at any given moment, we have at least three different frequencies. Moreover, distortion inherently enriches the sound with additional <a href="https://en.wikipedia.org/wiki/Harmonic_(music">harmonics</a>), so we end up with a whole spectrum of various frequencies.</blockquote>
+<p>You’ve probably seen "bouncing waves" in every other music player that pulse and change shape during playback. These are actually all the frequencies of the song being cut and they change over time:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/xf/vu/o8/xfvuo8inhr_szihc8b2f3fdldue.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>The Web Audio API has mechanisms to "bend" this white curve shown in the image above. This is the purpose of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode"><code>BiquadFilterNode</code></a>. To understand how it works, let’s imagine that this white curve for a particular sound becomes a horizontal line:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/6u/o_/ko/6uo_kooevxwe0xgwny74fyhk_u0.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Now we can easily see what the <code>BiquadFilterNode</code> can do with this frequency curve:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/k1/vw/mw/k1vwmwgx908ewcxvg6dstebw_yg.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<blockquote>Source: <a href="https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced">https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced</a></blockquote>
+<p>So, we have a range of possible frequency transformations:</p>
+<ul>
+	<li><p>Lowpass: Smoothly cuts off all highs starting from a specified frequency and to the right.</p></li>
+	<li><p>Highpass: Smoothly cuts off all lows starting from a specified frequency and to the left.</p></li>
+	<li><p>Bandpass: Smoothly cuts off all lows and highs starting from a specified frequency and to the left and right, leaving a small untouched area around the specified frequency. The size of this area is controlled by a separate parameter.</p></li>
+	<li><p>Notch: Opposite of Bandpass — smoothly cuts out a range, leaving everything else untouched.</p></li>
+	<li><p>Lowshelf: Amplifies or reduces all frequencies to the left of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</p></li>
+	<li><p>Highshelf: Amplifies or reduces all frequencies to the right of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</p></li>
+	<li><p>Peaking: Amplifies or reduces frequencies around a specified frequency. The size of the area and the level of amplification or attenuation are controlled by two additional parameters.</p></li>
+	<li><p>Allpass: I didn’t quite understand what this filter does. Commentators, help! It passes all frequencies but changes their phase relationships. What that means exactly, I have no idea :)</p></li>
+</ul>
+<p>With such a versatile node at our disposal, we can try to shape what we have into something more palatable.</p>
+<p>I experimented with frequencies as best as I could. But I should immediately note that we are entering very shaky territory where achieving a good result is a sort of art that professionals in recording, mixing, and mastering dedicate their lives to. Also, I’m an absolute amateur in this area, so I applied filters in a rather chaotic rather than methodical way to frequencies that seemed problematic. Therefore, any sound engineer can assert their superiority in the comments at my expense, and I don’t mind.</p>
+<p>So, what did I do? Almost randomly, I arrived at these filters, which seemed to somewhat improve the sound:</p>
+<ul>
+	<li><p>Cut Nosal: Completely removed so-called "nasal frequencies" around 1000 Hz with a notch filter. The sound became less resonant and murky.</p></li>
+	<li><p>Cut Highs: Used a lowpass filter to cut all frequencies starting from 8500 Hz so the sound wouldn’t be so thin and crackly. Logically, removing frequencies starting from 8500 Hz might seem excessive, but it sounded better to me.</p></li>
+	<li><p>Cut Lows: Cut the bass with a highpass filter starting from 120 Hz to avoid excessive boominess.</p></li>
+	<li><p>Peak Mids: Boosted midrange frequencies around 3150 Hz with a peaking filter. Midrange frequencies are the natural guitar range, so I figured they needed to be emphasized.</p></li>
+</ul>
+<p>In the code, this equalization is represented as follows:</p>
+<pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
+	...
+
+	<span class="code-comment">// cut around 1000 Hz</span>
+	<span class="code-keyword">let</span> cutNosal = context.<span class="code-call">createBiquadFilter</span>();
+	cutNosal.type = <span class="code-literal">"notch"</span>;
+	cutNosal.frequency.<span class="code-call">setValueAtTime</span>(<span class="code-literal">1000</span>, context.currentTime);
+	cutNosal.Q.<span class="code-call">setValueAtTime</span>(<span class="code-literal">4</span>, context.currentTime);
+
+	<span class="code-comment">// cut above 8500 Hz</span>
+	<span class="code-keyword">let</span> cutHighs = context.<span class="code-call">createBiquadFilter</span>();
+	cutHighs.type = <span class="code-literal">"lowpass"</span>;
+	cutHighs.frequency.<span class="code-call">setValueAtTime</span>(<span class="code-literal">8500</span>, context.currentTime);
+	cutHighs.Q.<span class="code-call">setValueAtTime</span>(<span class="code-literal">0</span>, context.currentTime);
+
+	<span class="code-comment">// cut below 120 Hz</span>
+	<span class="code-keyword">let</span> cutLows = context.<span class="code-call">createBiquadFilter</span>();
+	cutLows.type = <span class="code-literal">"highpass"</span>;
+	cutLows.frequency.<span class="code-call">setValueAtTime</span>(<span class="code-literal">120</span>, context.currentTime);
+	cutLows.Q.<span class="code-call">setValueAtTime</span>(<span class="code-literal">0</span>, context.currentTime);
+
+	<span class="code-comment">// boost around 3000 Hz</span>
+	<span class="code-keyword">let</span> peakMids = context.<span class="code-call">createBiquadFilter</span>();
+	peakMids.type = <span class="code-literal">"peaking"</span>;
+	peakMids.frequency.<span class="code-call">setValueAtTime</span>(<span class="code-literal">3150</span>, context.currentTime);
+	peakMids.Q.<span class="code-call">setValueAtTime</span>(<span class="code-literal">1.5</span>, context.currentTime);
+	peakMids.gain.<span class="code-call">setValueAtTime</span>(<span class="code-literal">5</span>, context.currentTime);
+
+	distortion.<span class="code-call">connect</span>(cutNosal)
+	cutNosal.<span class="code-call">connect</span>(cutHighs)
+	cutHighs.<span class="code-call">connect</span>(cutLows)
+	cutLows.<span class="code-call">connect</span>(peakMids)
+	peakMids.<span class="code-call">connect</span>(gain)
+	gain.<span class="code-call">connect</span>(context.destination)
+}</code></pre>
+<p>And here’s how it sounded:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1866972339&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Not exactly a noticeable improvement, right? The sound is still quite unpleasant. It also feels flat and lacks depth. So, I thought it would be a good idea to add some reverb to the sound.</p>
+<h2>Reverb</h2>
+<p>Reverb is essentially an echo effect. The more reverb you apply to a sound, the more spacious the environment in which the sound is heard will seem.</p>
+<p>The Web Audio API provides us with a <a href="https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode"><code>ConvolverNode</code></a>, which allows us to create <i>any</i> kind of reverb. However, the API achieves such ultimate versatility in a clever and somewhat lazy way — the node has only one main parameter, <a href="https://developer.mozilla.org/en-US/docs/Web/API/ConvolverNode/buffer">buffer</a>, into which you need to feed an impulse response.</p>
+<p>What is an impulse response? It is an audio file that records the "atmosphere" of a room, space, or any other environment in a special way. By "atmosphere," we mean the room’s or space’s response to signals of all frequencies. You can think of it as if you recorded a guitar in a large room with a microphone and then subtracted the sound of the guitar from that recording. What remains is the room’s response to the sounds. Essentially, an impulse response provides us with this kind of response.</p>
+<p>You can find a wide variety of impulse response files online to emulate any space — from a small closet or bathroom to a subway station, cathedral, or large stadium. Applying one of these impulse responses to your audio track will give you the echo characteristic of the chosen environment.</p>
+<p>I had never used impulse responses before, but it turned out to be quite straightforward: I downloaded a small library of wav files from the internet, fed them into the <code>ConvolverNode</code>, and observed the results. After some attempts, I got an acceptable outcome.</p>
+<p>Here’s a function that provides a ready-to-use, configured node:</p>
+<pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">createReverb</span>() {
+    <span class="code-keyword">let</span> convolver = context.<span class="code-call">createConvolver</span>();
+
+    <span class="code-comment">// load impulse response from file</span>
+    <span class="code-keyword">let</span> response = <span class="code-keyword">await</span> <span class="code-call">fetch</span>(<span class="code-literal">"./WireGrind_s_0.8s_06w_100Hz_02m.wav"</span>);
+    <span class="code-keyword">let</span> arraybuffer = <span class="code-keyword">await</span> response.<span class="code-call">arrayBuffer</span>();
+    convolver.buffer = <span class="code-keyword">await</span> context.<span class="code-call">decodeAudioData</span>(arraybuffer);
+
+    <span class="code-keyword">return</span> convolver;
+}</code></pre>
+<p>And then, following the familiar pattern, this node is integrated into the chain within our <code>init</code>:</p>
+<pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
+	...
+
+    <span class="code-keyword">let</span> reverb = <span class="code-keyword">await</span> <span class="code-call">createReverb</span>();
+
+	...
+
+    distortion.<span class="code-call">connect</span>(cutNosal)
+    cutNosal.<span class="code-call">connect</span>(cutHighs)
+    cutHighs.<span class="code-call">connect</span>(cutLows)
+    cutLows.<span class="code-call">connect</span>(peakMids)
+    peakMids.<span class="code-call">connect</span>(reverb)
+    reverb.<span class="code-call">connect</span>(gain)
+    gain.<span class="code-call">connect</span>(context.destination)
+}</code></pre>
+<p>The chain of effects has indeed grown:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/yw/rk/jy/ywrkjydivpm2-fvegaln-9ura2m.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Enjoy the result:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943577&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>I didn’t exactly enjoy the sound I got. But at least we managed to distract the listener from the frequency imperfections by making the sound less dry and somewhat embedded in space. It might even be a bit too embedded, as I chose a rather strong reverb. By that point, I was quite exhausted from trying to tweak a decent sound, so I decided to pause and switch to the main task of this project—finally creating the riff generator itself.</p>
+<h2>Generating Chords</h2>
+<p>So, we’ve reached the core functionality. To recap, the purpose of the application is to generate four random power chords and play them four times in a row. It sounds simple enough, and since we already know how to play chords, we are almost there.</p>
+<p>The first problem, or rather, uncertainty, arises almost immediately—how exactly will we play the generated sequence of chords? We could, for example, simply strum each chord once. But that would be boring and unexciting, wouldn’t it? Okay, since we have a <i>punk</i> riff generator, maybe it’s enough to methodically and monotonously strum down 8 times like caricatured bassists from jokes? This is a more acceptable option, but it’s still very dull.</p>
+<p>In the end, I concluded that the functionality of the application should be slightly expanded to allow selecting from a set of pre-made rhythms. Here are six rhythms that came to mind and were approved by me as suitable:</p>
+<pre><code class="language-javascript">RYTHMS = [
+    [EIGHTH, EIGHTH, EIGHTH, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH],
+    [FOURTH, EIGHTH, FOURTH, EIGHTH, EIGHTH, EIGHTH],
+    [FOURTH_DOT, FOURTH, EIGHTH, EIGHTH, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH, EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH],
+]</code></pre>
+<p>Here are six rhythmic patterns described. It is assumed that we will choose one of the options, and each generated chord will be played according to this rhythmic pattern.</p>
+<p>But wait, among the familiar constants, there’s a previously non-existent <code>EIGHTH_PAUSE</code>! And it seems clear that this represents a pause lasting one-eighth of a beat, but what constant did we use to express it? Recall that the durations <code>HALF</code>, <code>FOURTH</code>, <code>EIGHTH</code>, etc., are represented by numbers indicating their duration in seconds. Pauses should also last in seconds. But how then do we distinguish between sounds and pauses if both are represented in seconds and no additional information is available, and we don’t want to introduce extra flags, fields, or classes? I solved this problem quite quickly, while also inadvertently introducing <i>anti-time</i>:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> FOURTH_PAUSE = -FOURTH
+<span class="code-keyword">const</span> EIGHTH_PAUSE = -EIGHTH
+<span class="code-keyword">const</span> SIXTEENTH_PAUSE = -SIXTEENTH
+<span class="code-keyword">const</span> HALF_PAUSE = -HALF
+<span class="code-keyword">const</span> WHOLE_PAUSE = -WHOLE
+
+<span class="code-keyword">const</span> FOURTH_DOT_PAUSE = -FOURTH_DOT
+<span class="code-keyword">const</span> EIGHTH_DOT_PAUSE = -EIGHTH_DOT
+<span class="code-keyword">const</span> SIXTEENTH_DOT_PAUSE = -SIXTEENTH_DOT
+<span class="code-keyword">const</span> HALF_DOT_PAUSE = -HALF_DOT</code></pre>
+<p>Yes, yes, we will distinguish between sound durations and pause durations using signs. A bit of a hack, but after all, we’re writing in JS, so why not.</p>
+<p>For better clarity, here are the same rhythms but in tablature form. Perhaps some will find it easier to perceive the rhythm this way:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/w5/lx/sr/w5lxsrbbultu3mhe6tjjxojzqk4.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Let’s go over how this should work algorithmically: we generate 4 random power chords, then play each chord according to the chosen rhythmic pattern. And we repeat this 4 times so the listener gets a better grasp of the sequence. So, we are looking at 3 nested loops:</p>
+<pre><code class="language-python"><span class="code-keyword">for</span> bar <span class="code-keyword">in</span> bars:
+	<span class="code-keyword">for</span> chors <span class="code-keyword">in</span> chords:
+		<span class="code-keyword">for</span> note <span class="code-keyword">in</span> rythm.notes:
+			...</code></pre>
+<p>That was pseudocode. Now let’s write the code for these loops:</p>
+<pre><code class="language-javascript">RYTHMS = [
+    [EIGHTH, EIGHTH, EIGHTH, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH, EIGHTH],
+    [FOURTH, EIGHTH, FOURTH, EIGHTH, EIGHTH, EIGHTH],
+    [FOURTH_DOT, FOURTH, SIXTEENTH, EIGHTH_DOT, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH],
+    [EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH, EIGHTH, EIGHTH, EIGHTH_PAUSE, EIGHTH],
+]
+
+button.onclick = async () =&gt; {
+    <span class="code-keyword">if</span> (!context) {
+        <span class="code-keyword">await</span> <span class="code-call">init</span>();
+    }
+
+    <span class="code-keyword">const</span> chords = [
+        <span class="code-call">createPowerChord</span>(<span class="code-call">generateNote</span>()),
+        <span class="code-call">createPowerChord</span>(<span class="code-call">generateNote</span>()),
+        <span class="code-call">createPowerChord</span>(<span class="code-call">generateNote</span>()),
+        <span class="code-call">createPowerChord</span>(<span class="code-call">generateNote</span>())
+    ];
+
+    <span class="code-keyword">const</span> rythm = RYTHMS[<span class="code-literal">4</span>]
+
+    <span class="code-keyword">for</span>(<span class="code-keyword">let</span> bar = <span class="code-literal">0</span>; bar &lt; <span class="code-literal">4</span>; ++bar) {
+        <span class="code-keyword">for</span>(<span class="code-keyword">let</span> ch = <span class="code-literal">0</span>; ch &lt; chords.length; ++ch) {
+            <span class="code-keyword">for</span>(<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; rythm.length; ++i) {
+                <span class="code-keyword">const</span> duration = rythm[i];
+                <span class="code-keyword">if</span> (duration &gt;= <span class="code-literal">0</span>) {
+                    <span class="code-call">playSound</span>(chords[ch], rythm[i])
+                } <span class="code-keyword">else</span> {
+                    <span class="code-call">playPause</span>(duration)
+                }
+            }
+        }
+    }
+    timeline = <span class="code-literal">0</span>
+};</code></pre>
+<p>What new methods do we need to implement based on what we've written? We see unfamiliar methods: <code>playPause()</code>, <code>generateNote()</code>, and <code>createPowerChord</code>.</p>
+<p>According to our brilliant plan, every time we encounter a negative note duration, we call the function <code>playPause()</code> to play (or rather, schedule) silence. This is actually quite simple: we just need to increase the <code>timeline</code>.</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">playPause</span>(duration) {
+    timeline += duration
+}</code></pre>
+<p>Now let's move on to <code>createPowerChord(generateNote())</code>. The idea is that we first select a random note from our list of notes, and then the <code>createPowerChord(...)</code> function, using this note as the first, constructs the correct power chord. It seems simple enough—just do it. However, this task turned out to be the problematic spot that required a slight rewrite of our approach to representing notes in the code.</p>
+<p>Here’s how notes were stored up to this point:</p>
+<pre><code class="language-javascript"><span class="code-comment">// Notes in Hz</span>
+<span class="code-keyword">const</span> C2 = <span class="code-literal">65.41</span>;
+<span class="code-keyword">const</span> Csh2 = <span class="code-literal">69.30</span>;
+<span class="code-keyword">const</span> D2 = <span class="code-literal">73.42</span>;
+<span class="code-keyword">const</span> Dsh2 = <span class="code-literal">77.78</span>;
+<span class="code-keyword">const</span> E2 = <span class="code-literal">82.41</span>;
+<span class="code-keyword">const</span> F2 = <span class="code-literal">87.31</span>;
+<span class="code-keyword">const</span> Fsh2 = <span class="code-literal">92.50</span>;
+<span class="code-keyword">const</span> G2 = <span class="code-literal">98.00</span>;
+<span class="code-keyword">const</span> Gsh2 = <span class="code-literal">103.83</span>;
+<span class="code-keyword">const</span> A2 = <span class="code-literal">110.00</span>;
+<span class="code-keyword">const</span> Ash2 = <span class="code-literal">116.54</span>;
+<span class="code-keyword">const</span> B2 = <span class="code-literal">123.47</span>;
+
+<span class="code-keyword">const</span> C3 = <span class="code-literal">130.81</span>;
+<span class="code-keyword">const</span> Csh3 = <span class="code-literal">138.59</span>;
+<span class="code-keyword">const</span> D3 = <span class="code-literal">146.83</span>;
+<span class="code-keyword">const</span> Dsh3 = <span class="code-literal">155.56</span>;
+<span class="code-keyword">const</span> E3 = <span class="code-literal">164.81</span>;
+<span class="code-keyword">const</span> F3 = <span class="code-literal">174.61</span>;
+<span class="code-keyword">const</span> Fsh3 = <span class="code-literal">185.00</span>;
+<span class="code-keyword">const</span> G3 = <span class="code-literal">196.00</span>;
+<span class="code-keyword">const</span> Gsh3 = <span class="code-literal">207.65</span>;
+<span class="code-keyword">const</span> A3 = <span class="code-literal">220.00</span>;
+<span class="code-keyword">const</span> Ash3 = <span class="code-literal">233.08</span>;
+<span class="code-keyword">const</span> B3 = <span class="code-literal">246.94</span>;
+
+...</code></pre>
+<p>And next on the list—it's a long one. Now the question is: how do we pick a random note from this set of constants? Well, we can't. At least not while the notes are represented solely in this way. We need a general list containing all these notes. Only then can we select a random element from the list.</p>
+<p>It's unpleasant, I know. The solution I ended up with for storing notes also turned out to be somewhat inelegant—I'd even call it a workaround. But we're writing in JS, after all, so why be shy! Here's the result:</p>
+<pre><code class="language-javascript"><span class="code-comment">// Notes in Hz</span>
+<span class="code-keyword">const</span> NOTES_HZ = [
+    <span class="code-literal">65.41</span>,
+    <span class="code-literal">69.30</span>,
+    <span class="code-literal">73.42</span>,
+    <span class="code-literal">77.78</span>,
+    <span class="code-literal">82.41</span>,
+    <span class="code-literal">87.31</span>,
+    <span class="code-literal">92.50</span>,
+    <span class="code-literal">98.00</span>,
+    <span class="code-literal">103.83</span>,
+    <span class="code-literal">110.00</span>,
+    <span class="code-literal">116.54</span>,
+    <span class="code-literal">123.47</span>,
+    ...
+]
+
+<span class="code-keyword">const</span> C2   = NOTES_HZ[<span class="code-literal">0</span>];
+<span class="code-keyword">const</span> Csh2 = NOTES_HZ[<span class="code-literal">1</span>];
+<span class="code-keyword">const</span> D2   = NOTES_HZ[<span class="code-literal">2</span>];
+<span class="code-keyword">const</span> Dsh2 = NOTES_HZ[<span class="code-literal">3</span>];
+<span class="code-keyword">const</span> E2   = NOTES_HZ[<span class="code-literal">4</span>]; <span class="code-comment">// E string</span>
+<span class="code-keyword">const</span> F2   = NOTES_HZ[<span class="code-literal">5</span>];
+<span class="code-keyword">const</span> Fsh2 = NOTES_HZ[<span class="code-literal">6</span>];
+<span class="code-keyword">const</span> G2   = NOTES_HZ[<span class="code-literal">7</span>];
+<span class="code-keyword">const</span> Gsh2 = NOTES_HZ[<span class="code-literal">8</span>];
+<span class="code-keyword">const</span> A2   = NOTES_HZ[<span class="code-literal">9</span>]; <span class="code-comment">// A string</span>
+<span class="code-keyword">const</span> Ash2 = NOTES_HZ[<span class="code-literal">10</span>];
+<span class="code-keyword">const</span> B2   = NOTES_HZ[<span class="code-literal">11</span>];
+...</code></pre>
+<p>And in this way, 59 notes are recorded. Well, that's not great. I think if I spent some time thinking about it, I could have found a better solution, at least by avoiding hardcoded indices. But this project is definitely not about code architecture beauty, so I left it as it is. The important thing is that the goal was achieved—now it's possible to pick a random note from the entire set.</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">generateNote</span>() {
+    <span class="code-keyword">const</span> LOWEST_E_STRING = <span class="code-literal">4</span>
+    <span class="code-keyword">const</span> HIGHEST_A_STRING = <span class="code-literal">16</span>
+
+    <span class="code-keyword">return</span> Math.<span class="code-call">floor</span>(Math.<span class="code-call">random</span>() * HIGHEST_D_STRING) + LOWEST_E_STRING;
+}
+
+<span class="code-keyword">function</span> <span class="code-call">createPowerChord</span>(tonica) {
+    <span class="code-keyword">return</span> [NOTES_HZ[tonica], NOTES_HZ[tonica + <span class="code-literal">7</span>], NOTES_HZ[tonica + <span class="code-literal">12</span>]];
+}</code></pre>
+<p>In <code>generateNote</code>, I specifically limited the random note selection to be from either the 6th guitar string or from the 5th string up to the 6th fret. If you don't understand what that means, don't worry—it's more of a specificity to ensure the power chords are reasonable in pitch and pleasing to the ear. Meanwhile, <code>createPowerChord</code> forms the chord based on the correct musical intervals from the given note.</p>
+<p>And here's the result of such generation:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943574&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Well, we've achieved what we set out to do! Random chords are generated, and there’s even a rhythmic pattern. It sounds great. Or rather, it sounds a bit off; but it’s great that we achieved the main goal and the browser is making music for us.</p>
+<p>But I still couldn't shake the question of how to get better sound quality.</p>
+<h2>Real Guitar</h2>
+<p>As usual, I went searching for answers on the internet and soon found myself back on StackOverflow, where a similar question <a href="https://stackoverflow.com/questions/24615677/how-to-use-web-audio-api-to-make-sound-like-guitar-piano-etc">was answered</a>, suggesting two paths:</p>
+<ul>
+	<li><p>Dive into very complex mathematics and get lost there</p></li>
+	<li><p>Use a recording of a pure guitar string and apply all effects to it</p></li>
+</ul>
+<p>It’s a case of “two chairs—take your pick.” The first option was intimidating from the start, while the second promised yet another rewrite of constants with frequencies—what exactly needed to be rewritten, I didn't fully understand at the time but anticipated a lot of changes.</p>
+<p>In the end, I chose the second option, spurred on by a <a href="https://zpl.fi/pitch-shifting-in-web-audio-api/">post</a> that explained how to get the entire set of notes from a single harpsichord sample and the math behind it.</p>
+<p>And the math is actually quite simple. You might remember that speeding up a melody by two times not only makes it faster but also higher-pitched. Reflecting on the sine wave, you can understand why—compressing the sine wave results in a higher frequency sound. Music theory even tells us that doubling the speed will raise the pitch by one octave. From this, we can derive a straightforward formula for calculating the playback rate of a sample to achieve any desired note:</p>
+<p class="latex">$$
+playbackRate=2^{(note-sampleNote)/12}
+$$</p>
+<p>where:</p>
+<ul>
+	<li><p><b><code>note</code></b> is the note we want to play,</p></li>
+	<li><p><b><code>sampleNote</code></b> is the note that is played in the instrument sample,</p></li>
+	<li><p><b><code>12</code></b> represents the number of notes in an octave, which are evenly spaced apart. Hence, we divide by 12.</p></li>
+</ul>
+<p>And the key thing to remember is that <b><code>note</code></b> and <b><code>sampleNote</code></b> are <i>not measured in Hertz</i>; they are just sequential note numbers that follow one another and are evenly spaced.</p>
+<p>So where do Hertz come into play? Actually, they are no longer needed explicitly, just like oscillators—we will be using the sound of the guitar from an audio file and treating it as the reference note.</p>
+<p>What audio file do we need? I decided that to cover the entire guitar range with a single file of one string’s sound, I would use the sound of the open fourth string.</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/47/20/4m/47204mng0gf-p6fw2istdhcj_pk.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Why the fourth string? It is the thin bass string, covered with winding. Three out of four strings used for power chords are covered with winding, so we maintain the desired timbre—thin unwound strings sound a bit different. The fourth string is roughly in the middle of the sound range, so I figured that its sound could be adjusted up and down without expecting significant discrepancies from the actual string sound.</p>
+<p>I found the following sound available online that suited me:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943571&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>An ordinary raw electric guitar. Note the strange resonance at the very end. I don’t know what that is, probably it’s extraneous sounds recorded after the note was played. I’ll pay more attention to it later.</p>
+<p>Since this is the sound of the open fourth string, we know that it’s note D3. We will need to build the other notes relative to it. Also, remember that now Hertz are not important; only the relative order of the notes matters.</p>
+<p>So does this mean we need to rewrite our note constants again? It turns out we do. The good news is that their representation will now be extremely simple:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> C2   = <span class="code-literal">0</span>
+<span class="code-keyword">const</span> Csh2 = <span class="code-literal">1</span>
+<span class="code-keyword">const</span> D2   = <span class="code-literal">2</span>
+<span class="code-keyword">const</span> Dsh2 = <span class="code-literal">3</span>
+<span class="code-keyword">const</span> E2   = <span class="code-literal">4</span> <span class="code-comment">// E string</span>
+<span class="code-keyword">const</span> F2   = <span class="code-literal">5</span>
+<span class="code-keyword">const</span> Fsh2 = <span class="code-literal">6</span>
+<span class="code-keyword">const</span> G2   = <span class="code-literal">7</span>
+<span class="code-keyword">const</span> Gsh2 = <span class="code-literal">8</span>
+<span class="code-keyword">const</span> A2   = <span class="code-literal">9</span> <span class="code-comment">// A string</span>
+<span class="code-keyword">const</span> Ash2 = <span class="code-literal">10</span>
+<span class="code-keyword">const</span> B2   = <span class="code-literal">11</span>
+
+<span class="code-keyword">const</span> C3   = <span class="code-literal">12</span>
+<span class="code-keyword">const</span> Csh3 = <span class="code-literal">13</span>
+<span class="code-keyword">const</span> D3   = <span class="code-literal">14</span> <span class="code-comment">// D string</span>
+<span class="code-keyword">const</span> Dsh3 = <span class="code-literal">15</span>
+<span class="code-keyword">const</span> E3   = <span class="code-literal">16</span>
+<span class="code-keyword">const</span> F3   = <span class="code-literal">17</span>
+<span class="code-keyword">const</span> Fsh3 = <span class="code-literal">18</span>
+<span class="code-keyword">const</span> G3   = <span class="code-literal">19</span> <span class="code-comment">// G string</span>
+<span class="code-keyword">const</span> Gsh3 = <span class="code-literal">20</span>
+<span class="code-keyword">const</span> A3   = <span class="code-literal">21</span>
+<span class="code-keyword">const</span> Ash3 = <span class="code-literal">22</span>
+<span class="code-keyword">const</span> B3   = <span class="code-literal">23</span> <span class="code-comment">// B string</span>
+
+...</code></pre>
+<p>Yes, it’s that simple. And our hack with the array is gone—we can handle it without it now.</p>
+<p>We load the audio file exactly the same way we loaded the impulse response for the reverb effect:</p>
+<pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">createGuitarSample</span>() {
+    <span class="code-keyword">return</span> <span class="code-call">fetch</span>(<span class="code-literal">"./guitar_d_string.wav"</span>)
+        .<span class="code-call">then</span>(response =&gt; response.<span class="code-call">arrayBuffer</span>())
+        .<span class="code-call">then</span>(buffer =&gt; context.<span class="code-call">decodeAudioData</span>(buffer))
+}</code></pre>
+<p>The <code>AudioBufferSourceNode</code> will replace the oscillator node for us. We’ll feed it the loaded audio buffer and set the appropriate <code>playbackRate</code> using the formula we discussed earlier:</p>
+<pre><code class="language-javascript"><span class="code-keyword">let</span> guitarSample
+
+async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
+	...
+	guitarSample = <span class="code-keyword">await</span> <span class="code-call">createGuitarSample</span>()
+	...
+}
+
+...
+
+<span class="code-keyword">const</span> SAMPLE_NOTE = D3;
+
+<span class="code-keyword">function</span> <span class="code-call">createSampleSource</span>(noteToPlay) {
+    <span class="code-keyword">const</span> source = context.<span class="code-call">createBufferSource</span>()
+    source.buffer = guitarSample
+    source.playbackRate.value = <span class="code-literal">2</span> ** ((noteToPlay - SAMPLE_NOTE) / <span class="code-literal">12</span>)
+    <span class="code-keyword">return</span> source
+}</code></pre>
+<p>It is very important that the audio file with the sample is correctly trimmed and has appropriate normalized volume. For example, the initially downloaded file looked like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/u-/0x/tf/u-0xtfe2wznavske0wzcppspew0.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Do you see the silence at the beginning? It needs to be removed, otherwise each note in your final sound will have a delay and discontinuity. I edited the file in <a href="https://www.audacityteam.org/">Audacity</a> so that it looked like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/de/fb/ep/defbep8e1vcuw8xgir6eferso1k.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>And now, finally, by replacing the oscillator with the audio track as the source of the initial sound, we can enjoy the sound of the guitar string processed with all our effects: distortion, reverb, and equalizers:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943559&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Yes, now it sounds like a guitar. Now for the most anticipated part — let's play a power chord:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943553&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Now we're talking! This sound is actually usable. Notice how the strange tail at the end of the file started playing three times at different times? This is a great illustration of what <code>playbackRate</code> does to the sound — it slows it down or speeds it up over time, and as a side effect (which, in our case, is not just a side effect but a very important one), it affects the pitch. Later, I cut off the tail from the audio track, but it was amusing.</p>
+<p>Now let’s try to adapt the equalizer to the new sound and get the same punk riff generator, but with the updated sound. I admit, I spent a lot of time tweaking the sound and can't say I achieved perfect results. Moreover, I repeatedly equalized the sound over and over, so subsequent audio examples might differ slightly in sound. But overall, the principal layout of all Web Audio API nodes in the project now looks like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/fc/e7/wz/fce7wzjwtwfhyt8tm2q_-kxzuts.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>And the generator now sounds like this:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1865332653&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>So, did we reach Guitar Pro 5 level? I think we’re pretty close.</p>
+<p>Of course, since this is a random generator, it can produce unattractive riffs, and on some rhythms, a robotic hand can be felt:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1865332830&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Later, we’ll try to divert the listener's attention from the robotic guitar. But before we do that, I want to show something even more robotic. I already mentioned that extreme tempos in music start around 200 bpm and higher. I once accidentally set the tempo to 1000 bpm and got interesting results:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943529&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Curious, right? And how about 10000 bpm?:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1846943526&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>I believe this is a new word in sound generation.</p>
+<h2>Convenience</h2>
+<p>Now let’s take a moment to discuss small but very important conveniences that will make the project a bit more pleasant for both the programmer and the user.</p>
+<h3>Stopping playback on replay</h3>
+<p>After an oscillator node or an audio track is started, it subsequently stops either after playing to the end or if you explicitly call <code>node.stop(0)</code>.</p>
+<p>Until now, I hadn’t addressed this issue, but every time I pressed the play button on the web page, new sounds would join the old ones still playing, merging into a harsh cacophony. The only way to fix this was to reload the page.</p>
+<p>To avoid this, <i>every</i> source node needs to be remembered in a special array, and at the right moment, you need to call <code>stop(0)</code> on all nodes:</p>
+<pre><code class="language-javascript"><span class="code-keyword">let</span> soundNodes = []
+
+...
+
+<span class="code-keyword">function</span> <span class="code-call">playSound</span>(notes, duration) {
+    <span class="code-keyword">const</span> startTime = context.currentTime + timeline
+    <span class="code-keyword">const</span> endTime = startTime + seconds
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> noteIndex = <span class="code-literal">0</span>; noteIndex &lt; notes.length; noteIndex++) {
+        <span class="code-keyword">const</span> sample = <span class="code-call">createSampleSource</span>(notes[noteIndex])
+
+        sample.<span class="code-call">connect</span>(distortion)
+        sample.<span class="code-call">start</span>(startTime)
+        sample.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)
+
+        soundNodes.<span class="code-call">push</span>(sample)
+    }
+
+    timeline += seconds
+}
+
+...
+
+button.onclick = async () =&gt; {
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; soundNodes.length; ++i) {
+        soundNodes[i].<span class="code-call">stop</span>(<span class="code-literal">0</span>)
+    }
+    soundNodes = []
+
+	...
+}</code></pre>
+<p>Yes, unfortunately, Web Audio API doesn’t provide other mechanisms for resetting the sound.</p>
+<h3>Simple Effect Chaining</h3>
+<p>Until now, we’ve been connecting nodes by calling <code>node1.connect(node2)</code> as many times as needed for the required connections:</p>
+<pre><code class="language-javascript">distortion.<span class="code-call">connect</span>(cutHighs)
+cutHighs.<span class="code-call">connect</span>(gumDown)
+gumDown.<span class="code-call">connect</span>(cutSand)
+cutSand.<span class="code-call">connect</span>(cutSand2)
+cutSand2.<span class="code-call">connect</span>(boostLow)
+boostLow.<span class="code-call">connect</span>(peakMids)
+peakMids.<span class="code-call">connect</span>(reverb)
+reverb.<span class="code-call">connect</span>(gain)
+gain.<span class="code-call">connect</span>(context.destination)</code></pre>
+<p>If you want to exclude a node from the sequence or change the order of nodes, you have to cleverly adjust the arguments in the <code>connect</code> calls, which is very inconvenient. For example, to exclude the reverb from the chain, you need to do the following:</p>
+<pre><code class="language-diff">-peakMids.<span class="code-call">connect</span>(reverb)
++peakMids.<span class="code-call">connect</span>(gain)</code></pre>
+<p>It's very easy to get confused.</p>
+<p>But if we simply put all the nodes into a list and then automatically connect them using a <code>for</code> loop, we get a very convenient format for manipulating nodes within the list:</p>
+<pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
+    ...
+
+    effectsChain = [
+        distortion,
+        cutHighs,
+        gumDown,
+        cutSand,
+        cutSand2,
+        boostLow,
+        peakMids,
+        reverb,
+        gain,
+        context.destination
+    ]
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; effectsChain.length - <span class="code-literal">1</span>; ++i) {
+        effectsChain[i].<span class="code-call">connect</span>(effectsChain[i + <span class="code-literal">1</span>])
+    }
+}</code></pre>
+<p>Excluding reverb from the chain now looks like this:</p>
+<pre><code class="language-javascript">effectsChain = [
+	distortion,
+	cutHighs,
+	gumDown,
+	cutSand,
+	cutSand2,
+	boostLow,
+	peakMids,
+	<span class="code-comment">//reverb,</span>
+	gain,
+	context.destination
+]</code></pre>
+<h2>Drums</h2>
+<p>The generator sounds pretty good already, but it lacks liveliness — the sound feels static. This wasn't part of my original scope, but I reasonably concluded that adding drums would bring the sound to a new level, potentially masking some flaws in our guitar sound. Therefore, it's worth adding them, even in a basic form.</p>
+<p>I downloaded samples of a kick drum and a snare drum and integrated them into a simple rhythmic pattern. There’s nothing technically new here, so I'll skip the implementation details. I'll just show the resulting set of nodes:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/it/rn/au/itrnau9aekjwwh1uwbofub6iy28.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>As you can see, the scheme has grown quite a bit, and I was very glad that I had written a simplified mechanism for building chains in time — it came in very handy now:</p>
+<pre><code class="language-javascript">effectsChain = [
+	distortion,
+	cutHighs,
+	gumDown,
+	cutSand,
+	cutSand2,
+	boostLow,
+	peakMids,
+	guitarReverb,
+	guitarGain,
+	context.destination
+]
+
+drumsEffectsChain = [
+	drumsReverb,
+	drumsGain,
+	context.destination
+]
+
+<span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; effectsChain.length - <span class="code-literal">1</span>; ++i) {
+	effectsChain[i].<span class="code-call">connect</span>(effectsChain[i + <span class="code-literal">1</span>])
+}
+
+<span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; drumsEffectsChain.length - <span class="code-literal">1</span>; ++i) {
+	drumsEffectsChain[i].<span class="code-call">connect</span>(drumsEffectsChain[i + <span class="code-literal">1</span>])
+}</code></pre>
+<p>Let's note that the volumes of the guitar and drums are individual, so you can finely adjust their levels relative to each other. The echo effect, on the other hand, is shared to avoid a clash of two different "environments."</p>
+<p>Here’s the result:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1881241887&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Congratulations, we have rock!</p>
+<h2>Giving the Guitar More Presence</h2>
+<p>After introducing the drums, I noticed that the guitar was lacking a bit of power, and attempts to increase the guitar volume or reduce the drum volume didn’t yield the desired result.</p>
+<p>Then I remembered a trick used in many rock albums — the overdub guitar. The idea is simple — you have the same guitar riff played simultaneously in both the left and right ears. Ideally, this should not be just a layering of the same recording panned to the left and right channels, but two different recordings of the same riff, so that the listener perceives slight differences and imperfections in the musician’s playing. This slight mismatch between the two parts creates an impression of depth and stereo sound.</p>
+<p>Panning is created quite simply — for this, the Web Audio API has a <a href="https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode"><code>StereoPannerNode</code></a>:</p>
+<pre><code class="language-javascript"><span class="code-keyword">let</span> panningLeft = context.<span class="code-call">createStereoPanner</span>()
+panningLeft.pan.<span class="code-call">setValueAtTime</span>(-<span class="code-literal">0.8</span>, context.currentTime)</code></pre>
+<p>Here, we shifted the sound 80% to the left with just two lines of code.</p>
+<p>A more interesting task is to make the left and right guitars sound slightly different rhythmically. To achieve this, we need to introduce some variation in sound playback to simulate the human factor—people cannot play like machines and adhere to a 100% perfect rhythm. Therefore, we’ll introduce a very small random delay in the playback of each chord for each guitar:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> GUITAR_PLAYING_ERRORS = <span class="code-literal">0.07</span>
+<span class="code-keyword">const</span> randomFloat = (min, max) =&gt; Math.<span class="code-call">random</span>() * (max - min) + min;
+
+...
+
+<span class="code-keyword">function</span> <span class="code-call">playSound</span>(notes, duration) {
+	...
+
+	<span class="code-keyword">for</span> (<span class="code-keyword">let</span> noteIndex = <span class="code-literal">0</span>; noteIndex &lt; notes.length; noteIndex++) {
+        <span class="code-keyword">const</span> sample = <span class="code-call">createGuitarSource</span>(notes[noteIndex])
+
+        sample.<span class="code-call">connect</span>(guitarEffectsChain2[<span class="code-literal">0</span>])
+        sample.<span class="code-call">start</span>(startTime + <span class="code-call">randomFloat</span>(<span class="code-literal">0</span>, GUITAR_PLAYING_ERRORS))
+        sample.<span class="code-call">stop</span>(endTime + <span class="code-call">randomFloat</span>(<span class="code-literal">0</span>, GUITAR_PLAYING_ERRORS))
+
+        soundNodes.<span class="code-call">push</span>(sample)
+    }
+
+    ...
+}</code></pre>
+<p>So, the start and end of the sound are slightly blurred due to the random delay. Our virtual guitarist occasionally lags behind or speeds up slightly. Not too much, just within a margin that's barely noticeable. Even if <code>GUITAR_PLAYING_ERRORS</code> is set to an extremely small value, the spatial effect between the left and right sides will remain.</p>
+<p>I also EQ’d the right guitar a bit differently from the left, and applied different distortion formulas to each guitar. As a result, the sound became richer and more varied— the difference from the previous example is quite noticeable:</p>
+<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1881248736&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+<p>Now I’m very satisfied with the sound! It could possibly be improved further, but I’d prefer to stop here since the result is already excellent.</p>
+<p>Here’s how the principal effects scheme now looks:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/uv/cr/bp/uvcrbpjngwbg4scpg_uxmx2iay8.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>As you can see, I had to omit showing the nodes within the equalizers, as the diagram would have been excessively cumbersome. All nodes can be seen in the chains described in the code.</p>
+<pre><code class="language-javascript">guitarEffectsChain = [
+	distortion,
+	cutHighs,
+	gumDown,
+	cutSand,
+	cutSand2,
+	boostLow,
+	peakMids,
+	panningLeft,
+	guitarGain,
+]
+
+guitarEffectsChain2 = [
+	distortion2,
+	cutHighs2,
+	cutSand2_2,
+	cutSand22,
+	boostLow2,
+	peakMids2,
+	panningRight,
+	guitarGain,
+]
+
+guitarEffectsFinalChain = [
+	guitarGain,
+	reverb,
+]
+
+drumsEffectsChain = [
+	drumsGain,
+	reverb,
+]
+
+finalChain = [
+	reverb,
+	context.destination
+]
+
+<span class="code-keyword">for</span> (<span class="code-keyword">const</span> chain of [
+	guitarEffectsChain,
+	guitarEffectsChain2,
+	guitarEffectsFinalChain,
+	drumsEffectsChain,
+	finalChain
+]) {
+	<span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-literal">0</span>; i &lt; chain.length - <span class="code-literal">1</span>; ++i) {
+		chain[i].<span class="code-call">connect</span>(chain[i + <span class="code-literal">1</span>])
+	}
+}</code></pre>
+<h2>Application Layout</h2>
+<p>So, I've achieved the functionality I initially planned. We've even exceeded expectations by adding nice features like drums and overdub guitars, which I'm very pleased with.</p>
+<p>However, I still had the task of creating a representative web page where users could interact with the Punk riff generator in a user-friendly manner. I initially tried to design the page myself. But to give you an idea of how bad I am at design, my version of the page looked like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/jq/ql/ed/jqqledyiq7fqm0kk292oji8r-zw.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>So, I turned to a professional—my wife—and she created a stunning design that's easy on the eyes. Thanks to her:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/pm/kt/-d/pmkt-dncpm24bb4mgy02jicvj0a.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>The layout was successfully implemented by me, and now you can see the result of all our hard work on the <a href="https://askepit.github.io/tools/punk_riff_generator/">demo page</a>.</p>
+<p>Thus, our little adventure into browser-based music comes to an end. Thanks to everyone who made it to the end. Perhaps someday I'll add more features to this generator. For now, its main purpose is to click the play button until you find a riff you like. After that, you can save it somewhere and use it in your musical endeavors. I'd be happy to read any suggestions in the comments about features that could be added to this simple generator. Any suggestions that seem good and interesting to me will be recorded in the "Deep Todo backlog" and, perhaps, someday implemented when I find the time. Of course, you can always fork the <a href="https://github.com/AskePit/punk-riff-generator">GitHub project</a> or post issues there!</p>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

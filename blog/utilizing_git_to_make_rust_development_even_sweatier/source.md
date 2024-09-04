@@ -1,5 +1,10 @@
-# Utilizing git to make rust development even sweatier
-
+---
+tags:
+  - article
+  - rust
+  - git
+title: Utilizing Git to make Rust development even sweatier
+---
 Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore?
 
 Actually, the article is more about git than Rust, so if you're not particularly familiar with Rust, don't hesitate — the narrative will be more about the development flow than the language itself. Rust was chosen for the article mainly for its convenient package manager `cargo`, which makes the storytelling more laconic and illustrative.

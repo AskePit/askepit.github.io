@@ -4,7 +4,7 @@
 <head lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Utilizing git to make rust development even sweatier</title>
+    <title>Utilizing Git to make Rust development even sweatier</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Oswald:wght@200..700&family=Oxygen:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&family=Raleway:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Slab:wght@100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&family=Shippori+Mincho&family=Unna:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
     </style>
@@ -37,7 +37,7 @@ MathJax = {
     </label>
     <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
 </div>
-<h1>Utilizing git to make rust development even sweatier</h1>
+<h1>Utilizing Git to make Rust development even sweatier</h1>
 <p>Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore?</p>
 <p>Actually, the article is more about git than Rust, so if you're not particularly familiar with Rust, don't hesitate — the narrative will be more about the development flow than the language itself. Rust was chosen for the article mainly for its convenient package manager <code>cargo</code>, which makes the storytelling more laconic and illustrative.</p>
 <h2>You’ve got a task</h2>
@@ -205,9 +205,9 @@ cargo check && cargo test && cargo fmt</code></pre>
 <p>Right, our code indeed needed some formatting according to <code>cargo fmt</code>. Formatting is done, but it missed the commit, and that's a problem.</p>
 <p>Let's break down what we have:</p>
 <ul>
-	<li><code>cargo fmt</code> (if the command is executed exactly in this form, without flags) never returns an error. It always runs successfully unless there's some severe internal inconsistency, which is unlikely to happen. Therefore, this command <i>cannot stop the commit</i>; it will always go through.</li>
-	<li><code>cargo fmt</code> makes changes to the code, and these changes, obviously, will be considered as not staged changes.</li>
-	<li>The <code>pre-commit</code> hook runs <i>before</i> the commit.</li>
+	<li><p><code>cargo fmt</code> (if the command is executed exactly in this form, without flags) never returns an error. It always runs successfully unless there's some severe internal inconsistency, which is unlikely to happen. Therefore, this command <i>cannot stop the commit</i>; it will always go through.</p></li>
+	<li><p><code>cargo fmt</code> makes changes to the code, and these changes, obviously, will be considered as not staged changes.</p></li>
+	<li><p>The <code>pre-commit</code> hook runs <i>before</i> the commit.</p></li>
 </ul>
 <p>Analyzing all these points, we conclude that we need to apply the changes made by <code>cargo fmt</code> right away in the hook. What if we run <code>git add .</code> right in the hook? Nothing stops us from trying:</p>
 <pre><code class="language-bash">#!/bin/sh

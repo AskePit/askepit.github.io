@@ -1,5 +1,11 @@
-# Voronoi, Manhattan, random
-
+---
+tags:
+  - article
+  - gamedev
+  - cpp
+  - godot
+title: Voronoi, Manhattan, random
+---
 This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets.
 
 So, we had one programmer, one artist, an absolute lack of understanding of the workflow, an unfamiliar game engine, and a desire to create something. If you're curious about the mixup of Voronoi diagrams, a special case of Minkowski distance, polygon transformations, procedural generation, and noise—all wrapped up in a beautifully stylized package—this is the right place for you to read.
@@ -610,7 +616,8 @@ ChatGPT has provided me with code, which seemed to work, which is generally not 
 Here is where the real "fun" begins because the concept of "normal random" is vague and subject to discussion. I wanted more precise formulations from Ilya—something expressed in exact numbers. However, it wasn't simple because while we might have a rough mental image of how trees should be placed on the edge of a forest, translating that into numerical parameters isn't straightforward.
 
 We settled on creating tables for each map that described the distribution of items in each biome. For example, here's a table for a forest map:
-![[Screenshot 2024-04-24 124126.png]]
+
+![](https://miro.medium.com/v2/resize:fit:4800/format:webp/1*Cr7PFG2xCFkE6kETL39-Qg.png)
 
 Yes, it's in layman's terms, vague, without formulas or an abundance of numbers, but it was a starting point. With this information, I found it easier to come up with ways to generate various items according to my preferences and understanding.
 

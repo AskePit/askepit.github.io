@@ -1,8 +1,12 @@
-# Git in conditions of extreme branch atomicity
+---
+tags:
+  - article
+  - git
+title: Git in conditions of extreme branch atomicity
+---
 
 How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.
-
-## Advantage of Small Branches
+# Advantage of Small Branches
 
 How are your Git branches organized? What do they look like, and what size are they?
 
@@ -23,7 +27,7 @@ While writing `subsystem`, you might have written a considerable number of core 
 
 Quite a clear picture. However, some of you might already feel uneasy because a problem related to this approach is emerging.
 
-## Problem with Small Branches
+# Problem with Small Branches
 
 It's not hard to see that with this approach, there might be situations where you just end up with long chains of dependent branches:
 
@@ -35,7 +39,7 @@ The key challenge in such a development mode is to ensure that all my depending-
 
 Moreover, in each branch in my tree, there's an equal chance that I might add something, fix something, or make adjustments. And all these changes must make their way into the branches depending on the modified one.
 
-## How to Simplify Your Life
+# How to Simplify Your Life
 
 I'm quite stubborn, but even for me, all the work of keeping branches in the proper state eventually became an annoying routine, consuming time and bringing no pleasure at all.
 
