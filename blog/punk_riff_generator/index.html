@@ -51,10 +51,10 @@ MathJax = {
 
 <p>Let’s set the right mood for reading this article:</p>
 <ul>
-	<li><p>The article contains a couple dozen short audio tracks so you can feel the evolution of the sound we’re going to create with our own hands. And the evolution is something to behold!</p></li>
-	<li><p>The narrative will be accompanied by some slightly suffocating dives into sound theory, but I’ll try to explain things clearly.</p></li>
-	<li><p>I’ll boldly assume that you won’t need any musical background to understand what’s going on in the article. But that's not a guarantee! How accurate this assumption is will be revealed in the comments.</p></li>
-	<li><p>The article turned out to be a cleverly intertwined mix of mathematics, music theory, and programming. Read on and develop yourself in all directions. :)</p></li>
+	<li>The article contains a couple dozen short audio tracks so you can feel the evolution of the sound we’re going to create with our own hands. And the evolution is something to behold!</li>
+	<li>The narrative will be accompanied by some slightly suffocating dives into sound theory, but I’ll try to explain things clearly.</li>
+	<li>I’ll boldly assume that you won’t need any musical background to understand what’s going on in the article. But that's not a guarantee! How accurate this assumption is will be revealed in the comments.</li>
+	<li>The article turned out to be a cleverly intertwined mix of mathematics, music theory, and programming. Read on and develop yourself in all directions. :)</li>
 </ul>
 <h2>Simple Sine Wave</h2>
 <p>So, my first impulse was to generate a sine wave in the browser. No sooner said than done—I went to <a href="https://stackoverflow.com/questions/34708980/generate-sine-wave-and-play-it-in-the-browser">Stack Overflow</a> as usual, copy-pasted the solution from there, dropped it into the script section of an HTML page, and got the desired signal:</p>
@@ -123,10 +123,10 @@ $$</p>
 <h3>The Physics (and Math) of Music</h3>
 <p>It's well-known that there are only seven notes. A more accurate statement, however, would be:</p>
 <ul>
-	<li><p>There are only seven notes,</p></li>
-	<li><p>But this applies to Western music,</p></li>
-	<li><p>Actually, there are not exactly seven, but more like twelve,</p></li>
-	<li><p>And no one will stop you from going beyond these twelve notes, which happens all the time.</p></li>
+	<li>There are only seven notes,</li>
+	<li>But this applies to Western music,</li>
+	<li>Actually, there are not exactly seven, but more like twelve,</li>
+	<li>And no one will stop you from going beyond these twelve notes, which happens all the time.</li>
 </ul>
 <p>So, what are these 12 notes, and why aren't there just seven—after all, there's <i>do re mi fa sol la ti</i>? Well, take a look:</p>
 
@@ -197,9 +197,9 @@ oscillator.frequency.value = toneInHz</code></pre>
 <p>In the most minimalist form, that’s all: you create a node, set its pitch—done! However, creating and configuring a node doesn’t immediately produce sound in the browser. To hear the oscillator, its signal needs to be routed somewhere. Here’s where we’ll delve deeper into the Web Audio API, which I didn’t do for the previous example since the <code>sineWaveAt</code> code was essentially a dead end.</p>
 <p>As I briefly mentioned, the Web Audio API provides us with an <code>AudioContext</code>. Essentially, it is a global object with all the necessary methods to create nodes and connect them to each other. Nodes can be:</p>
 <ul>
-	<li><p><b>Sound sources</b>, like our <code>OscillatorNode</code>. There’s also a node that can play an mp3 file, for example.</p></li>
-	<li><p><b>Sound processors</b>. These are nodes for various equalization, echo, volume adjustments, etc.</p></li>
-	<li><p><b>Sound destinations</b>. In fact, there is only one such node, which acts as a virtual speaker that receives the final sound and it’s what you’ll hear through your speakers or headphones.</p></li>
+	<li><b>Sound sources</b>, like our <code>OscillatorNode</code>. There’s also a node that can play an mp3 file, for example.</li>
+	<li><b>Sound processors</b>. These are nodes for various equalization, echo, volume adjustments, etc.</li>
+	<li><b>Sound destinations</b>. In fact, there is only one such node, which acts as a virtual speaker that receives the final sound and it’s what you’ll hear through your speakers or headphones.</li>
 </ul>
 <p>The main idea and principle of the Web Audio API are: you create the nodes you need, connect them to each other so that the sound passes through and is processed in the correct order, and finally route the final signal to the destination node, <a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioDestinationNode"><code>AudioContext.destination</code></a>.</p>
 <p>In our case, the setup is fairly straightforward: we have an oscillator node, and we connect it to <code>AudioContext.destination</code>, and you’ll hear the sound in the browser. However, I’d advise against listening to it right away since there’s a catch. The volume of the oscillator is very high because the signal it produces is in the familiar range of $y \in [-1; 1]$, which means “full volume”.</p>
@@ -235,10 +235,10 @@ oscillator.<span class="code-call">start</span>(context.currentTime)</code></pre
 <p>Now that we have our signal, let's use it to play a simple melody. I chose the opening part of the song <a href="https://www.youtube.com/watch?v=0J2QdDbelmY">Seven Nation Army</a> for this purpose. I assume most people can play these notes in their heads, so I won’t include a snippet of the song here.</p>
 <p>When it comes to playing a sequence of sounds, we inevitably encounter the concept of a timeline in all its manifestations, along with related questions:</p>
 <ul>
-	<li><p>How long should each sound be played?</p></li>
-	<li><p>In what unit should the duration of notes be measured?</p></li>
-	<li><p>How to set the tempo of the song? And if you want to speed up or slow down the overall tempo, how to maintain the correct duration of notes relative to each other?</p></li>
-	<li><p>How to divide the song into measures, and how does the number of measures depend on the tempo of the song?</p></li>
+	<li>How long should each sound be played?</li>
+	<li>In what unit should the duration of notes be measured?</li>
+	<li>How to set the tempo of the song? And if you want to speed up or slow down the overall tempo, how to maintain the correct duration of notes relative to each other?</li>
+	<li>How to divide the song into measures, and how does the number of measures depend on the tempo of the song?</li>
 </ul>
 <p>There are many questions, so we will address them step by step. Let’s start with how such issues are resolved by real musicians. They use musical notation — a melody is written on a staff, which contains all the necessary information related to the temporal characteristics of the song. Our snippet on the staff might look something like this:</p>
 
@@ -293,11 +293,11 @@ oscillator.<span class="code-call">start</span>(context.currentTime)</code></pre
 <span class="code-keyword">const</span> HALF_DOT = HALF * <span class="code-literal">1.5</span></code></pre>
 <p>These are the constants we need to start creating. Here’s what we’ve done:</p>
 <ul>
-	<li><p>Set the BPM as required by the song at 110.</p></li>
-	<li><p>Converted BPM (beats per <b>minute</b>) to BPS (beats per <b>second</b>) by dividing BPM by 60.</p></li>
-	<li><p>Knowing that a beat is exactly a quarter note, we convert BPS to SPB (seconds per beat) by simply inverting the value. Now we have the number of seconds a quarter note should last.</p></li>
-	<li><p>We can easily calculate the durations of other notes in seconds based on the quarter note.</p></li>
-	<li><p>Notes with dots are simply multiplied by 1.5.</p></li>
+	<li>Set the BPM as required by the song at 110.</li>
+	<li>Converted BPM (beats per <b>minute</b>) to BPS (beats per <b>second</b>) by dividing BPM by 60.</li>
+	<li>Knowing that a beat is exactly a quarter note, we convert BPS to SPB (seconds per beat) by simply inverting the value. Now we have the number of seconds a quarter note should last.</li>
+	<li>We can easily calculate the durations of other notes in seconds based on the quarter note.</li>
+	<li>Notes with dots are simply multiplied by 1.5.</li>
 </ul>
 <p>Now, let’s imagine how four repetitions of our Seven Nation Army phrase might look:</p>
 <pre><code class="language-javascript"><span class="code-keyword">for</span> (i = <span class="code-literal">0</span>; i &lt; <span class="code-literal">4</span>; ++i) {
@@ -432,10 +432,10 @@ oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)</code
 <p>What is distortion by its nature? The name suggests it's a type of signal "distortion," which makes a clean, smooth sound become loud, overloaded, gritty, and roaring. But what algorithm or function can turn a sine wave into something that growls and buzzes?</p>
 <p>Distortion is commonly implemented using a transforming mathematical function that is (beware, mathematical jargon!):</p>
 <ul>
-	<li><p>Smooth</p></li>
-	<li><p>Monotonic</p></li>
-	<li><p>Increasing</p></li>
-	<li><p>Non-linear</p></li>
+	<li>Smooth</li>
+	<li>Monotonic</li>
+	<li>Increasing</li>
+	<li>Non-linear</li>
 </ul>
 <p>Why these characteristics? They are well explained, for instance, in <a href="https://alexanderleon.medium.com/web-audio-series-part-2-designing-distortion-using-javascript-and-the-web-audio-api-446301565541">this article</a>. This article also suggests that a <a href="https://ru.wikipedia.org/wiki/%D0%A1%D0%B8%D0%B3%D0%BC%D0%BE%D0%B8%D0%B4%D0%B0">sigmoid function</a> fits these characteristics well. This family of mathematical functions is described by various formulas, but they all share a graph that resembles the letter $S$.</p>
 <p>Choose the sigmoid function that suits you best:</p>
@@ -481,10 +481,10 @@ $$</p>
 <p>The Web Audio API provides a <a href="https://developer.mozilla.org/en-US/docs/Web/API/WaveShaperNode"><code>WaveShaperNode</code></a> that allows you to apply a transformation function to any signal. We will use this to distort the sound produced by the oscillators.</p>
 <p>The node can be given any graph in discrete form: as a <code>Float32Array</code>. Here’s how it works:</p>
 <ul>
-	<li><p>The graph is always considered as a function with $x$ in the range $[-1; 1]$.</p></li>
-	<li><p>The <code>Float32Array</code> can be of any length. The longer the array, the higher the sampling frequency of your transformation graph. The node will interpret the first element of the array as $x=-1$, the middle element as $x=0$, and the last element as $x=1$.</p></li>
-	<li><p>The numbers in the array are the $y$ values.</p></li>
-	<li><p>The node will apply this transformation graph to any signal it receives, just as we manually applied the sigmoid to the sine wave on the graph.</p></li>
+	<li>The graph is always considered as a function with $x$ in the range $[-1; 1]$.</li>
+	<li>The <code>Float32Array</code> can be of any length. The longer the array, the higher the sampling frequency of your transformation graph. The node will interpret the first element of the array as $x=-1$, the middle element as $x=0$, and the last element as $x=1$.</li>
+	<li>The numbers in the array are the $y$ values.</li>
+	<li>The node will apply this transformation graph to any signal it receives, just as we manually applied the sigmoid to the sine wave on the graph.</li>
 </ul>
 <p>We need to insert another node into the chain:</p>
 
@@ -587,12 +587,12 @@ button.onclick = async () =&gt; {
 };</code></pre>
 <p>Let’s go through the main points:</p>
 <ul>
-	<li><p>There is a button somewhere on the web page.</p></li>
+	<li>There is a button somewhere on the web page.</li>
 	<li><p>When clicked, we initialize everything needed to start:</p>
 <p>- Create the context</p>
 <p>- Create and configure gain and distortion nodes. This is where we apply <code>makeDistortionCurve</code> to set the sigmoid for the distortion node.</p>
 <p>- Set up the chain distortion -&gt; gain -&gt; context.destination</p></li>
-	<li><p>We start our loop with 4 repetitions of the melody</p></li>
+	<li>We start our loop with 4 repetitions of the melody</li>
 	<li><p>The melody is still played by the <code>playSound</code> function, which looks the same as before with a few exceptions:</p>
 <p>- The oscillator output is now fed to the distortion node, not the gain node as before.</p>
 <p>- The trick with the gain level on the gain node is gone, as it turns out that with the distortions we’re applying now, clicks are no longer audible. What was a workaround is now unnecessary — it has disappeared by itself.</p></li>
@@ -633,23 +633,23 @@ button.onclick = async () =&gt; {
 <blockquote>Source: <a href="https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced">https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced</a></blockquote>
 <p>So, we have a range of possible frequency transformations:</p>
 <ul>
-	<li><p>Lowpass: Smoothly cuts off all highs starting from a specified frequency and to the right.</p></li>
-	<li><p>Highpass: Smoothly cuts off all lows starting from a specified frequency and to the left.</p></li>
-	<li><p>Bandpass: Smoothly cuts off all lows and highs starting from a specified frequency and to the left and right, leaving a small untouched area around the specified frequency. The size of this area is controlled by a separate parameter.</p></li>
-	<li><p>Notch: Opposite of Bandpass — smoothly cuts out a range, leaving everything else untouched.</p></li>
-	<li><p>Lowshelf: Amplifies or reduces all frequencies to the left of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</p></li>
-	<li><p>Highshelf: Amplifies or reduces all frequencies to the right of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</p></li>
-	<li><p>Peaking: Amplifies or reduces frequencies around a specified frequency. The size of the area and the level of amplification or attenuation are controlled by two additional parameters.</p></li>
-	<li><p>Allpass: I didn’t quite understand what this filter does. Commentators, help! It passes all frequencies but changes their phase relationships. What that means exactly, I have no idea :)</p></li>
+	<li>Lowpass: Smoothly cuts off all highs starting from a specified frequency and to the right.</li>
+	<li>Highpass: Smoothly cuts off all lows starting from a specified frequency and to the left.</li>
+	<li>Bandpass: Smoothly cuts off all lows and highs starting from a specified frequency and to the left and right, leaving a small untouched area around the specified frequency. The size of this area is controlled by a separate parameter.</li>
+	<li>Notch: Opposite of Bandpass — smoothly cuts out a range, leaving everything else untouched.</li>
+	<li>Lowshelf: Amplifies or reduces all frequencies to the left of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</li>
+	<li>Highshelf: Amplifies or reduces all frequencies to the right of a specified frequency. The amplification or reduction effect is controlled by a separate parameter, which can be negative for reducing the level of frequencies.</li>
+	<li>Peaking: Amplifies or reduces frequencies around a specified frequency. The size of the area and the level of amplification or attenuation are controlled by two additional parameters.</li>
+	<li>Allpass: I didn’t quite understand what this filter does. Commentators, help! It passes all frequencies but changes their phase relationships. What that means exactly, I have no idea :)</li>
 </ul>
 <p>With such a versatile node at our disposal, we can try to shape what we have into something more palatable.</p>
 <p>I experimented with frequencies as best as I could. But I should immediately note that we are entering very shaky territory where achieving a good result is a sort of art that professionals in recording, mixing, and mastering dedicate their lives to. Also, I’m an absolute amateur in this area, so I applied filters in a rather chaotic rather than methodical way to frequencies that seemed problematic. Therefore, any sound engineer can assert their superiority in the comments at my expense, and I don’t mind.</p>
 <p>So, what did I do? Almost randomly, I arrived at these filters, which seemed to somewhat improve the sound:</p>
 <ul>
-	<li><p>Cut Nosal: Completely removed so-called "nasal frequencies" around 1000 Hz with a notch filter. The sound became less resonant and murky.</p></li>
-	<li><p>Cut Highs: Used a lowpass filter to cut all frequencies starting from 8500 Hz so the sound wouldn’t be so thin and crackly. Logically, removing frequencies starting from 8500 Hz might seem excessive, but it sounded better to me.</p></li>
-	<li><p>Cut Lows: Cut the bass with a highpass filter starting from 120 Hz to avoid excessive boominess.</p></li>
-	<li><p>Peak Mids: Boosted midrange frequencies around 3150 Hz with a peaking filter. Midrange frequencies are the natural guitar range, so I figured they needed to be emphasized.</p></li>
+	<li>Cut Nosal: Completely removed so-called "nasal frequencies" around 1000 Hz with a notch filter. The sound became less resonant and murky.</li>
+	<li>Cut Highs: Used a lowpass filter to cut all frequencies starting from 8500 Hz so the sound wouldn’t be so thin and crackly. Logically, removing frequencies starting from 8500 Hz might seem excessive, but it sounded better to me.</li>
+	<li>Cut Lows: Cut the bass with a highpass filter starting from 120 Hz to avoid excessive boominess.</li>
+	<li>Peak Mids: Boosted midrange frequencies around 3150 Hz with a peaking filter. Midrange frequencies are the natural guitar range, so I figured they needed to be emphasized.</li>
 </ul>
 <p>In the code, this equalization is represented as follows:</p>
 <pre><code class="language-javascript">async <span class="code-keyword">function</span> <span class="code-call">init</span>() {
@@ -898,8 +898,8 @@ button.onclick = async () =&gt; {
 <h2>Real Guitar</h2>
 <p>As usual, I went searching for answers on the internet and soon found myself back on StackOverflow, where a similar question <a href="https://stackoverflow.com/questions/24615677/how-to-use-web-audio-api-to-make-sound-like-guitar-piano-etc">was answered</a>, suggesting two paths:</p>
 <ul>
-	<li><p>Dive into very complex mathematics and get lost there</p></li>
-	<li><p>Use a recording of a pure guitar string and apply all effects to it</p></li>
+	<li>Dive into very complex mathematics and get lost there</li>
+	<li>Use a recording of a pure guitar string and apply all effects to it</li>
 </ul>
 <p>It’s a case of “two chairs—take your pick.” The first option was intimidating from the start, while the second promised yet another rewrite of constants with frequencies—what exactly needed to be rewritten, I didn't fully understand at the time but anticipated a lot of changes.</p>
 <p>In the end, I chose the second option, spurred on by a <a href="https://zpl.fi/pitch-shifting-in-web-audio-api/">post</a> that explained how to get the entire set of notes from a single harpsichord sample and the math behind it.</p>
@@ -909,9 +909,9 @@ playbackRate=2^{(note-sampleNote)/12}
 $$</p>
 <p>where:</p>
 <ul>
-	<li><p><b><code>note</code></b> is the note we want to play,</p></li>
-	<li><p><b><code>sampleNote</code></b> is the note that is played in the instrument sample,</p></li>
-	<li><p><b><code>12</code></b> represents the number of notes in an octave, which are evenly spaced apart. Hence, we divide by 12.</p></li>
+	<li><b><code>note</code></b> is the note we want to play,</li>
+	<li><b><code>sampleNote</code></b> is the note that is played in the instrument sample,</li>
+	<li><b><code>12</code></b> represents the number of notes in an octave, which are evenly spaced apart. Hence, we divide by 12.</li>
 </ul>
 <p>And the key thing to remember is that <b><code>note</code></b> and <b><code>sampleNote</code></b> are <i>not measured in Hertz</i>; they are just sequential note numbers that follow one another and are evenly spaced.</p>
 <p>So where do Hertz come into play? Actually, they are no longer needed explicitly, just like oscillators—we will be using the sound of the guitar from an audio file and treating it as the reference note.</p>

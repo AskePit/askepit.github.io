@@ -74,8 +74,8 @@ MathJax = {
 <p>If you're familiar with Rust, you know that the <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option&lt;T&gt;</code></a> class has a best companion — the <a href="https://doc.rust-lang.org/std/result/enum.Result.html#"><code>Result&lt;T, E&gt;</code></a> class. They are closely related, and each has a bunch of methods that convert one into the other.</p>
 <p>While <code>Option&lt;T&gt;</code> is equivalent to <code>optional&lt;T&gt;</code> in C++, <code>Result&lt;T, E&gt;</code> needs some clarification. It's somewhat like <code>optional&lt;T&gt;</code>, but the absence of a result is interpreted as an error of type <code>E</code>. That is, an object of the <code>Result&lt;T, E&gt;</code> class can be in two states:</p>
 <ul>
-	<li><p>Ok state: The object contains a valid value of type <code>T</code>.</p></li>
-	<li><p>Error state: The object holds an error of type <code>E</code>.</p></li>
+	<li>Ok state: The object contains a valid value of type <code>T</code>.</li>
+	<li>Error state: The object holds an error of type <code>E</code>.</li>
 </ul>
 <p>We can ask the object in which state it is and retrieve its content: either a value or an error.</p>
 <p>For a C++ programmer, this class might seem exotic, but in Rust, it holds great significance since the language lacks exceptions, and handling exceptional situations is made through returning error codes. In 99% of cases, this is done by returning a <code>Result&lt;T, E&gt;</code>.</p>
@@ -141,9 +141,9 @@ MathJax = {
 </ul>
 <p>Nevertheless, I observed all these approaches in various types of deviations:</p>
 <ul>
-	<li><p>Attempting to determine the sign of a <code>float</code> number by reading its most significant bit.</p></li>
-	<li><p>Transforming a pointer into a number and back — hello embedded systems. I even saw an exotic case where an address was transformed into an ID.</p></li>
-	<li><p>Mathematical tricks with the exponent or mantissa of a <code>float</code>.</p></li>
+	<li>Attempting to determine the sign of a <code>float</code> number by reading its most significant bit.</li>
+	<li>Transforming a pointer into a number and back — hello embedded systems. I even saw an exotic case where an address was transformed into an ID.</li>
+	<li>Mathematical tricks with the exponent or mantissa of a <code>float</code>.</li>
 </ul>
 <p>"Why would anyone need the mantissa?" you ask? And I would answer: behold my ancient <a href="https://github.com/AskePit/IEEE754Converter">GitHub project</a>, where I’ve created a small IEEE 754 converter, just for fun. I did it a long time ago for self-educational purposes, and I also wanted to steal the design of the standard Windows 7 calculator and see how well I could replicate it :)</p>
 
@@ -228,9 +228,9 @@ T <span class="code-call">roundTo</span>(T x, uint8_t digitsAfterPoint)
 };</code></pre>
 <p>What can we note about this piece of code?</p>
 <ul>
-	<li><p><code>std::unordered_map</code>  is not the most trivial container. And it's not the most memory-efficient</p></li>
-	<li><p>Dictionaries or configs like this can be quite common in a project, and in the vast majority of cases, they will be small in size. The average number of elements in an enumeration rarely exceeds a few dozen, and most often it's just a few. Hash tables such as <code>std::unordered_map</code> or trees such as <code>std::map</code> start to look like overkill;</p></li>
-	<li><p>An enumeration is, essentially, a number. It is very tempting to consider it as a numeric index.</p></li>
+	<li><code>std::unordered_map</code>  is not the most trivial container. And it's not the most memory-efficient</li>
+	<li>Dictionaries or configs like this can be quite common in a project, and in the vast majority of cases, they will be small in size. The average number of elements in an enumeration rarely exceeds a few dozen, and most often it's just a few. Hash tables such as <code>std::unordered_map</code> or trees such as <code>std::map</code> start to look like overkill;</li>
+	<li>An enumeration is, essentially, a number. It is very tempting to consider it as a numeric index.</li>
 </ul>
 <p>This last point quickly leads us to the idea that we could create a container that interfaces like a dictionary but under the hood is a <code>std::array</code>. A proxy-container. The indices of the array are the elements of our enumeration, and the array's data are the values of the "map".</p>
 <p>All that remains is to figure out how the array will know its size — i.e., how to count the number of elements in the enumeration. The simplest old-school method is to add a special element, Count, to the end of the enumeration. Let's stick with this method, as it's not particularly exotic—I often see it in codebases—so it's kinda ok to use it:</p>
@@ -268,13 +268,13 @@ T <span class="code-call">roundTo</span>(T x, uint8_t digitsAfterPoint)
 std::cout &lt;&lt; unitNames[Unit::Items] &lt;&lt; std::endl; <span class="code-comment">// Outputs "pcs"</span></code></pre>
 <p>The beauty of this:</p>
 <ul>
-	<li><p>We use all the benefits of both <code>std::array</code> and <code>std::unordered_map</code>. The convenience of a dictionary interface combined with the speed and simplicity (in a good sense) of an array under the hood;</p></li>
-	<li><p>Cache-friendly—data is stored sequentially in memory, in contrast to <code>std::unordered_map</code> and <code>std::map</code>;</p></li>
-	<li><p>The size of the array is known at compile-time, and if we improve the container further, almost all its methods can be made <code>constexpr</code>.</p></li>
+	<li>We use all the benefits of both <code>std::array</code> and <code>std::unordered_map</code>. The convenience of a dictionary interface combined with the speed and simplicity (in a good sense) of an array under the hood;</li>
+	<li>Cache-friendly—data is stored sequentially in memory, in contrast to <code>std::unordered_map</code> and <code>std::map</code>;</li>
+	<li>The size of the array is known at compile-time, and if we improve the container further, almost all its methods can be made <code>constexpr</code>.</li>
 </ul>
 <p>Limitations of this approach:</p>
 <ul>
-	<li><p>Mandatory <code>Count</code> in the enumeration;</p></li>
+	<li>Mandatory <code>Count</code> in the enumeration;</li>
 	<li><p>The enumeration cannot have custom-typed values like:</p>
 <pre><code class="language-cpp"><span class="code-keyword">enum class</span> Type
 {
@@ -284,8 +284,8 @@ std::cout &lt;&lt; unitNames[Unit::Items] &lt;&lt; std::endl; <span class="code-
     D
 }</code></pre>
 <p>Only the default order starting from zero;</p></li>
-	<li><p>Memory is allocated for <i>all elements</i> of the enumeration in the array. If you fill the <code>EnumArray</code> with only some values, the rest will contain default-constructed objects;</p></li>
-	<li><p>Another limitation—type <code>T</code> must be default-constructed.</p></li>
+	<li>Memory is allocated for <i>all elements</i> of the enumeration in the array. If you fill the <code>EnumArray</code> with only some values, the rest will contain default-constructed objects;</li>
+	<li>Another limitation—type <code>T</code> must be default-constructed.</li>
 </ul>
 <p>I'm usually okay with such limitations, so I typically use this container without any issues.</p>
 <h3>Early Return</h3>
