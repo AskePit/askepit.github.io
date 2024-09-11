@@ -3,6 +3,7 @@ body {
     --header-font: 'Shippori Mincho';
     --subheader-font: 'Shippori Mincho';
     --text-font: 'Crimson Pro';
+    --code-font: 'Fira Code';
 }
 
 h1 {
@@ -44,6 +45,12 @@ ul, li, p, blockquote {
 
 blockquote {
     font-size: 17px;
+}
+
+pre, code {
+    font-family: var(--code-font);
+    font-size: 14px;
+    font-weight: 400;
 }
 
 h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {

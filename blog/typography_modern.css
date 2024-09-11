@@ -3,6 +3,7 @@ body {
     --header-font: 'STIX Two Text';
     --subheader-font: 'STIX Two Text';
     --text-font: 'Open Sans';
+    --code-font: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
 }
 
 h1 {
@@ -42,7 +43,14 @@ ul, li, p, blockquote {
 }
 
 blockquote {
-    font-size: 14px;
+    font-size: 13px;
+}
+
+pre, code {
+    font-family: var(--code-font);
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.75;
 }
 
 li + li {
@@ -55,26 +63,4 @@ figcaption {
     font-weight: 600;
 
     margin-top: 5px;
-}
-
-@media only screen and (max-width: 1000px) {
-    ul, li, p, blockquote {
-        font-size: 16px;
-    }
-    
-    blockquote {
-        font-size: 14px;
-    }
-
-    h1 {
-        font-size: 36px;
-    }
-
-    h2 {
-        font-size: 24px;
-    }
-    
-    h3, h4, h5, h6 {
-        font-size: 20px;
-    }
 }

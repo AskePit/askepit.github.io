@@ -8,6 +8,7 @@ body {
     --header-font: 'Inter';
     --subheader-font: 'Noto Sans';
     --text-font: 'Spectral';
+    --code-font: 'Fira Code';
 }
 
 h1 {
@@ -47,6 +48,12 @@ ul, li, p, blockquote {
 
 blockquote {
     font-size: 17px;
+}
+
+pre, code {
+    font-family: var(--code-font);
+    font-size: 14px;
+    font-weight: 400;
 }
 
 li + li {

@@ -3,6 +3,7 @@ body {
     --header-font: 'Oswald';
     --subheader-font: 'Oswald';
     --text-font: 'Old Standard TT';
+    --code-font: 'Fira Code';
 }
 
 h1 {
@@ -62,6 +63,12 @@ blockquote {
     font-size: 17px;
 }
 
+pre, code {
+    font-family: var(--code-font);
+    font-size: 14px;
+    font-weight: 400;
+}
+
 li + li {
     margin-top: 2px;
 }
@@ -72,26 +79,4 @@ figcaption {
     font-weight: 600;
 
     margin-top: 5px;
-}
-
-@media only screen and (max-width: 1000px) {
-    ul, li, p, blockquote {
-        font-size: 19px;
-    }
-    
-    blockquote {
-        font-size: 17px;
-    }
-
-    h1 {
-        font-size: 36px;
-    }
-
-    h2 {
-        font-size: 24px;
-    }
-    
-    h3, h4, h5, h6 {
-        font-size: 20px;
-    }
 }
