@@ -42,8 +42,6 @@ ul, li, p, blockquote {
     font-family: var(--text-font);
     font-size: 19px;
     font-weight: 300;
-    
-    margin-top: 15px;
 }
 
 blockquote {
