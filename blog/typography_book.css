@@ -1,7 +1,8 @@
 body {
-    --title-font: 'Shippori Mincho';
-    --header-font: 'Shippori Mincho';
-    --subheader-font: 'Shippori Mincho';
+    --uni-header: 'Noto Sans';
+    --title-font: var(--uni-header);
+    --header-font: var(--uni-header);
+    --subheader-font: var(--uni-header);
     --text-font: 'Crimson Pro';
     --code-font: 'Fira Code';
 }
@@ -9,15 +10,14 @@ body {
 h1 {
     font-family: var(--title-font);
     font-size: 36px;
-    font-weight: 600;
+    font-weight: 700;
     /* text-transform: uppercase; */
-    font-variant: small-caps;
 }
 
 h2 {
     font-family: var(--header-font);
     font-size: 24px;
-    font-weight: 1000;
+    font-weight: 700;
     /* text-transform: uppercase; */
 
     margin-top: 50px;
@@ -27,7 +27,7 @@ h2 {
 h3, h4, h5, h6 {
     font-family: var(--subheader-font);
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 680;
     /* text-transform: uppercase; */
     
     margin-top: 40px;
