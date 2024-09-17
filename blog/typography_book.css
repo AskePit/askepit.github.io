@@ -4,7 +4,7 @@ body {
     --header-font: var(--uni-header);
     --subheader-font: var(--uni-header);
     --text-font: 'Crimson Pro';
-    --code-font: 'Fira Code';
+    --code-font: 'Roboto Mono';
 }
 
 h1 {
