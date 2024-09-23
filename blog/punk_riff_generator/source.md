@@ -108,9 +108,11 @@ It's well-known that there are only seven notes. A more accurate statement, howe
 - Actually, there are not exactly seven, but more like twelve,
 - And no one will stop you from going beyond these twelve notes, which happens all the time.
 
-So, what are these 12 notes, and why aren't there just seven—after all, there's _do re mi fa sol la ti_? Well, take a look:
+So, what are these 12 notes, and why aren't there just seven—after all, there's *do re mi fa sol la ti*? Well, take a look:
 
-![](https://habrastorage.org/webt/fo/hp/d2/fohpd2qj9ugxzhuqqbyn8doojdc.png) Don’t ask why this is the case or what logic is behind it. Most likely, it just happened historically. It’s worth noting that there are actually an infinite number of notes: after you play these 12 notes on the piano, you can continue and play the same 12 notes again but in a different octave. This works both ways—leftward, toward the lower, bass notes, and rightward, toward the higher ones.
+![](https://habrastorage.org/webt/fo/hp/d2/fohpd2qj9ugxzhuqqbyn8doojdc.png)
+
+Don’t ask why this is the case or what logic is behind it. Most likely, it just happened historically. It’s worth noting that there are actually an infinite number of notes: after you play these 12 notes on the piano, you can continue and play the same 12 notes again but in a different octave. This works both ways—leftward, toward the lower, bass notes, and rightward, toward the higher ones.
 
 Each note has its own frequency, measured in Hertz, and these values can be found in online tables. Since I needed to quickly code the frequencies of the notes I was planning to work with, I turned to [ChatGPT](https://chatgpt.com/) to handle the tedious part for me:
 
