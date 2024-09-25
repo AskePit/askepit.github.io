@@ -15,11 +15,11 @@ h2 code, h3 code {
 }
 
 a, a code {
-    color: #258ae7;
+    color: #5dbff8;
 }
 
 .code-keyword {
-    color: #a400de;
+    color: #f07dffe1;
 }
 
 .code-comment {
@@ -31,7 +31,7 @@ a, a code {
 }
 
 .code-call {
-    color: #39728E;
+    color: #88dbe0;
     /* font-weight: 550; */
 }
 
