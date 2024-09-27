@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
     <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
     <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
-    <link rel="stylesheet" href="../switcher.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../sandwich_menu.css" id="switcher-styles" type="text/css"/>
 </head>
 <body>
 <script>
@@ -23,20 +24,18 @@ MathJax = {
 </script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
 </script>
-<div class="theme-switcher">
-    <label class="switch">
-        <input type="checkbox" name="theme">
-        <span class="slider round"></span>
-    </label>
-    <p><span style="font-size: 20px;">theme</span></p>
-</div>
-<div class="typography-switcher">
-    <label class="switch">
-        <input type="checkbox" name="typo">
-        <span class="slider round"></span>
-    </label>
-    <p id="typo-capture"><span style="font-size: 20px;">book</span></p>
-</div>
+<input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+<label for="theme-switch" class="switch-body">
+    <div class="checked-state moon"></div>
+    <div class="unchecked-state sun"></div>
+    <div class="slider"></div>
+</label>
+<input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+<label for="typography-switch" class="switch-body second">
+    <div class="checked-state serif"></div>
+    <div class="unchecked-state sans"></div>
+    <div class="slider"></div>
+</label>
 <h1>Voronoi, Manhattan, random</h1>
 <p>This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets.</p>
 <p>So, we had one programmer, one artist, an absolute lack of understanding of the workflow, an unfamiliar game engine, and a desire to create something. If you're curious about the mixup of Voronoi diagrams, a special case of Minkowski distance, polygon transformations, procedural generation, and noise—all wrapped up in a beautifully stylized package—this is the right place for you to read.</p>
