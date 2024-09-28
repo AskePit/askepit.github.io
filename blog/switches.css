@@ -4,7 +4,7 @@ body {
 
     --origin-switch-width: 186px;
     --origin-switch-height: 92px;
-    --origin-icon-size: 64px;
+    --origin-icon-size: 66px;
     --origin-slider-size: 54px;
     --origin-slider-margin: 20px;
     --origin-checked-icon-margin: 28px;
@@ -16,7 +16,7 @@ body {
     --slider-margin: calc(var(--origin-slider-margin) * var(--scale));
     --checked-icon-margin: calc(var(--origin-checked-icon-margin) * var(--scale));
 
-    --scale: 0.36;
+    --scale: 0.27;
 }
 
 .switch-checkbox {
@@ -24,9 +24,7 @@ body {
 }
 
 .switch-body {
-    position: fixed;
-    top: 80px;
-    right: 100px;
+    position: relative;
     width: var(--switch-width);
     height: var(--switch-height);
     border-radius: 100px;
@@ -34,10 +32,6 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-}
-
-.second {
-    top: 140px;
 }
 
 .checked-state {
@@ -76,12 +70,13 @@ body {
 .serif {
     -webkit-mask: url(img/serif.svg) no-repeat center;
     mask: url(img/serif.svg) no-repeat center;
+    transform: translateY(calc(5px * var(--scale))) scale(0.8);
 }
 
 .sans {
     -webkit-mask: url(img/sans.svg) no-repeat center;
     mask: url(img/sans.svg) no-repeat center;
-    transform: translateX(calc(-5px * var(--scale)));
+    transform: translateX(calc(-5px * var(--scale))) translateY(calc(5px * var(--scale))) scale(0.8);
 }
 
 .slider {

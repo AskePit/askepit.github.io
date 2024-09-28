@@ -1,0 +1,50 @@
+body {
+    --hamburger-size: 50px;
+    --hamburger-margin: 10px;
+    --hamburger-menu-width: 150px;
+
+    --hamburger-menu-offset: calc(-1*(var(--hamburger-menu-width) - var(--hamburger-size) - var(--hamburger-margin)));
+}
+
+.hamburger-checkbox {
+    display: none;
+}
+
+.hamburger-menu {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    grid-row-gap: 20px;
+    align-items: left;
+
+    width: var(--hamburger-menu-width);
+    height: 100%;
+    top: 0px;
+
+    background-color: #fff0;
+    right: var(--hamburger-menu-offset);
+    border-left: 0px;
+
+    transition: transform 0.3s;
+}
+
+.hamburger-checkbox:checked + .hamburger-menu {
+    /* background-color: white; */
+    transform: translateX(var(--hamburger-menu-offset));
+    border-left: 1px solid;
+}
+
+.hamburger-checkbox + .hamburger-menu label {
+    display: none;
+    align-self: center;
+}
+
+.hamburger-checkbox:checked + .hamburger-menu label {
+    display: flex;
+}
+
+.hamburger {
+    width: var(--hamburger-size);
+    height: var(--hamburger-size);
+    margin: var(--hamburger-margin) 0px 0px var(--hamburger-margin);
+}

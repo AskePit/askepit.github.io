@@ -42,3 +42,7 @@ a, a code {
 .code-diff-remove {
     background-color: #f61b6a33;
 }
+
+.hamburger-checkbox:checked + .hamburger-menu {
+    background-color: white;
+}
