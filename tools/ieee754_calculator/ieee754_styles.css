@@ -1,0 +1,46 @@
+#main-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 602px;
+    background-image: linear-gradient(to bottom, #E1EBF6, #E1EBF6);
+    padding: 12px;
+}
+
+#upper-flow {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+#bits-flow {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#normalized-section {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+#input-fields-flow {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+#copy-buttons-flow {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.input-fields-row-flow {
+    display: flex;
+    flex-direction: row;
+    align-content: stretch;
+    /* flex-wrap: wrap; */
+}
