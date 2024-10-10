@@ -1,0 +1,13 @@
+[submodule "jack"]
+	path = tools/jack
+	url = git@github.com:AskePit/Jack.git
+
+[submodule "pyramid"]
+	path = tools/pyramid
+	url = git@github.com:AskePit/Pyramid.git
+[submodule "punk_riff_generator"]
+	path = tools/punk_riff_generator
+	url = git@github.com:AskePit/punk-riff-generator.git
+[submodule "ieee754_calculator"]
+	path = tools/ieee754_calculator
+	url = git@github.com:AskePit/ieee754-web.git
