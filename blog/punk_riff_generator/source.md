@@ -1419,3 +1419,6 @@ So, I turned to a professional—my wife—and she created a stunning design tha
 The layout was successfully implemented by me, and now you can see the result of all our hard work on the [demo page](https://askepit.github.io/tools/punk_riff_generator/).
 
 Thus, our little adventure into browser-based music comes to an end. Thanks to everyone who made it to the end. Perhaps someday I'll add more features to this generator. For now, its main purpose is to click the play button until you find a riff you like. After that, you can save it somewhere and use it in your musical endeavors. I'd be happy to read any suggestions in the comments about features that could be added to this simple generator. Any suggestions that seem good and interesting to me will be recorded in the "Deep Todo backlog" and, perhaps, someday implemented when I find the time. Of course, you can always fork the [GitHub project](https://github.com/AskePit/punk-riff-generator) or post issues there!
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

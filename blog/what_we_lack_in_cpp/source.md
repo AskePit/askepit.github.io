@@ -507,3 +507,6 @@ void unorderedErase(std::vector<T>& v, int index)
 Half of the article was nullified by C++ itself in the process of writing it because modern C++20 and C++23 standards covered about half of the desires described in this complaint book. And all in all, a wishlist from language users will never run out because as many people, as many wishes, and you can't fit them all into the standard library or the language itself.
 
 I tried to mention only those points that, in my humble opinion, seem to be less subjective and would be worthy of inclusion in the language standard. At least in my work, these features are more or less in demand on a daily basis. You may rightly have a different opinion on my list, and I, in turn, would be happy to read in the comments about your pain and the features you didn't get, to understand how language users would like to see the future of C++.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

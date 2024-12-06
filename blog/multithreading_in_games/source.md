@@ -307,3 +307,6 @@ So, what have we concluded, and what does this article give us? I think everyone
 - The executable file of a game is about 85% (a completely arbitrary number) comprised of game engine code rather than the game itself;
 - The engine will, to a large extent (again, a completely arbitrary number), determine how intensively your final application will use multithreading;
 - An MMO game server is likely to benefit more from additional CPU cores compared to a single-player PC game, due to the need to handle a large load from numerous clients.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

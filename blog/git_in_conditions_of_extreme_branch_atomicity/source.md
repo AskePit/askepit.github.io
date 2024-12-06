@@ -93,3 +93,6 @@ py chain_merge.py
 ```
 
 and for a moment, engage in something more enjoyable or meaningful.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

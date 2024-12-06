@@ -730,3 +730,6 @@ I think our experience could be helpful to someone—to those who just want to s
 To some extent, the article was needed for myself as well—to refresh, structure, and rethink the experience, code, and algorithms gained during development, which will undoubtedly be useful to me in the future.
 
 Once again, it emphasizes a well-known truth—even the simplest indie game is hard. A game with random generation is hard squared. Making games is not always fun. But in the process of their development, you gain experience that you can't get anywhere else. Even if the project fades or fails, your experience remains with you, and in the future, you can apply it to projects that lie ahead. Or write a retrospective article, as I did.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

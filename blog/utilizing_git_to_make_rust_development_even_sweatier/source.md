@@ -410,3 +410,6 @@ verbose = true
 ```
 
 I don't know the subtleties of the utility, and whether it's worth using it – whether it has any advantages or disadvantages over idiomatic creation of git hooks is up to you to decide.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>
