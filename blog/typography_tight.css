@@ -50,7 +50,7 @@ h6 {
     font-size: 18px;
 }
 
-ul, li, p, blockquote {
+ul, li, p, blockquote, small {
     font-family: var(--text-font);
     font-size: 19px;
     font-weight: 300;
@@ -59,6 +59,10 @@ ul, li, p, blockquote {
 
 blockquote {
     font-size: 17px;
+}
+
+small {
+    font-size: 16px;
 }
 
 pre, code {

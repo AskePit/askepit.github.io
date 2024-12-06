@@ -35,7 +35,7 @@ h3, h4, h5, h6 {
     margin-bottom: 0px;
 }
 
-ul, li, p, blockquote {
+ul, li, p, blockquote, small {
     font-family: var(--text-font);
     font-size: 1rem;
     line-height: 1.75;
@@ -43,6 +43,10 @@ ul, li, p, blockquote {
 
 blockquote {
     font-size: 14px;
+}
+
+small {
+    font-size: 13px;
 }
 
 pre, code {

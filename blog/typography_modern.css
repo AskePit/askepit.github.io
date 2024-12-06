@@ -33,7 +33,7 @@ h3, h4, h5, h6 {
     margin-bottom: 0px;
 }
 
-ul, li, p, blockquote {
+ul, li, p, blockquote, small {
     font-family: var(--text-font);
     font-size: 15px;
     font-weight: 400;
@@ -42,6 +42,10 @@ ul, li, p, blockquote {
 
 blockquote {
     font-size: 13px;
+}
+
+small {
+    font-size: 12px;
 }
 
 pre, code {
