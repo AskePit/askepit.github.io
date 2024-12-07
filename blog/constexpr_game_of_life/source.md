@@ -5,7 +5,7 @@ tags:
 ---
 # How It All Began
 
-For over a decade now, C++ has had [`constexpr`](https://en.cppreference.com/w/cpp/language/constexpr), a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations _before the program even runs_!
+For over a decade now, C++ has had [`constexpr`](https://en.cppreference.com/w/cpp/language/constexpr), a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations *before the program even runs*!
 
 At some point, a thought struck me: if the compiler can calculate everything for you, then **why bother with runtime at all**? What are you going to do there—print out some results? Come on, that's lame. Totally unsportsmanlike.
 
@@ -15,7 +15,7 @@ And that's exactly when my challenge was born:
 
 # Setting the Goal
 
-Let’s spell out the main idea one more time for clarity: we want to write a program, compile it, and have **all** computations happen _during compilation_. Actually running the program? _Not interested._
+Let’s spell out the main idea one more time for clarity: we want to write a program, compile it, and have **all** computations happen *during compilation*. Actually running the program? *Not interested.*
 
 But the code **must work**.
 
@@ -23,9 +23,9 @@ Contradictory? Perhaps. Impossible? Nah. We’re doing this.
 
 ![](https://habrastorage.org/webt/p1/t-/7c/p1t-7csilx5ekan-m7ryligjg3o.png)
 
-Complicating Factors: I'm a Windows Dev. Ah yes, I’m one of those _Windows programmers_. Go ahead, prepare your popcorn for the inevitable flame wars. For me, this means dealing with Windows-specific horrors: Visual Studio's compiler, `cmd`, `bat`, `exe`, and all the other nightmares that haunt Linus's dreams. This setup will undoubtedly throw extra wrenches into the works, but hey, I’m all for it.
+Complicating Factors: I'm a Windows Dev. Ah yes, I’m one of those *Windows programmers*. Go ahead, prepare your popcorn for the inevitable flame wars. For me, this means dealing with Windows-specific horrors: Visual Studio's compiler, `cmd`, `bat`, `exe`, and all the other nightmares that haunt Linus's dreams. This setup will undoubtedly throw extra wrenches into the works, but hey, I’m all for it.
 
-The program must do something reasonable and useful. The overplayed examples of calculating factorials or Fibonacci numbers are off the table—too cliché, zero practical value, and utterly unchallenging. Forcing the compiler to play Doom? Tempting, but I’ll pass. Not because the compiler couldn't handle it, but because _I_ probably couldn’t handle it.
+The program must do something reasonable and useful. The overplayed examples of calculating factorials or Fibonacci numbers are off the table—too cliché, zero practical value, and utterly unchallenging. Forcing the compiler to play Doom? Tempting, but I’ll pass. Not because the compiler couldn't handle it, but because *I* probably couldn’t handle it.
 
 So, I landed somewhere in the middle. We’ll make the compiler play a game, but something significantly simpler. Say, [Conway’s Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life). I mean, if even Google [can run this simulation directly on their search page](https://www.google.com/search?q=game+of+life&oq=game+of+life), why can’t I force a C++ compiler to do the same?
 
@@ -40,15 +40,15 @@ Let’s refresh the rules of the Game of Life:
 - If a cell is empty but has exactly three neighbors, life is born in that cell.
 - And so it goes, generation after generation, endlessly.
 
-“But wait,” you’ll say, “Game of Life is a _game_. It needs frames, a main loop, infinite execution, rendering—even animations! And here you are spinning us some nonsense about compile-only.”
+“But wait,” you’ll say, “Game of Life is a *game*. It needs frames, a main loop, infinite execution, rendering—even animations! And here you are spinning us some nonsense about compile-only.”
 
-Fair point. But in this challenge, I’m giving myself plenty of room for creativity. The one hard rule is this: **you cannot execute the compiled file.** Not directly, not indirectly. Beyond that? Anything goes. And this is where we’ll need to get _very_ creative.
+Fair point. But in this challenge, I’m giving myself plenty of room for creativity. The one hard rule is this: **you cannot execute the compiled file.** Not directly, not indirectly. Beyond that? Anything goes. And this is where we’ll need to get *very* creative.
 
 # Nuances of `constexpr`
 
 Let’s clarify some language subtleties upfront. In C++, you can mark a function or method as `constexpr`. But—and here’s the kicker—this doesn’t guarantee compile-time execution. If the function is called with non-`constexpr` parameters, your `constexpr` marker will be quietly ignored, and you won’t even get a heads-up about it.
 
-For example, take this code—it _will_ perform the calculation during compilation:
+For example, take this code—it *will* perform the calculation during compilation:
 
 ```cpp
 constexpr int twice(int n)
@@ -66,7 +66,7 @@ The program will exit with code `34`, and the calculation `17 * 2` will have bee
 
 > Of course, we’re talking theory here, so let’s skip over the fact that the compiler can optimize such trivial multiplication all on its own, even without explicitly using `constexpr`. For the sake of this discussion, let’s pretend the compiler won’t bother without it.
 
-Now, let’s tweak things to make compile-time execution _impossible_:
+Now, let’s tweak things to make compile-time execution *impossible*:
 
 ```cpp
 constexpr int twice(int n)
@@ -82,7 +82,7 @@ int main()
 }
 ```
 
-Now, the return code depends on user input, which means the compiler's ability to compute the result at compile-time is effectively _gone_. However, the code still compiles and runs. This demonstrates that the `twice` function can be legally used in both compile-time and runtime contexts.
+Now, the return code depends on user input, which means the compiler's ability to compute the result at compile-time is effectively *gone*. However, the code still compiles and runs. This demonstrates that the `twice` function can be legally used in both compile-time and runtime contexts.
 
 That said, it doesn’t mean you can just slap `constexpr` onto any function as a catch-all. The moment you add something incompatible with compile-time evaluation, you’ll be greeted with a compilation error:
 
@@ -100,9 +100,9 @@ When we try to compile this, we get:
 error C3615: constexpr function 'twice' cannot result in a constant expression
 ```
 
-Okay, but what if I want to guarantee that my function always, _always_ runs in a compile-time context? Enter [`std::is_constant_evaluated`](https://en.cppreference.com/w/cpp/types/is_constant_evaluated) from C++20. This is a `constexpr` function you can call inside another `constexpr` function to check if you’re _actually_ in a `constexpr` context or if you’ve been downgraded to runtime. Because, of course, the C++ standards committee loves its complexities.
+Okay, but what if I want to guarantee that my function always, *always* runs in a compile-time context? Enter [`std::is_constant_evaluated`](https://en.cppreference.com/w/cpp/types/is_constant_evaluated) from C++20. This is a `constexpr` function you can call inside another `constexpr` function to check if you’re *actually* in a `constexpr` context or if you’ve been downgraded to runtime. Because, of course, the C++ standards committee loves its complexities.
 
-In our case, we _need_ to ensure we’re operating in a compile-time context. Any deviation from this course should ideally result in a compilation error. Sure, we could wrap ourselves in layers of `constexpr` and sprinkle some `std::is_constant_evaluated` checks. But, fortunately, the same C++20 also introduced the [`consteval`](https://en.cppreference.com/w/cpp/language/consteval) specifier. Think of it as `constexpr` on steroids: it marks a method as being _exclusively_ for compile-time execution. Any attempt to use it at runtime will immediately throw a righteous compilation error. And that’s exactly what we need—strict guarantees that the compiler’s exe will sweat, not ours.
+In our case, we *need* to ensure we’re operating in a compile-time context. Any deviation from this course should ideally result in a compilation error. Sure, we could wrap ourselves in layers of `constexpr` and sprinkle some `std::is_constant_evaluated` checks. But, fortunately, the same C++20 also introduced the [`consteval`](https://en.cppreference.com/w/cpp/language/consteval) specifier. Think of it as `constexpr` on steroids: it marks a method as being *exclusively* for compile-time execution. Any attempt to use it at runtime will immediately throw a righteous compilation error. And that’s exactly what we need—strict guarantees that the compiler’s exe will sweat, not ours.
 
 > This article uses C++20 features and, when necessary, dips into C++23. Not everyone can unleash these wonders in production, but hey, that’s just life as a C++ developer.
 
@@ -150,15 +150,15 @@ int main()
 
 I know, I said I wouldn’t bother with compile-time stuff for now, and then I went ahead and smothered everything in `constexpr`. Well, forgive me—I couldn’t resist. There’s no real computation yet, but I’ve already laid the groundwork.
 
-Here’s what we’ve done so far: we introduced a two-dimensional canvas entity, `Canvas`, and declared the starting frame of the game, `life`, which contains a curious little pattern called the _Glider_. In the Game of Life, the Glider behaves like a rotating, moving object that more or less retains its shape over a defined period. Easier to show than to explain:
+Here’s what we’ve done so far: we introduced a two-dimensional canvas entity, `Canvas`, and declared the starting frame of the game, `life`, which contains a curious little pattern called the *Glider*. In the Game of Life, the Glider behaves like a rotating, moving object that more or less retains its shape over a defined period. Easier to show than to explain:
 
 ![](https://habrastorage.org/webt/f1/je/pf/f1jepfxskshjwvskqqsofflp9kg.gif)
 
 This pattern is perfect for testing the game logic—it should move diagonally downward and to the right every frame.
 
-Now, I foresee a question: _why did you add `return life[0][1];`?_ Without that line, the compiler would decide all our variables were pointless fluff and cut _everything_ from the binary.
+Now, I foresee a question: "why did you add `return life[0][1];`?" Without that line, the compiler would decide all our variables were pointless fluff and cut *everything* from the binary.
 
-Also, the `[0][1]` position contains a live cell, so the program should return `1` when it exits. Not that it ever _will_ exit, mind you—remember the main rule of this challenge!
+Also, the `[0][1]` position contains a live cell, so the program should return `1` when it exits. Not that it ever *will* exit, mind you—remember the main rule of this challenge!
 
 Of course, we’re not at the stage of executing anything yet, since we haven’t even compiled anything.
 
@@ -168,14 +168,14 @@ Of course, we’re not at the stage of executing anything yet, since we haven’
 
 Since we’re on Windows, the most logical compiler at our disposal is the one used by Visual Studio—Microsoft Visual C++ (MSVC). Its binary is famously named `cl.exe`.
 
-Now, we _don’t_ want to use Visual Studio as an IDE—that’s for the faint of heart. Our goal is to use `cl.exe` directly. And here we hit our first snag. On Linux, you can simply open a terminal and immediately run `gcc` to get down to business. But if you open a fresh `cmd` and type `cl /help`, you’ll get:
+Now, we *don’t* want to use Visual Studio as an IDE—that’s for the faint of heart. Our goal is to use `cl.exe` directly. And here we hit our first snag. On Linux, you can simply open a terminal and immediately run `gcc` to get down to business. But if you open a fresh `cmd` and type `cl /help`, you’ll get:
 
 ```
 'cl' is not recognized as an internal or external command,
 operable program or batch file.
 ```
 
-By default, the shell environment isn’t configured to work with `cl` out of the box, and the path to it isn’t even included in `PATH`. And yes, this is _by design_. Here’s [some delightfully verbose documentation](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170) about how to simply get `cl` up and running.
+By default, the shell environment isn’t configured to work with `cl` out of the box, and the path to it isn’t even included in `PATH`. And yes, this is *by design*. Here’s [some delightfully verbose documentation](https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170) about how to simply get `cl` up and running.
 
 **TL;DR**: To handle the Visual C++ compiler manually, you first need to set up the shell environment. There are nearly a dozen ways to do this, depending on your desired platform and bitness. For each configuration, there’s a dedicated `.bat` file. Rule #1 of Windows compiler hygiene: first run the environment setup batch file, then use `cl`.
 
@@ -189,7 +189,7 @@ cl /help
 
 Here, we used the batch file for x64-native tools, which suits our needs.
 
-You know all those _x64/x86 Native Tools Command Prompt for VS2022_ shortcuts? They’re essentially pre-configured shells where you can run `cl.exe` straight out of the box. But we’re dismissing that option too, because we want to compile from any bare terminal.
+You know all those x64/x86 Native Tools Command Prompt for VS2022 shortcuts? They’re essentially pre-configured shells where you can run `cl.exe` straight out of the box. But we’re dismissing that option too, because we want to compile from any bare terminal.
 
 At this stage, the command we need for compilation looks like this:
 
@@ -201,7 +201,7 @@ Its execution confirms that our setup compiles successfully, so we can proceed w
 
 # Stretching the Compile-Time Boundaries
 
-With the compiler primed and ready, let’s soldier on with our _Game of Life_ implementation.
+With the compiler primed and ready, let’s soldier on with our Game of Life implementation.
 
 In reality, the computational part of our simulation is painfully simple: you take an old `Canvas`, calculate the new `Canvas` based on the game’s rules, render/display it somehow, and repeat this until the end of time—that’s the whole program. The cornerstone of this algorithm is a function with the signature `Canvas update(Canvas old)`, responsible for calculating the next generation of cells:
 
@@ -254,7 +254,7 @@ int main()
 }
 ```
 
-Theoretically, we now have the second frame of the game calculated at compile-time. The only thing left to figure out is how to actually _see_ it.
+Theoretically, we now have the second frame of the game calculated at compile-time. The only thing left to figure out is how to actually *see* it.
 # Extracting the Information
 
 How do we get the result after the compiler finishes its work? The first idea that came to mind was to make the compiler generate an ASM listing alongside the binary and check there. Our calculated second frame should definitely be there as a constant. Alternatively, we could parse the `exe` file—it should also contain this constant in some form. However, parsing a binary file with a complex structure reeks of madness.
@@ -443,7 +443,7 @@ Our clever plan is as follows:
 
 We can easily script this solution into an infinite loop using Python.
 
-The brilliance and absurdity of this idea lie in the fact that if you view `life.txt` in any text editor that supports live content updates while running the script, you’ll effectively observe the Game of Life in motion! And in ASCII graphics, no less. Actually, it might be more accurate to call it _C++-syntax graphics_, as this content remains valid C++ code throughout. C++ code that mutates with each frame of the game. It's practically [evolutionary programming](https://en.m.wikipedia.org/wiki/Evolutionary_programming) in action.
+The brilliance and absurdity of this idea lie in the fact that if you view `life.txt` in any text editor that supports live content updates while running the script, you’ll effectively observe the Game of Life in motion! And in ASCII graphics, no less. Actually, it might be more accurate to call it C++-syntax graphics, as this content remains valid C++ code throughout. C++ code that mutates with each frame of the game. It's practically [evolutionary programming](https://en.m.wikipedia.org/wiki/Evolutionary_programming) in action.
 # Writing the Main Loop
 
 At this point, the article takes a sharp linguistic turn, shifting from C++ to Python.
@@ -574,7 +574,7 @@ You could say we've achieved what we wanted—a Game of Life simulation computed
 
 The first glaring problem is the low FPS. It feels like we're running at about 1 frame per second. On the one hand, what did I expect? Each frame requires launching the compiler from scratch, which then has to process its entire standard cycle of parsing, optimization, and code generation.
 
-Remember the `time.sleep(0.25)` in my `main-loop`? Yeah, I definitely overdid it, and I've since removed it—the animation shown above is already running without that delay. Yet the FPS is _still painfully low_.
+Remember the `time.sleep(0.25)` in my `main-loop`? Yeah, I definitely overdid it, and I've since removed it—the animation shown above is already running without that delay. Yet the FPS is *still painfully low*.
 
 Let’s recall that our script must invoke the `bat` file to configure the shell environment for each frame. Based on my empirical estimates, this step alone accounts for at least half of the total execution time. To fix this, we need a way for the script to run the `bat` file just once at startup and somehow retain the initialized context. Hmm, once again, I find myself like:
 
@@ -617,7 +617,7 @@ What the cunning ChatGPT suggests:
 
 - Run the batch file.
 - Run `set`.
-- _Parse_ the stdout and save the parsed variables into a dictionary.
+- *Parse* the stdout and save the parsed variables into a dictionary.
 - Use `subprocess.run` to call the C++ compiler in the loop, leveraging its advanced optional argument `env=` to pass our parsed map!
 
 I can't decide whether this is brilliant or just plain stupid—like most of what’s happening in this article.
@@ -698,7 +698,7 @@ And now, take a look at the result:
 
 ![](https://habrastorage.org/webt/dk/oj/h8/dkojh84dpq2f4gppxcl1pdfqhbo.gif)
 
-Does it matter that the randomness here is _very_ pseudo? Not at all. Moreover, you don’t even need to go to the lengths shown in the shader — a simple but effective pseudo-random number generator can be implemented using a straightforward formula with operations that are perfectly valid in a `consteval` context:
+Does it matter that the randomness here is very pseudo? Not at all. Moreover, you don’t even need to go to the lengths shown in the shader — a simple but effective pseudo-random number generator can be implemented using a straightforward formula with operations that are perfectly valid in a `consteval` context:
 
 $$
 R_{n+1}=(R_n*a+b) \bmod m
@@ -809,7 +809,7 @@ I think it’s a worthy first frame.
 
 The final hurdle in our way is figuring out how to make the compiler understand what it’s supposed to do: generate the first random frame or simulate a new frame based on the previous one.
 
-This puzzle kept me busy for a while, as it wasn’t immediately obvious how C++ code could determine whether it was being run _for the first time_ or not. Then I remembered: this is C++, and you can smother it in macros until you lose your mind. Sometimes, these macros can work wonders, as we’ve already seen with `__TIME__`.
+This puzzle kept me busy for a while, as it wasn’t immediately obvious how C++ code could determine whether it was being run *for the first time* or not. Then I remembered: this is C++, and you can smother it in macros until you lose your mind. Sometimes, these macros can work wonders, as we’ve already seen with `__TIME__`.
 
 The solution turned out to be simple—almost prosaic. Any compiler allows you to pass custom `define`s at runtime so that the code can behave differently based on them. For MSVC, this is done using the `/D{define_name}` flag. This approach is as old as time itself, but you tend to forget about it when you need it most because, these days, macros are trendy to bash and shame.
 
@@ -892,4 +892,4 @@ I’m asking myself the same question. However, let’s retrospectively look at 
 Abnormal programming makes life more enjoyable. Just don’t bring this to production.
 
 ---
-<small>© Nikolai Shalakin. Originally published by [habr.com](https://habr.com/ru/articles/860150/), used under CC BY 3.0. Translated by the author.</small>
+<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/860150/">habr.com</a>, used under CC BY 3.0.</small>
