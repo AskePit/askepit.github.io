@@ -12,15 +12,12 @@ h1 {
     font-family: var(--title-font);
     font-size: 2.25em;
     font-weight: 700;
-    /* text-transform: uppercase; */
-    /* font-variant: small-caps; */
 }
 
 h2 {
     font-family: var(--header-font);
     font-size: 1.5em;
     font-weight: 600;
-    /* text-transform: uppercase; */
 
     margin-top: 50px;
     margin-bottom: 0px;
@@ -30,7 +27,6 @@ h3, h4, h5, h6 {
     font-family: var(--subheader-font);
     font-size: 1.25em;
     font-weight: 600;
-    /* text-transform: uppercase; */
     
     margin-top: 40px;
     margin-bottom: 0px;
