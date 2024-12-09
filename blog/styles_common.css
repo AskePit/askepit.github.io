@@ -80,7 +80,7 @@ blockquote {
 .parse-error::before {
     content: 'Error: ';
     font-weight: 1000;
-    font-family: 'Fira Code';
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
     background-color: white;
     color: #d60000;
     padding: 10px 0px 10px 10px;
@@ -92,7 +92,7 @@ blockquote {
     color: white;
     padding: 10px;
     font-size: 20px;
-    font-family: 'Fira Code';
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
 }
 
 @media only screen and (max-width: 1000px) {
