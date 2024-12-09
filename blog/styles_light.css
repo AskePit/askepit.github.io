@@ -44,5 +44,5 @@ a, a code {
 }
 
 .hamburger-checkbox:checked + .hamburger-menu {
-    background-color: white;
+    background-color: #fbfbfb;
 }

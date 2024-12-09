@@ -1,7 +1,7 @@
 let typoSwitcher = document.querySelector("input[name=typo]");
 
-typoVariantsNames = ['neutral', 'book']
-typo = -1
+let typoVariantsNames = ['neutral', 'book']
+let typo = -1
 
 function switchTypo() {
     function switchWork() {
@@ -10,7 +10,6 @@ function switchTypo() {
             typo = 0
         }
         document.getElementById('typography').href = '../typography_' + typoVariantsNames[typo] + '.css';
-        document.getElementById('typo-capture').innerHTML = typoVariantsNames[typo];
     }
 
     typoSwitcher.addEventListener('change', function() {

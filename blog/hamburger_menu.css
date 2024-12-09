@@ -11,7 +11,7 @@ body {
 }
 
 .hamburger-menu {
-    position: absolute;
+    position: fixed;
     display: flex;
     flex-direction: column;
     grid-row-gap: 20px;
@@ -25,13 +25,11 @@ body {
     right: var(--hamburger-menu-offset);
     border-left: 0px;
 
-    transition: transform 0.3s;
+    transition: transform 0.3s, background-color 0.3s ease;
 }
 
 .hamburger-checkbox:checked + .hamburger-menu {
-    /* background-color: white; */
     transform: translateX(var(--hamburger-menu-offset));
-    border-left: 1px solid;
 }
 
 .hamburger-checkbox + .hamburger-menu label {
