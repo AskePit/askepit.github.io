@@ -1,0 +1,575 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Write Obsidian plugins, part II</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Write Obsidian plugins, part II</h1>
+<p>Let's continue writing our own plugins for Obsidian. You can find the first part of the article <a href="https://habr.com/ru/articles/861230/">here</a>. In it, we:</p>
+<ul>
+	<li>Discovered that writing plugins can be even easier than the official documentation suggests</li>
+	<li>Wrote three small plugins, which are already being used <s>in production</s> personally by me</li>
+	<li>Promised to write a fourth "final boss" plugin</li>
+</ul>
+<p>Now, let's get started.</p>
+<h2>Plugin 4. Chess Viewer. The Idea</h2>
+<p>I'm not a chess player, but I'm interested in it :) I have notes with chess sketches. And I'm definitely not alone in this, since right now there are three plugins in the Community plugins section that allow displaying a chessboard with pieces in a note.</p>
+<p>I used to use Obsidian Chess, but it used images for the pieces on the board, and for some reason, they took forever to load on the page. Eventually, the piece images disappeared altogether:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/oe/co/zj/oecozjunect7vh_ofd0yy6iwb5q.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Now, I can't even find this plugin in the list of available ones for installation.</p>
+<p>There are a couple of other solutions, like <a href="https://github.com/SilentVoid13/Chesser">Chesser</a> or <a href="https://github.com/chrislicodes/obsidian-chess-study">Chess Study</a>, but they are more like all-in-one tools — you can move pieces, brainstorm, draw interactive arrows, and so on. In short, it's complicated — I needed something simple, reliable, and not slow.</p>
+<p>A plugin that comes close to what I need is <a href="https://github.com/THeK3nger/obsidian-chessboard">Chessboard Viewer</a>: view-only, pieces are drawn in SVG, with minimal options for highlighting important squares and drawing static arrows. But it has two drawbacks:</p>
+<ul>
+	<li>I don’t like the appearance of the pieces and the board.</li>
+	<li>I've already come up with my own quirky way of cheaply displaying pieces, and it's not SVG.</li>
+</ul>
+<p>What’s this method? Honestly, I don’t even know how to explain it — it’s ASCII characters :) Here they are: ♔ ♕ ♖ ♗ ♘ ♙ ♚ ♛ ♜ ♝ ♞ ♟. And when you enlarge them, you can see that they actually look pretty decent, at least in my opinion:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/bx/yb/nk/bxybnkzqhjryp6i69fhudk8wi9e.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Initially, I wanted to display the board in a minimalist ASCII-only version. But after some struggles, I realized I would face insurmountable problems with displaying empty white and black squares. So, I decided to dive into proper HTML-CSS layout, where each square would render its ASCII symbols. It’s still cheap, and the main feature — the ASCII pieces — remains, but it won’t look as bad.</p>
+<h2>How to Describe the Board in a Note</h2>
+<p>Traditionally, such plugins use <a href="https://www.chess.com/terms/fen-chess">FEN notation</a> to describe the chessboard. It’s a simple and accessible way to represent the state of the chessboard in one line. The basic version of FEN notation looks like this:</p>
+<pre><code class="language-">rnbqkbnr/pp1ppppp/<span class="code-literal">2</span>p5/<span class="code-literal">8</span>/<span class="code-literal">4</span>P3/<span class="code-literal">8</span>/PPPP1PPP/RNBQKBNR</code></pre>
+<p>Rows are separated by slashes <code>/</code>. The letters stand for: <code>r</code> — rook, <code>n</code> — knight, <code>b</code> — bishop, <code>q</code> — queen, <code>k</code> — king, <code>p</code> — pawn. Uppercase letters are for white, lowercase for black. Numbers indicate the number of consecutive empty squares in the row. After the FEN string, there may be additional annotations regarding turn order, castling rights, and so on, but these aren’t relevant for our task.</p>
+<p>We want our plugin to work like this: in the note, we’ll write the FEN notation in a code block with the label <code>chess</code>:</p>
+<pre><code class="language-"></code></pre>
+<p>8/3k1P2/2N5/b7/5K2/4r3/3P4/8</p>
+<pre><code class="language-"></code></pre>
+<p>And in preview mode, the note should render a chessboard with pieces instead of the code block, looking something like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ku/eb/up/kuebupzm7vzynllf__h-aiupvla.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h2>Let's Get Started</h2>
+<p>So, we want to find all <code>chess</code> blocks in the note and replace their content. Hmm, does this sound familiar to you? If you’ve read <a href="https://habr.com/ru/articles/861230/">the previous article</a>, you might remember that this is exactly the scenario of our first, simplest plugin: Guitar Tabs Viewer, which replaced "all dashes with dots" in the pursuit of more readable guitar tablature. So, at the very least, we can borrow from there that replacing HTML during the pre-rendering stage is handled by the <code>Plugin.registerMarkdownCodeBlockProcessor()</code> method, and the basic structure of the plugin should look something like this:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> ChessLightweightPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">this</span>.<span class="code-call">registerMarkdownCodeBlockProcessor</span>(<span class="code-literal">'chess'</span>, (source, el, ctx) =&gt; {
+            <span class="code-comment">// Render chess board</span>
+            el.innerHTML = ...???
+        })
+    }
+}</code></pre>
+<p>We just need to figure out what to put in <code>el.innerHTML</code>, and the plugin will be ready! Obviously, <code>el.innerHTML</code> should contain the HTML markup for the board: black-and-white squares. And in each of the squares, we can optionally place the figure that is present there.</p>
+<h2>HTML Skeleton</h2>
+<p>This is where a bit of bad code comes into play, which has never hurt anyone. I just don't know how else to describe what I've done in terms of HTML implementation for an empty board, so brace yourselves:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> boardHtml =
+`&lt;div <span class="code-keyword">class</span>=<span class="code-literal">"board"</span>&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row8"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"a8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"b8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"c8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"d8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"e8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"f8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"g8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"h8"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row7"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"a7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"b7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"c7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"d7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"e7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"f7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"g7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"h7"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+...
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row1"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"a1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"b1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"c1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"d1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"e1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"f1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"g1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"h1"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;`</code></pre>
+<p>Well, you get it — I was too lazy to generate this via JS, plus I got some inexplicable clarity from these eighty-something lines — it's like I'm looking at the skeleton of an empty board :)</p>
+<p>Now we can overwrite the <code>chess</code>-code block with this board:</p>
+<pre><code class="language-javascript">async <span class="code-call">onload</span>() {
+	<span class="code-keyword">this</span>.<span class="code-call">registerMarkdownCodeBlockProcessor</span>(<span class="code-literal">'chess'</span>, (source, el, ctx) =&gt; {
+		el.innerHTML = boardHtml
+	})
+}</code></pre>
+<p>We don't even need to check to understand that by doing this, we replaced our code blocks in the notes with a visual <i>nothing</i> — emptiness, since our <code>&lt;div&gt;</code> elements still don't have a visual representation.</p>
+<h2>CSS</h2>
+<p>Let's fix that. Here's the CSS file I came up with that should visualize the board:</p>
+<pre><code class="language-css">body {
+    --cell-size: <span class="code-literal">50</span>px;
+}
+
+.board {
+    margin: <span class="code-literal">20</span>px <span class="code-literal">0</span>px <span class="code-literal">20</span>px <span class="code-literal">0</span>px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.square {
+    width: <span class="code-keyword">var</span>(--cell-size);
+    height: <span class="code-keyword">var</span>(--cell-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.white {
+    background-color: <span class="code-call">color</span>(srgb <span class="code-literal">0.944</span> <span class="code-literal">0.944</span> <span class="code-literal">0.944</span>);
+}
+
+.black {
+    background-color: <span class="code-call">color</span>(srgb <span class="code-literal">0.81333</span> <span class="code-literal">0.81333</span> <span class="code-literal">0.81333</span>);
+}</code></pre>
+<p>Nothing special: we give the cells sizes, color them in their respective colors, and arrange them in rows.</p>
+<p>At first, I checked the functionality of these styles using a regular pair of HTML-CSS files in a browser, and it worked. But how do we apply this CSS in the plugin now? It's very simple — you create a file named <code>styles.css</code> (exactly this name!) and just place it in the folder where <code>main.js</code> is located. No additional steps are needed, the styles will be automatically applied.</p>
+<p>Now, let's test it on a simple note:</p>
+<pre><code class="language-"># Two rooks mate
+</code></pre>
+<p>8/8/4k3/R7/7R/8/8/6K1</p>
+<pre><code class="language-"></code></pre>
+<p>8/4k3/7R/R7/8/8/8/6K1</p>
+<pre><code class="language-"></code></pre>
+<p>We get:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/rv/px/je/rvpxjeqckvyfwrsvymncwuwnlqa.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>It works! I didn't do it in vain, specifying top and bottom margins in the <code>.board</code> class: <code>margin: 20px 0px 20px 0px;</code>. Without this, the two boards would stick together into one solid piece.</p>
+<p>The boards are drawn, but the content of the <code>chess</code> blocks is ignored, and the boards themselves are empty. For now, we'll continue to ignore the FEN notation — we'll get to that later. Right now, let's quickly place the pieces directly in the HTML:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> whitesBoardHtml =
+`&lt;div <span class="code-keyword">class</span>=<span class="code-literal">"board"</span>&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row8"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"a8"</span>&gt;♞&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"b8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"c8"</span>&gt;♗&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"d8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"e8"</span>&gt;♛&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"f8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"g8"</span>&gt;♔&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"h8"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row7"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"a7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"b7"</span>&gt;♟&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"c7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"d7"</span>&gt;♚&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"e7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"f7"</span>&gt;♖&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"g7"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"h7"</span>&gt;♝&lt;/div&gt;
+    &lt;/div&gt;
+...</code></pre>
+<p>We look at the result:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/fb/lo/9q/fblo9qqopz-spqulhvs9xka7z2u.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Not enough, we need to increase the font size. And I can already see something strange... Let's increase it:</p>
+<pre><code class="language-css">.square {
+	...
+    font-size: <span class="code-call">calc</span>(<span class="code-keyword">var</span>(--cell-size) * <span class="code-literal">0.85</span>);
+}</code></pre>
+<p>Let's take a look:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/5l/ve/o9/5lveo9jctbasspcp6xuepx1jhye.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>What is happening?! Why is the black pawn like this? It turned out during the investigation that this is an <b>ASCII bug</b>, specifically with the black pawn symbol. It depends on who is rendering the font, but in 90% of cases, there are issues with the black pawn in all programs — it’s larger than the others and blue. And in Obsidian too. But under random circumstances, you might get lucky. I, for example, got lucky once, and the simple:</p>
+<pre><code class="language-css">.square {
+	...
+    font-family: serif;
+}</code></pre>
+<p>fixed the issue:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/kz/8c/ju/kz8cjuasmtvwap5aiad5ex6-dvs.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>The pawn is back to normal. Strange, but okay. It might only work within Obsidian, but it works.</p>
+<h2>Outlining the business logic</h2>
+<p>Before diving into the actual business logic, let's briefly revisit the plugin itself. We know the HTML structure of the board, so we already know how to "insert" pieces into it: by simply adding the piece's text into the <code>&lt;div&gt;</code> cells. Something like this:</p>
+<pre><code class="language-javascript">async <span class="code-call">onload</span>() {
+	<span class="code-keyword">this</span>.<span class="code-call">registerMarkdownCodeBlockProcessor</span>(<span class="code-literal">'chess'</span>, (source, el, ctx) =&gt; {
+		<span class="code-comment">// Parse code</span>
+		<span class="code-keyword">const</span> data = <span class="code-keyword">new</span> <span class="code-call">BoardData</span>(source)
+
+		<span class="code-comment">// Render chess board</span>
+		el.innerHTML = boardHtml
+
+		<span class="code-comment">// Fill chess board with pieces</span>
+		<span class="code-keyword">for</span> (<span class="code-keyword">const</span> [addr, piece] of Object.<span class="code-call">entries</span>(data.addresses)) {
+			<span class="code-keyword">const</span> cell = el.<span class="code-call">querySelector</span>(<span class="code-literal">'[id='</span> + addr + <span class="code-literal">']'</span>)
+			<span class="code-keyword">if</span> (cell) {
+				cell.innerText = piece
+			}
+		}
+	})
+}</code></pre>
+<p>Look, we've already planned for the mythical <code>BoardData</code>, which doesn't exist yet, but we know that it should have:</p>
+<ul>
+	<li>A constructor that takes the source HTML as an argument</li>
+	<li>A field <code>addresses</code> — a dictionary like <code>{address; ASCII-figure}</code></li>
+</ul>
+<p>Now we just need to implement <code>BoardData</code>, and the plugin should work.</p>
+<h2>Parsing and displaying FEN</h2>
+<p>The requirements for the parsing class have already been outlined in the previous section: our ultimate goal is to get the <code>addresses</code> field as a dictionary of piece addresses. Let's implement it:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> BoardData {
+    <span class="code-comment">// map of {address piece} like {'a4': '♞'}</span>
+    addresses = {}
+
+    <span class="code-call">constructor</span>(source) {
+        <span class="code-keyword">const</span> lines = source.<span class="code-call">split</span>(<span class="code-literal">'\n'</span>)
+        <span class="code-keyword">const</span> line = lines?.[<span class="code-literal">0</span>]
+        <span class="code-keyword">this</span>.#<span class="code-call">parseFen</span>(line)
+    }
+
+    #<span class="code-call">parseFen</span>(fen) {
+        <span class="code-keyword">const</span> rowLines = fen.<span class="code-call">split</span>(<span class="code-literal">'/'</span>)
+
+        <span class="code-keyword">let</span> row = <span class="code-literal">8</span>
+        <span class="code-keyword">let</span> col = <span class="code-literal">1</span>
+
+        <span class="code-keyword">this</span>.addresses = {}
+
+        <span class="code-keyword">for</span> (<span class="code-keyword">const</span> rowLine of rowLines) {
+            col = <span class="code-literal">1</span>
+            <span class="code-keyword">for</span> (<span class="code-keyword">const</span> ch of rowLine) {
+                <span class="code-keyword">if</span> (<span class="code-call">isLetter</span>(ch)) {
+                    <span class="code-keyword">let</span> piece = <span class="code-literal">''</span>
+
+                    <span class="code-keyword">if</span> (ch == <span class="code-literal">'p'</span>) piece = <span class="code-literal">'♟'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'r'</span>) piece = <span class="code-literal">'♜'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'n'</span>) piece = <span class="code-literal">'♞'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'b'</span>) piece = <span class="code-literal">'♝'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'q'</span>) piece = <span class="code-literal">'♛'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'k'</span>) piece = <span class="code-literal">'♚'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'P'</span>) piece = <span class="code-literal">'♙'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'R'</span>) piece = <span class="code-literal">'♖'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'N'</span>) piece = <span class="code-literal">'♘'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'B'</span>) piece = <span class="code-literal">'♗'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'Q'</span>) piece = <span class="code-literal">'♕'</span>
+                    <span class="code-keyword">else</span> <span class="code-keyword">if</span> (ch == <span class="code-literal">'K'</span>) piece = <span class="code-literal">'♔'</span>
+
+                    <span class="code-keyword">this</span>.addresses[<span class="code-call">getAddress</span>(row, col)] = piece
+
+                    col += <span class="code-literal">1</span>
+                } <span class="code-keyword">else</span> {
+                    col += <span class="code-call">parseInt</span>(ch, <span class="code-literal">10</span>)
+                }
+            }
+            row -= <span class="code-literal">1</span>
+        }
+    }
+}</code></pre>
+<p>This class uses a pinch of helper functions:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">isLetter</span>(c) {
+    <span class="code-keyword">return</span> c.<span class="code-call">toLowerCase</span>() != c.<span class="code-call">toUpperCase</span>()
+}
+
+<span class="code-keyword">function</span> <span class="code-call">rowToString</span>(r) {
+    <span class="code-keyword">return</span> r.<span class="code-call">toString</span>()
+}
+
+<span class="code-keyword">function</span> <span class="code-call">colToString</span>(c) {
+    <span class="code-keyword">return</span> String.<span class="code-call">fromCharCode</span>(<span class="code-literal">'a'</span>.<span class="code-call">charCodeAt</span>() + c - <span class="code-literal">1</span>)
+}
+
+<span class="code-keyword">function</span> <span class="code-call">getAddress</span>(r, c) {
+    <span class="code-keyword">return</span> <span class="code-call">colToString</span>(c) + <span class="code-call">rowToString</span>(r)
+}</code></pre>
+<p>Now the plugin should render the chess positions according to the FEN description. Let's pull out our old template:</p>
+<pre><code class="language-"># Two rooks mate
+</code></pre>
+<p>8/8/4k3/R7/7R/8/8/6K1</p>
+<pre><code class="language-"></code></pre>
+<p>8/4k3/7R/R7/8/8/8/6K1</p>
+<pre><code class="language-"></code></pre>
+<p>The note takes the following appearance:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/vf/r5/zx/vfr5zxxkdeluesned0chrhqo270.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Hooray — we've achieved a working chessboard with pieces, congratulations to us!</p>
+<h2>Highlighting Cells</h2>
+<p>We have the basic board display, but one crucial feature for chess notations is missing — the ability to highlight cells with colors, so you can express ideas and the flow of events on the board more clearly. Here's how it is implemented on <a href="https://chatgpt.com/c/chess.com">chess.com</a>:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/i5/ox/-m/i5ox-m2kj6mc6nmunloz1p_dpiq.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>I would like to have green, red, and blue colors in my arsenal. There is also a requirement that the colors should be applied to the cell with some transparency, so that the white and black cells are still distinguishable even when highlighted. A "vignette" effect would also work.</p>
+<p>We will implement cell highlighting by programmatically adding one of three special classes to the highlighted cell: <code>.green-highlight</code>, <code>.red-highlight</code>, <code>.blue-highlight</code>:</p>
+<pre><code class="language-css">.red-hihglight {
+    box-shadow: <span class="code-literal">0 0</span> <span class="code-call">calc</span>(<span class="code-keyword">var</span>(--cell-size)*<span class="code-literal">2</span>) <span class="code-call">rgba</span>(<span class="code-literal">255</span>, <span class="code-literal">0</span>, <span class="code-literal">0</span>, <span class="code-literal">0.75</span>) inset;
+}
+
+.blue-hihglight {
+    box-shadow: <span class="code-literal">0</span> <span class="code-literal">0</span> <span class="code-call">calc</span>(<span class="code-keyword">var</span>(--cell-size)*<span class="code-literal">2</span>) <span class="code-call">rgba</span>(<span class="code-literal">0</span>, <span class="code-literal">0</span>, <span class="code-literal">255</span>, <span class="code-literal">0.4</span>) inset;
+}
+
+.green-hihglight {
+    box-shadow: <span class="code-literal">0</span> <span class="code-literal">0</span> <span class="code-call">calc</span>(<span class="code-keyword">var</span>(--cell-size)*<span class="code-literal">2</span>) <span class="code-call">rgba</span>(<span class="code-literal">0</span>, <span class="code-literal">255</span>, <span class="code-literal">0</span>, <span class="code-literal">0.5</span>) inset;
+}</code></pre>
+<p>As you can see, the class includes a <code>box-shadow</code> with some strange calculations. This is the result of my experiments with applying a "vignette" effect to the cell using different colors. In the end, it wasn't exactly a vignette, but the result satisfied me — you'll see soon.</p>
+<p>First, we need to figure out how to describe information about highlighted cells in an Obsidian note. I came up with the same scheme used by all the chess plugins I know:</p>
+<pre><code class="language-"></code></pre>
+<p>fen: rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR</p>
+<p>green: d7 d5</p>
+<p>red: e4</p>
+<pre><code class="language-"></code></pre>
+<p>This means that the parser for the <code>BoardData</code> class will become more complex. It will also gain additional fields:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> BoardData {
+	...
+
+    <span class="code-comment">// arrays of [address] like [e2, e4]</span>
+    reds = []
+    greens = []
+    blues = []
+
+    <span class="code-call">constructor</span>(source) {
+        <span class="code-keyword">const</span> lines = source.<span class="code-call">split</span>(<span class="code-literal">'\n'</span>).<span class="code-call">map</span>(line =&gt; line.<span class="code-call">trim</span>())
+
+        <span class="code-keyword">for</span> (<span class="code-keyword">const</span> line of lines) {
+            <span class="code-keyword">if</span> (line.<span class="code-call">startsWith</span>(<span class="code-literal">'fen:'</span>)) {
+                <span class="code-keyword">const</span> fen = <span class="code-call">removePrefix</span>(line, <span class="code-literal">'fen:'</span>).<span class="code-call">trim</span>()
+                <span class="code-keyword">this</span>.#<span class="code-call">parseFen</span>(fen)
+            } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (line.<span class="code-call">startsWith</span>(<span class="code-literal">'red:'</span>)) {
+                <span class="code-keyword">const</span> redLine = <span class="code-call">removePrefix</span>(line, <span class="code-literal">'red:'</span>).<span class="code-call">trim</span>()
+                <span class="code-keyword">this</span>.reds = redLine.<span class="code-call">split</span>(<span class="code-literal">' '</span>)
+            } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (line.<span class="code-call">startsWith</span>(<span class="code-literal">'green:'</span>)) {
+                <span class="code-keyword">const</span> greenLine = <span class="code-call">removePrefix</span>(line, <span class="code-literal">'green:'</span>).<span class="code-call">trim</span>()
+                <span class="code-keyword">this</span>.greens = greenLine.<span class="code-call">split</span>(<span class="code-literal">' '</span>)
+            } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (line.<span class="code-call">startsWith</span>(<span class="code-literal">'blue:'</span>)) {
+                <span class="code-keyword">const</span> blueLine = <span class="code-call">removePrefix</span>(line, <span class="code-literal">'blue:'</span>).<span class="code-call">trim</span>()
+                <span class="code-keyword">this</span>.blues = blueLine.<span class="code-call">split</span>(<span class="code-literal">' '</span>)
+            } <span class="code-keyword">else</span> {
+                <span class="code-keyword">if</span> (line.<span class="code-call">contains</span>(<span class="code-literal">':'</span>)) {
+                    <span class="code-keyword">continue</span>
+                }
+                <span class="code-keyword">this</span>.#<span class="code-call">parseFen</span>(line)
+            }
+        }
+    }
+	...
+}</code></pre>
+<p>We will update the plugin to use the newly parsed data:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> ChessLightweightPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">this</span>.<span class="code-call">registerMarkdownCodeBlockProcessor</span>(<span class="code-literal">'chess'</span>, (source, el, ctx) =&gt; {
+            <span class="code-comment">// Parse code</span>
+            <span class="code-keyword">const</span> data = <span class="code-keyword">new</span> <span class="code-call">BoardData</span>(source)
+
+			...
+
+            <span class="code-keyword">for</span> (<span class="code-keyword">const</span> addr of data.reds) {
+                el.<span class="code-call">querySelector</span>(<span class="code-literal">'[id='</span> + addr + <span class="code-literal">']'</span>).classList.<span class="code-call">add</span>(<span class="code-literal">'red-hihglight'</span>)
+            }
+
+            <span class="code-keyword">for</span> (<span class="code-keyword">const</span> addr of data.greens) {
+                el.<span class="code-call">querySelector</span>(<span class="code-literal">'[id='</span> + addr + <span class="code-literal">']'</span>).classList.<span class="code-call">add</span>(<span class="code-literal">'green-hihglight'</span>)
+            }
+
+            <span class="code-keyword">for</span> (<span class="code-keyword">const</span> addr of data.blues) {
+                el.<span class="code-call">querySelector</span>(<span class="code-literal">'[id='</span> + addr + <span class="code-literal">']'</span>).classList.<span class="code-call">add</span>(<span class="code-literal">'blue-hihglight'</span>)
+            }
+        })
+    }
+}</code></pre>
+<p>Now everything is ready. The boards in the notes can show more information about what's happening:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/on/s_/to/ons_toopqci2c1y2kjhwxmaylbw.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>I don't know about you, but I'm happy with the result. The only thing missing for complete satisfaction is...</p>
+<h2><s>Coup</s> Reversal of the board</h2>
+<p>The previous image describes the Caro-Kann opening for Black. It's much more convenient to observe it from Black's side. I want to:</p>
+<pre><code class="language-"></code></pre>
+<p>...</p>
+<p>flipBoard: true</p>
+<pre><code class="language-"></code></pre>
+<p>How to parse this field, I won’t bother showing, it's a trivial task. The slightly more complex task is—how do we actually flip the board? Use <code>transform</code>? Programmatically rewrite the cell addresses? Here, as usual, a pinch of hacky code comes into play, which has never hurt anyone:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> whitesBoardHtml =
+`&lt;div <span class="code-keyword">class</span>=<span class="code-literal">"board"</span>&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row8"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"a8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"b8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"c8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"d8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"e8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"f8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"g8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"h8"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+...
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row1"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"a1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"b1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"c1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"d1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"e1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"f1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"g1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"h1"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;`
+
+<span class="code-keyword">const</span> blacksBoardHtml =
+`&lt;div <span class="code-keyword">class</span>=<span class="code-literal">"board"</span>&gt;
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row1"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"h1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"g1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"f1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"e1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"d1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"c1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"b1"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"a1"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+...
+    &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"row"</span> id=<span class="code-literal">"row8"</span>&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"h8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"g8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"f8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"e8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"d8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"c8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square black"</span> id=<span class="code-literal">"b8"</span>&gt;&lt;/div&gt;
+        &lt;div <span class="code-keyword">class</span>=<span class="code-literal">"square white"</span> id=<span class="code-literal">"a8"</span>&gt;&lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;`</code></pre>
+<p>No, what's wrong with that? Just eighty lines of shame, and here you are already writing in the plugin:</p>
+<pre><code class="language-javascript">async <span class="code-call">onload</span>() {
+	<span class="code-keyword">this</span>.<span class="code-call">registerMarkdownCodeBlockProcessor</span>(<span class="code-literal">'chess'</span>, (source, el, ctx) =&gt; {
+		<span class="code-comment">// Parse code</span>
+        <span class="code-keyword">const</span> data = <span class="code-keyword">new</span> <span class="code-call">BoardData</span>(source)
+
+		...
+
+		<span class="code-comment">// Render chess board</span>
+		el.innerHTML = data.flipBoard ? blacksBoardHtml : whitesBoardHtml
+
+		...
+	})
+}</code></pre>
+<p>And now you're comfortably sitting in the black side's seat:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/wx/cp/ug/wxcpugrv9cc_nyzm4e2pff3ru9i.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h2>Is that it?</h2>
+<p>Yes, it is. :)</p>
+<p>Could we make the plugin even better? Absolutely! Right now, I have a kanban board with the following TODO list for this plugin:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/jy/xz/jp/jyxzjpj9wwf5s1ob2oihlgresms.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Someday I’ll get around to tackling all these tasks, but for now, I can use the plugin as it is, and you’ve already grasped the one key idea I wanted to convey:</p>
+<blockquote>Just drop the styles.css into the plugin folder!</blockquote>
+<p>Yes, technically, everything else in this article is more about layout, business logic, and a pinch of the wow-effect, where your note transforms from plain text into a mini-webpage. So consider this my little con.</p>
+<hr>
+<p>This concludes our journey with creating plugins for Obsidian. I wish you success in writing your own Obsidian plugins, as now you know that it’s not difficult at all, but quite fun, and most importantly — can be really useful for your own everyday note-taking operations.</p>
+<p>As promised, here’s the <a href="https://github.com/AskePit/aske-obsidian-plugins">GitHub link</a> if anyone wants to explore or use the plugins we wrote here.</p>
+<hr>
+<small>© Nikolai Shalakin. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

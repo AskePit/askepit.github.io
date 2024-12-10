@@ -2,6 +2,7 @@
 tags:
   - article
   - cpp
+title: constexpr Game of Life
 ---
 # How It All Began
 
@@ -892,4 +893,4 @@ I’m asking myself the same question. However, let’s retrospectively look at 
 Abnormal programming makes life more enjoyable. Just don’t bring this to production.
 
 ---
-<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/860150/">habr.com</a>, used under CC BY 3.0.</small>
+<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/860150/">habr.com</a>, used under CC BY 3.0. Translated by the author.</small>

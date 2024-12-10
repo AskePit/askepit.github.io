@@ -1,0 +1,636 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Write Obsidian plugins, part I</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Write Obsidian plugins, part I</h1>
+<h2>Introduction</h2>
+<p>After all the hype around Notion, people scattered in all directions, but somehow most ended up looking toward Obsidian. Internet was flooded with articles about Obsidian and plugins for Obsidian.</p>
+<p>However, to my disappointment, there are not so many articles about how to write your own plugin rather than just use someone else’s creations. In the meantime, I’d like to fill this gap with my own guide.</p>
+<h2>What We'll Be Doing</h2>
+<p>This will be a two-article series where we’ll write four entire plugins together. They’ll be simple, small, but I’m not joking when I say I plan to use them personally and regularly in my primary Obsidian vault. That is, I’m writing them for myself first and foremost, which guarantees that these plugins, while simple, aren’t some pointless Hello World demos but actually perform useful tasks—at least for one user.</p>
+<p>The articles are aimed at making it <i>as easy as possible</i> to get into Obsidian plugin development. I want to show just how simple it is—you can sit down and start writing a plugin with nothing more than Obsidian and your favorite text editor. No additional installations needed, I promise.</p>
+<p>I also suggest using these articles as a supplementary <i>do-by-example</i> documentation when you need to write your own plugin. My four small plugins might not do exactly what your plugin needs to do, but they’ll help you navigate the official documentation with confidence and know where to start.</p>
+<p>One small request: if you skim the article, please don’t skip the poll at the end—I’m very interested in the stats.</p>
+<h2>What You Need to Write a Plugin</h2>
+<p>For a long time, I hesitated even to consider writing my own plugins because I thought it required a frontend zoo of TypeScript, Electron, npm, Node.js, or something equally intimidating.</p>
+<p>The official Obsidian documentation <i>strongly recommends</i> using TypeScript and npm and exclusively demonstrates this approach in their <a href="https://github.com/obsidianmd/obsidian-sample-plugin">GitHub examples</a>. But I assert that if you just want to sit down and write a tiny plugin, you <i>don’t need</i> that stack at all.</p>
+<p>The four plugins we’ll write are essentially about crafting a <code>main.js</code> file for each of them. Oh, and a <code>manifest.json</code>, but that’s just a few lines.</p>
+<h2>Brief API Overview</h2>
+<p>Obsidian has <a href="https://docs.obsidian.md/Home">official documentation</a> for plugin development. It includes guides on various topics as well as a full API Reference listing all the classes available for development.</p>
+<p>In my experience, the guides are pretty shallow, only covering the absolute basics. Digging through the API Reference can also be challenging, especially if you’re not sure what you’re looking for. At the very least, Obsidian has a Discord channel where the community can help you in the <code>plugin-dev</code> chat.</p>
+<p>When starting out, it’s tough without a basic reference to the most important API classes so you know where to go to accomplish specific tasks. Here’s my list of essential classes:</p>
+<p>Key logic classes:</p>
+<ul>
+	<li><a href="https://docs.obsidian.md/Reference/TypeScript+API/Plugin"><code>Plugin</code></a>: Inherit from this to create a plugin</li>
+	<li><a href="https://docs.obsidian.md/Reference/TypeScript+API/App"><code>App</code></a>: The central hub for all major Obsidian singletons</li>
+	<li><a href="https://docs.obsidian.md/Plugins/Vault"><code>Vault</code></a>: Handles working with folders and files in the vault</li>
+	<li><a href="https://docs.obsidian.md/Reference/TypeScript+API/FileManager"><code>FileManager</code></a>: For more specialized file and folder operations. Sometimes it’s hard to guess whether a feature is in <code>Vault</code> or <code>FileManager</code></li>
+</ul>
+<p>Key UI classes:</p>
+<ul>
+	<li><a href="https://docs.obsidian.md/Reference/TypeScript+API/Notice"><code>Notice</code></a>: For small popup notifications</li>
+	<li><a href="https://docs.obsidian.md/Plugins/User+interface/Modals"><code>Modal</code></a>: Dialog windows, including ones with input fields</li>
+	<li><a href="https://docs.obsidian.md/Plugins/User+interface/Views"><code>ItemView</code></a>: A custom GUI element where you can render any HTML content</li>
+	<li><a href="https://docs.obsidian.md/Plugins/User+interface/Workspace"><code>Workspace</code></a>: Manages all screen views, including tabs, splits, and more</li>
+</ul>
+<p>Here’s a funny JavaScript tidbit: in three out of the four plugins, we’ll need this simple function:</p>
+<pre><code class="language-javascript"><span class="code-keyword">const</span> removePrefix = (value, prefix) =&gt;
+    value.<span class="code-call">startsWith</span>(prefix) ? value.<span class="code-call">slice</span>(prefix.length) : value;</code></pre>
+<p>Yes, by some strange twist of fate, writing plugins for Obsidian often involves removing prefixes from strings, yet the <code>String</code> interface doesn’t offer anything suitable for this ¯\<i>(ツ)</i>/¯.</p>
+<h2>Plugin Skeleton</h2>
+<p>In the most minimalist version, to create a plugin you need to:</p>
+<ul>
+	<li>Locate the <code>.obsidian/plugins</code> folder in your <i>preferably test</i> Obsidian vault.</li>
+	<li>Create a folder inside it with the name of your plugin.</li>
+	<li>Add a <code>manifest.json</code> file in the plugin folder containing the plugin’s information.</li>
+	<li>Add a <code>main.js</code> file in the plugin folder with the plugin’s code.</li>
+</ul>
+<p>And that’s pretty much it :) Obsidian will immediately recognize the plugin, and you’ll be able to enable it in the settings like any other Community plugin.</p>
+<p>We always start by creating a <code>manifest.json</code> file where we declare all the plugin’s information:</p>
+<pre><code class="language-json">{
+	<span class="code-literal">"id"</span>: <span class="code-literal">"test-habr-plugin"</span>,
+	<span class="code-literal">"name"</span>: <span class="code-literal">"Test Habr Plugin"</span>,
+	<span class="code-literal">"version"</span>: <span class="code-literal">"1.0.1"</span>,
+	<span class="code-literal">"minAppVersion"</span>: <span class="code-literal">"1.0.0"</span>,
+	<span class="code-literal">"description"</span>: <span class="code-literal">"Habr stronk"</span>,
+	<span class="code-literal">"author"</span>: <span class="code-literal">"askepit"</span>,
+	<span class="code-literal">"authorUrl"</span>: <span class="code-literal">""</span>,
+	<span class="code-literal">"helpUrl"</span>: <span class="code-literal">""</span>,
+	<span class="code-literal">"isDesktopOnly"</span>: <span class="code-keyword">false</span>
+}</code></pre>
+<p>I think there’s no need to explain what’s going on here—every field has clear and self-explanatory names. All the information specified in the manifest will be used by Obsidian to display details about your plugin in the Community plugins settings section.</p>
+<p>Just don’t repeat my mistake! Foolishly, I initially set <code>"isDesktopOnly": true</code> in my plugins, assuming that deploying handwritten plugins to mobile devices would be complicated, and I wouldn’t bother with it. Spoiler: deploying to mobile is practically effortless—as long as you’ve set <code>"isDesktopOnly": false</code> in advance. I paid the price for this oversight with a prolonged facepalm moment and even had to ask for help in the official Discord channel because I completely forgot about this manifest field. So, learn from my mistake :)</p>
+<p>Now, let’s move on to the plugin’s code itself. In its minimal form, a functional plugin recognizable by Obsidian looks like this:</p>
+<pre><code class="language-javascript"><span class="code-literal">'use strict'</span>
+<span class="code-keyword">var</span> obsidian = <span class="code-call">require</span>(<span class="code-literal">'obsidian'</span>)
+
+<span class="code-keyword">class</span> TestHabrPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+
+    }
+}
+
+module.exports = TestHabrPlugin</code></pre>
+<p>You can safely copy this template from one of your plugins to another. The class we inherited from <code>obsidian.Plugin</code> is our main entity, responsible for managing the entire lifecycle of our plugin.</p>
+<p>The plugin doesn’t do anything yet, but it’s recognized in your settings and can be enabled. But if you do this:</p>
+<pre><code class="language-javascript">async <span class="code-call">onload</span>() {
+	console.<span class="code-call">log</span>(<span class="code-literal">'Habr stronk'</span>)
+}</code></pre>
+<p>Then, upon enabling the plugin, you'll see your message in Obsidian's dev-tools console (<code>Ctrl + Shift + I</code>):</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/4x/xm/jq/4xxmjqxzv3z7jfhqeauzmzuoxbe.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h2>Plugin 1: Guitar Tabs Viewer</h2>
+<p>Let's start with the simplest and most minor plugin for a warm-up and easy onboarding.</p>
+<h3>Task</h3>
+<p>I have notes with guitar tablatures that I store in the following format:</p>
+<pre><code class="language-">E|---------------------------------|
+B|---------------------------------|
+G|---------------------------------|
+D|-------<span class="code-literal">3-5-4-3</span>-------------------|
+A|-<span class="code-literal">5</span>---<span class="code-literal">5</span>---------<span class="code-literal">5</span>-<span class="code-literal">3</span>---<span class="code-literal">3</span>-<span class="code-literal">0</span>-<span class="code-literal">0</span>-<span class="code-literal">3</span>-<span class="code-literal">3</span>-<span class="code-literal">4</span>-|
+E|---------------------------------|</code></pre>
+<p>Tablatures generally look more or less the same, but there are oddities when someone on the internet <s>is wrong</s> draws the string ruler in their own peculiar way. You might come across tablatures with horizontal lines like these:</p>
+<pre><code class="language-">E|—————————————————————————————————|
+B|—————————————————————————————————|
+G|—————————————————————————————————|
+D|———————<span class="code-literal">3</span>—<span class="code-literal">5</span>—<span class="code-literal">4</span>—<span class="code-literal">3</span>———————————————————|
+A|—<span class="code-literal">5</span>———<span class="code-literal">5</span>—————————<span class="code-literal">5</span>—<span class="code-literal">3</span>———<span class="code-literal">3</span>—<span class="code-literal">0</span>—<span class="code-literal">0</span>—<span class="code-literal">3</span>—<span class="code-literal">3</span>—<span class="code-literal">4</span>—|
+E|—————————————————————————————————|</code></pre>
+<p>There are also other types of lines—ASCII symbols for horizontal dashes are abundant. This visual inconsistency really bothers me. Plus, I'd like to minimize the presence of lines in the tablature staff altogether.</p>
+<p>That's why I want the <i>view</i> mode for pages with tablatures to unify all the various types of dashes into a single standard. As that standard, I've chosen the Middle dot (<code>·</code>) symbol, as it takes up the least visual space. The most extreme option, of course, would be a space, but in that case, all the numbers would simply "float in the air," significantly reducing readability.</p>
+<p>In short, I want to see all tablatures like this:</p>
+<pre><code class="language-">E|·································|
+B|·································|
+G|·································|
+D|·······<span class="code-literal">3</span>·<span class="code-literal">5</span>·<span class="code-literal">4</span>·<span class="code-literal">3</span>···················|
+A|·<span class="code-literal">5</span>···<span class="code-literal">5</span>·········<span class="code-literal">5</span>·<span class="code-literal">3</span>···<span class="code-literal">3</span>·<span class="code-literal">0</span>·<span class="code-literal">0</span>·<span class="code-literal">3</span>·<span class="code-literal">3</span>·<span class="code-literal">4</span>·|
+E|·································|</code></pre>
+<p>We will format tablatures in notes using a code block like this:</p>
+<pre><code class="language-"></code></pre>
+<p>E|---------------------------------|</p>
+<p>B|---------------------------------|</p>
+<p>G|---------------------------------|</p>
+<p>D|-------3-5-4-3-------------------|</p>
+<p>A|-5---5---------5-3---3-0-0-3-3-4-|</p>
+<p>E|---------------------------------|</p>
+<pre><code class="language-"></code></pre>
+<p>The plugin should only process blocks marked with <code>tab</code> or <code>tabs</code>.</p>
+<p>By the way, karma points to anyone who can guess what song this is from :)</p>
+<h3>Implementation</h3>
+<p>The task boils down to making the page replace the content of code blocks marked as <code>tab</code> or <code>tabs</code> in view mode. In Obsidian terms, this is called markdown post-processing—your markdown is already rendered into HTML, and you can intercept this HTML just before the page is displayed to modify elements however you like.</p>
+<p>The <code>Plugin</code> class provides a convenient method, <a href="https://docs.obsidian.md/Reference/TypeScript+API/Plugin/registerMarkdownPostProcessor"><code>registerMarkdownPostProcessor()</code></a>, specifically designed for this operation, so implementing the plugin is essentially straightforward:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> GuitarTabsViewerPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">this</span>.<span class="code-call">registerMarkdownPostProcessor</span>((element, context) =&gt; {
+            <span class="code-keyword">const</span> codeblocks = element.<span class="code-call">findAll</span>(<span class="code-literal">'code'</span>)
+
+            <span class="code-keyword">for</span> (<span class="code-keyword">let</span> codeblock of codeblocks) {
+                <span class="code-keyword">const</span> blockName = <span class="code-call">removePrefix</span>(codeblock.className, <span class="code-literal">'language-'</span>)
+                <span class="code-keyword">if</span> (blockName != <span class="code-literal">"tab"</span> && blockName != <span class="code-literal">"tabs"</span>) {
+                    <span class="code-keyword">continue</span>
+                }
+
+                <span class="code-keyword">const</span> targetSymbol = <span class="code-literal">'·'</span>
+
+                codeblock.innerHTML = codeblock.innerHTML
+                    .<span class="code-call">replaceAll</span>(<span class="code-literal">'-'</span>, targetSymbol) <span class="code-comment">// minus sign</span>
+                    .<span class="code-call">replaceAll</span>(<span class="code-literal">'–'</span>, targetSymbol) <span class="code-comment">// en-dash</span>
+                    .<span class="code-call">replaceAll</span>(<span class="code-literal">'—'</span>, targetSymbol) <span class="code-comment">// em-dash</span>
+                    .<span class="code-call">replaceAll</span>(<span class="code-literal">'─'</span>, targetSymbol) <span class="code-comment">// horizontal line</span>
+                    .<span class="code-call">replaceAll</span>(<span class="code-literal">'‒'</span>, targetSymbol) <span class="code-comment">// figure dash</span>
+            }
+        })
+    }
+}</code></pre>
+<p>Here’s what’s happening: <code>element</code> is the root HTML element of the content, something like <code>&lt;body&gt;</code>. Our task is to find all <code>&lt;code class="language-tab"&gt;</code> tags. Code blocks are marked by Obsidian with a class <code>language-X</code>, where <code>X</code> is the name of your programming language—or in our case, the tag <code>tab/tabs</code>.</p>
+<p>Once the code blocks are found, we replace their <code>innerHTML</code> by simply substituting all known types of horizontal dashes with the <code>·</code> symbol.</p>
+<p>Congratulations! Our first plugin that does something meaningful is ready:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/2j/nu/if/2jnuifjcqkvmap6pcer8dqki9qa.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>At the top is the tablature in edit mode, and at the bottom is how it looks in reading mode.</p>
+<p>Some might find this style of tablature questionable, but that’s the point of personal plugins—to cater to personal needs. Besides, in our case, the main focus is on the educational process :)</p>
+<h2>Plugin 2: Suggest TODO</h2>
+<h3>Task</h3>
+<p>I have a specific problem related to to-do lists. A typical scenario: I have a long TODO list, and I can never decide which item to tackle next. In the end, I either end up completely procrastinating, not starting anything at all, or I choose the most pleasant tasks, ignoring the difficult and unpleasant ones, leaving them hanging on the list for months.</p>
+<p>Let’s try to break through laziness and indecision with a plugin that selects a TODO item from the list for us.</p>
+<p>Here’s how it should work: we have a note with items, for example:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ul/fn/po/ulfnpot4bdm0bxbatxx9ralxcpm.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Or even like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/3r/nq/6p/3rnq6pnbylta31sjstxgtmru9yy.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Both types of lists should be supported. In the case of checkboxes, only unchecked items should be considered. The idea is to open a note with a TODO list and execute the <i>Suggest TODO</i> command, which will suggest something for us. We want the command to be available in two ways:</p>
+<ul>
+	<li>Via the <a href="https://help.obsidian.md/Plugins/Command+palette">Command palette</a></li>
+	<li>Via the <a href="https://help.obsidian.md/User+interface/Ribbon">Ribbon menu</a></li>
+</ul>
+<p>The response with the suggested TODO should be displayed in a separate dialog window.</p>
+<h3>Implementation</h3>
+<p>To begin, let’s separate the business logic from the plugin’s operational code by writing a function <code>suggestTodoImpl()</code>. This function will take raw <code>markdown</code> as input and return a string with a randomly selected TODO. The returned TODO should be cleaned of visual clutter and ready for display in the final dialog window. If the algorithm cannot find any available TODOs to suggest, the function should return <code>null</code>:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">suggestTodoImpl</span>(markdown) {
+    <span class="code-keyword">const</span> todos = markdown.<span class="code-call">split</span>(<span class="code-literal">"\n"</span>)
+        <span class="code-comment">// find TODOs</span>
+        .<span class="code-call">filter</span>(line =&gt; {
+            <span class="code-keyword">if</span> (line.<span class="code-call">startsWith</span>(<span class="code-literal">'- [x]'</span>)) <span class="code-keyword">return</span> <span class="code-keyword">false</span>
+            <span class="code-keyword">return</span> line.<span class="code-call">startsWith</span>(<span class="code-literal">'- '</span>) || line.<span class="code-call">startsWith</span>(<span class="code-literal">'- [ ]'</span>)
+        })
+        <span class="code-comment">// prettify TODOs</span>
+        .<span class="code-call">map</span>(line =&gt; <span class="code-call">removePrefix</span>(<span class="code-call">removePrefix</span>(line, <span class="code-literal">'- [ ]'</span>), <span class="code-literal">'- '</span>).<span class="code-call">trim</span>())
+
+    <span class="code-keyword">if</span> (todos.length === <span class="code-literal">0</span>) {
+        <span class="code-keyword">return</span> <span class="code-keyword">null</span>
+    }
+
+    <span class="code-keyword">const</span> randomLine = todos[Math.<span class="code-call">floor</span>(Math.<span class="code-call">random</span>() * todos.length)]
+    <span class="code-keyword">return</span> randomLine
+}</code></pre>
+<p>With this core logic in place, we can move on to the plugin itself. First, let’s let the plugin know that we want a custom Command and an icon in the Ribbon:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> TodoSuggestPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">this</span>.<span class="code-call">addCommand</span>({
+            id: <span class="code-literal">'Suggest-random-todo'</span>,
+            name: <span class="code-literal">'Suggest random TODO'</span>,
+            callback: () =&gt; {<span class="code-keyword">this</span>.<span class="code-call">suggestTodo</span>()}
+        })
+
+        <span class="code-keyword">this</span>.<span class="code-call">addRibbonIcon</span>(<span class="code-literal">'dice'</span>, <span class="code-literal">'Suggest random TODO'</span>, (evt) =&gt; {
+            <span class="code-keyword">this</span>.<span class="code-call">suggestTodo</span>()
+        })
+    }
+}</code></pre>
+<p>Both callbacks refer to <code>this.suggestTodo()</code>, which we haven’t written yet. But we’ll fix that shortly. In <code>this.addCommand()</code>, we register a command that can be invoked with <code>Ctrl + P</code>, and <code>this.addRibbonIcon()</code> adds a <code>dice</code> icon to the left-hand panel, resembling a die. Both actions will lead to the same logic:</p>
+<pre><code class="language-javascript">async <span class="code-call">suggestTodo</span>() {
+	<span class="code-keyword">const</span> activeView = <span class="code-keyword">this</span>.app.workspace.<span class="code-call">getActiveViewOfType</span>(obsidian.MarkdownView)
+	<span class="code-keyword">if</span> (!activeView) {
+		<span class="code-keyword">new</span> <span class="code-call">Notice</span>(<span class="code-literal">"No active note found!"</span>)
+		<span class="code-keyword">return</span>
+	}
+
+	<span class="code-keyword">let</span> content
+	<span class="code-keyword">if</span> (activeView.<span class="code-call">getMode</span>() === <span class="code-literal">"source"</span>) {
+		<span class="code-comment">// Editor mode: Get content from the editor</span>
+		<span class="code-keyword">const</span> editor = activeView.editor
+		content = editor.<span class="code-call">getValue</span>()
+	} <span class="code-keyword">else</span> <span class="code-keyword">if</span> (activeView.<span class="code-call">getMode</span>() === <span class="code-literal">"preview"</span>) {
+		<span class="code-comment">// Reading mode: Read content from the file</span>
+		<span class="code-keyword">const</span> file = activeView.file
+		content = <span class="code-keyword">await</span> <span class="code-keyword">this</span>.app.vault.<span class="code-call">read</span>(file)
+	}
+
+	<span class="code-keyword">if</span> (!content) {
+		<span class="code-keyword">new</span> <span class="code-call">Notice</span>(<span class="code-literal">"Could not read content!"</span>)
+		<span class="code-keyword">return</span>
+	}
+
+	<span class="code-keyword">const</span> todo = <span class="code-call">suggestTodoImpl</span>(content)
+
+	<span class="code-keyword">if</span> (!todo) {
+		<span class="code-keyword">new</span> <span class="code-call">Notice</span>(<span class="code-literal">"No TODOs available!"</span>)
+		<span class="code-keyword">return</span>
+	}
+
+	<span class="code-keyword">new</span> <span class="code-call">ResultModal</span>(<span class="code-keyword">this</span>.app, todo).<span class="code-call">open</span>()
+}</code></pre>
+<p>The code, though it may seem lengthy, is mostly a prelude to the line <code>const todo = suggestTodoImpl(content)</code>. The task of finding the <code>content</code> boils down to first locating the active view in Obsidian and then extracting the markdown from it.</p>
+<p>The first step is accomplished with <code>this.app.workspace.getActiveViewOfType(obsidian.MarkdownView)</code>, while the second depends on the mode the view is currently in: reading or editing. This explains the branching logic in the attempts to populate <code>content</code>.</p>
+<p>We also encounter two new classes:</p>
+<ul>
+	<li><code>Notice</code></li>
+	<li><code>ResultModal</code></li>
+</ul>
+<p><a href="https://docs.obsidian.md/Reference/TypeScript+API/Notice"><code>Notice</code></a> is a small popup notification that appears in the top-right corner of the window for a few seconds. For example, like this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/v0/1m/wn/v01mwnwccq6nwv2v1dla9_qmczo.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>We’ll use it to notify the user about non-standard situations.</p>
+<p>As for <code>ResultModal</code>, it’s our custom class—a dialog window where we’ll display the result of the command execution if everything goes smoothly:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/9p/aw/y_/9pawy_oxjdtqyugwvwsnbynnnsk.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>To create a custom modal window, you need to inherit from <a href="https://docs.obsidian.md/Plugins/User+interface/Modals"><code>Modal</code></a> and define the window's content in the class constructor:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> ResultModal <span class="code-keyword">extends</span> obsidian.Modal {
+    <span class="code-call">constructor</span>(app, todo) {
+        <span class="code-keyword">super</span>(app)
+
+        <span class="code-keyword">this</span>.<span class="code-call">setTitle</span>(<span class="code-literal">'Your TODO'</span>)
+        <span class="code-keyword">this</span>.<span class="code-call">setContent</span>(todo)
+
+        <span class="code-keyword">new</span> obsidian.<span class="code-call">Setting</span>(<span class="code-keyword">this</span>.contentEl)
+            .<span class="code-call">addButton</span>((btn) =&gt;
+                btn
+                .<span class="code-call">setButtonText</span>(<span class="code-literal">'OK'</span>)
+                .<span class="code-call">setCta</span>()
+                .<span class="code-call">onClick</span>(() =&gt; {
+                    <span class="code-keyword">this</span>.<span class="code-call">close</span>()
+                })
+            )
+    }
+}</code></pre>
+<p>The OK button simply closes the modal window.</p>
+<p>The plugin is ready! You can use it via the Command palette by running the <i>Suggest TODO</i> command:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/zz/l7/x7/zzl7x7ylu1tgtwituhtxaknyjx4.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Or simply click on the icon in the left-hand panel:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/hg/9m/uo/hg9muo_xcj1homlih33_vjoxny4.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h2>Plugin 3. Top-10 Recent Edited Notes</h2>
+<h3>Task</h3>
+<p>Up until recently, I had the mighty <a href="https://blacksmithgu.github.io/obsidian-dataview/">Dataview</a> plugin installed in Obsidian. It's a <i>beast</i> of a plugin that can do everything short of launching a spacecraft. It brings SQL and JavaScript magic into your notes, so you can juggle your data and create clever summaries and extracts to your heart's content.</p>
+<p>All that computational abundance? Not my cup of tea. I had Dataview installed for one reason only: to keep a handy note with a list of the top 10 most recently edited files in my vault. All you had to do was create a note with the following content:</p>
+<pre><code class="language-"></code></pre>
+<p>TABLE file.ctime as "Time Modified"</p>
+<p>SORT file.ctime DESC</p>
+<p>LIMIT 10</p>
+<pre><code class="language-"></code></pre>
+<p>and in preview mode, it would display the result of this "SQL" query, complete with quick links to jump straight to the files in the summary:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/dl/qd/dk/dlqddkyz1iiafixvb_1i7x6jeeq.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>In my test vault, I couldn’t even scrape together 10 files, but you get the idea.</p>
+<p>This kind of list is essential for me because—whether it's universal or just me—here's the deal:</p>
+<blockquote>The less time that's passed since the last edit, the higher the chances I'll need that note again to add something to it.</blockquote>
+<p>And yes, I’m aware of the core plugin <a href="https://help.obsidian.md/Plugins/Quick+switcher">Quick Switcher</a>, which you can summon with <code>Ctrl + O</code>. Its issue is that it shows the top <i>recently opened</i> files, which is not the same thing and totally disrupts my workflow.</p>
+<p>So, here’s the plan:</p>
+<ul>
+	<li>Create a top-10 list, but not as a note—instead, as a custom UI page on the right panel, where tags, page content, links, etc., are displayed.</li>
+	<li>Make it a flexible top-N list, where N is configurable in the plugin settings.</li>
+	<li>Get rid of the heavyweight Dataview plugin since it’s no longer needed.</li>
+</ul>
+<h3>Implementation</h3>
+<p>The plugin’s functionality boils down to replicating the Dataview query described earlier:</p>
+<ul>
+	<li>Fetch a list of all vault files.</li>
+	<li>Sort them by their last modified date.</li>
+	<li>Limit the list to N files.</li>
+	<li>Render the result as clickable links to the files.</li>
+</ul>
+<p>Since we plan to work with the entire vault, we need the <code>Vault</code> class, which is tailored for such tasks. It has a method <a href="https://docs.obsidian.md/Reference/TypeScript+API/Vault/getMarkdownFiles"><code>Vault.getMarkdownFiles()</code></a> that provides a list of <a href="https://docs.obsidian.md/Reference/TypeScript+API/TFile"><code>TFile</code></a> objects. From these, you can retrieve the last modified date: <code>file.stat.mtime</code>. Let’s outline a utility function for this logic:</p>
+<pre><code class="language-javascript"><span class="code-keyword">function</span> <span class="code-call">getTopNFiles</span>(plugin, n) {
+	<span class="code-keyword">const</span> files = plugin.app.vault.<span class="code-call">getMarkdownFiles</span>().<span class="code-call">sort</span>(
+		(f1, f2) =&gt; {
+			<span class="code-keyword">return</span> f2.stat.mtime - f1.stat.mtime
+		}
+	)
+
+	<span class="code-keyword">if</span> (files.length &gt; n) {
+		files.length = n
+	}
+
+	<span class="code-keyword">return</span> files
+}</code></pre>
+<p>Now we just need to decide where this code will be executed. In this plugin, we want to render the content in a custom panel on the right. This involves rendering into a custom <a href="https://docs.obsidian.md/Reference/TypeScript+API/View"><code>View</code></a>.</p>
+<p>Luckily, the Obsidian Docs provide an excellent <a href="https://docs.obsidian.md/Plugins/User+interface/Views">guide</a> that explains how to work with Views: how to declare them, register them in the plugin, display them, and populate them. We’ll follow this guide step by step and end up with code like this:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> RecentEditedNotesPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">this</span>.<span class="code-call">registerView</span>(
+            VIEW_TYPE_RECENT_EDITED_NOTES,
+            (leaf) =&gt; <span class="code-keyword">new</span> <span class="code-call">RecentEditedNotesView</span>(leaf, <span class="code-keyword">this</span>)
+        )
+        <span class="code-keyword">this</span>.<span class="code-call">activateView</span>()
+    }
+
+    async <span class="code-call">activateView</span>() {
+        <span class="code-keyword">const</span> { workspace } = <span class="code-keyword">this</span>.app
+
+        <span class="code-keyword">let</span> leaf = <span class="code-keyword">null</span>
+        <span class="code-keyword">const</span> leaves = workspace.<span class="code-call">getLeavesOfType</span>(VIEW_TYPE_RECENT_EDITED_NOTES)
+
+        <span class="code-keyword">if</span> (leaves.length &gt; <span class="code-literal">0</span>) {
+            <span class="code-comment">// A leaf with our view already exists, use that</span>
+            leaf = leaves[<span class="code-literal">0</span>]
+        } <span class="code-keyword">else</span> {
+            <span class="code-comment">// Our view could not be found in the workspace, create a new leaf</span>
+            <span class="code-comment">// in the right sidebar for it</span>
+            leaf = workspace.<span class="code-call">getRightLeaf</span>(<span class="code-keyword">false</span>)
+            <span class="code-keyword">await</span> leaf.<span class="code-call">setViewState</span>({ type: VIEW_TYPE_RECENT_EDITED_NOTES, active: <span class="code-keyword">true</span> })
+        }
+
+        <span class="code-comment">// "Reveal" the leaf in case it is in a collapsed sidebar</span>
+        workspace.<span class="code-call">revealLeaf</span>(leaf)
+    }
+}
+
+<span class="code-keyword">const</span> VIEW_TYPE_RECENT_EDITED_NOTES = <span class="code-literal">'recent-edited-notes-view'</span>
+
+<span class="code-keyword">class</span> RecentEditedNotesView <span class="code-keyword">extends</span> obsidian.ItemView {
+    plugin = <span class="code-keyword">null</span>
+
+    <span class="code-call">constructor</span>(leaf, plugin) {
+        <span class="code-keyword">super</span>(leaf)
+        <span class="code-keyword">this</span>.plugin = plugin
+    }
+
+    <span class="code-call">getViewType</span>() {
+        <span class="code-keyword">return</span> VIEW_TYPE_RECENT_EDITED_NOTES
+    }
+
+    <span class="code-call">getDisplayText</span>() {
+        <span class="code-keyword">return</span> <span class="code-literal">'Recent edited notes'</span>
+    }
+
+    async <span class="code-call">onOpen</span>() {
+    }
+}
+</code></pre>
+<p>This is all boilerplate code taken straight from the guide to declare and display a new view on the right panel with the ID <code>recent-edited-notes-view</code>:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/sf/h0/2o/sfh02oidhceoeixxaojgazez1ei.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>The View is currently empty, and we’ll populate it in the <code>async onOpen()</code> method, which is also empty for now. First, let’s think about the high-level behavior: when and under what conditions should the View’s content update?</p>
+<ul>
+	<li>At Obsidian startup</li>
+	<li>When a file is modified</li>
+	<li>When a file is renamed</li>
+</ul>
+<p>Let’s write it down like this:</p>
+<pre><code class="language-javascript">async <span class="code-call">onOpen</span>() {
+	<span class="code-keyword">this</span>.<span class="code-call">registerEvent</span>(
+		<span class="code-keyword">this</span>.plugin.app.vault.<span class="code-call">on</span>(<span class="code-literal">'modify'</span>, (file) =&gt; {
+			<span class="code-keyword">this</span>.<span class="code-call">update</span>()
+		})
+	)
+	<span class="code-keyword">this</span>.<span class="code-call">registerEvent</span>(
+		<span class="code-keyword">this</span>.plugin.app.vault.<span class="code-call">on</span>(<span class="code-literal">'rename'</span>, (file) =&gt; {
+			<span class="code-keyword">this</span>.<span class="code-call">update</span>()
+		})
+	)
+
+	<span class="code-keyword">this</span>.<span class="code-call">update</span>()
+}</code></pre>
+<p>Yes, the <code>Vault</code> class allows you to attach a callback to events like <a href="https://docs.obsidian.md/Reference/TypeScript+API/Vault/on('modify'">modification</a>) or <a href="https://docs.obsidian.md/Reference/TypeScript+API/Vault/on('rename'">renaming</a>) of a file. Huge thanks to <a href="https://habr.com/ru/users/MikleNT/">@MikleNT</a> for pointing out that such events should be properly wrapped in <code>this.registerEvent()</code> to ensure automatic unsubscription when the plugin is unloaded. This information can also be found in the <a href="https://github.com/obsidianmd/obsidian-api?tab=readme-ov-file#registering-events">obsidian-api GitHub repository</a>.</p>
+<p>We’re practically at the finish line now—just one more step: writing the <code>update()</code> function to populate the View with our top list:</p>
+<pre><code class="language-javascript"><span class="code-call">update</span>() {
+	<span class="code-keyword">const</span> container = <span class="code-keyword">this</span>.containerEl.children[<span class="code-literal">1</span>]
+	container.<span class="code-call">empty</span>()
+
+	container.<span class="code-call">createEl</span>(<span class="code-literal">'h4'</span>, { text: <span class="code-literal">'Top-10 recent edited notes'</span> })
+
+	<span class="code-keyword">const</span> files = <span class="code-call">getTopNFiles</span>(<span class="code-keyword">this</span>.plugin, <span class="code-literal">10</span>)
+	<span class="code-keyword">const</span> ul = container.<span class="code-call">createEl</span>(<span class="code-literal">'ul'</span>)
+
+	<span class="code-keyword">for</span> (<span class="code-keyword">const</span> file of files) {
+		<span class="code-keyword">const</span> li = ul.<span class="code-call">createEl</span>(<span class="code-literal">'li'</span>)
+		<span class="code-keyword">const</span> link = li.<span class="code-call">createEl</span>(<span class="code-literal">'a'</span>, { text: file.basename })
+	}
+}</code></pre>
+<p>Why is the index <code>1</code> in <code>this.containerEl.children[1]</code> and not <code>0</code>? Honestly, I couldn’t tell you—that’s how it was written in the guide, and it works, so I didn’t feel like experimenting. :)</p>
+<p>The function adds a header to the view, fetches the list of files using <code>getTopNFiles()</code>, and programmatically generates HTML that looks like this:</p>
+<pre><code class="language-">&lt;li&gt;
+    &lt;a&gt;...&lt;/a&gt;
+    &lt;a&gt;...&lt;/a&gt;
+    &lt;a&gt;...&lt;/a&gt;
+    ...
+&lt;/li&gt;</code></pre>
+<p>And we get the result:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/oh/ei/iu/oheiiucolnnlat3brybyvoosxc0.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Again, I don’t have 10 files, but you get the idea.</p>
+<p>But the links don’t work! And no matter how hard I tried to make them work—setting the <code>href</code>, other attributes, reading the official documentation, debugging links in Obsidian, trying to add Obsidian’s <code>.internal-link</code> class to the <code>&lt;a&gt;</code> tags—nothing worked. In the end, I found the solution in the Discord channel. The correct working solution looks like this:</p>
+<pre><code class="language-javascript">link.<span class="code-call">addEventListener</span>(<span class="code-literal">"click"</span>, (event) =&gt; {
+	event.<span class="code-call">preventDefault</span>() <span class="code-comment">// Prevent default link behavior</span>
+	app.workspace.<span class="code-call">openLinkText</span>(file.path, <span class="code-literal">""</span>, <span class="code-keyword">false</span>) <span class="code-comment">// Open the note</span>
+})</code></pre>
+<p>It’s a shame the official documentation didn’t cover such an important detail as opening an internal note via a link. But, in the end, we managed to figure it out.</p>
+<hr>
+<p>Let’s not forget that I promised to add settings to this plugin. The official documentation has a dedicated <a href="https://docs.obsidian.md/Plugins/User+interface/Settings">guide</a> for them. We’ll follow that too. Our plugin will have one modest setting—the number of files in the top list:</p>
+<pre><code class="language-javascript"><span class="code-keyword">class</span> RecentEditedNotesSettingTab <span class="code-keyword">extends</span> obsidian.PluginSettingTab {
+    plugin = <span class="code-keyword">null</span>
+
+    <span class="code-call">constructor</span>(app, plugin) {
+        <span class="code-keyword">super</span>(app, plugin)
+        <span class="code-keyword">this</span>.plugin = plugin
+    }
+
+    <span class="code-call">display</span>() {
+        <span class="code-keyword">let</span> { containerEl } = <span class="code-keyword">this</span>
+
+        containerEl.<span class="code-call">empty</span>()
+
+        <span class="code-keyword">new</span> obsidian.<span class="code-call">Setting</span>(containerEl)
+            .<span class="code-call">setName</span>(<span class="code-literal">'List length'</span>)
+            .<span class="code-call">setDesc</span>(<span class="code-literal">'How long is your list of recently edited notes'</span>)
+            .<span class="code-call">addText</span>((text) =&gt;
+                text
+                .<span class="code-call">setValue</span>(<span class="code-keyword">this</span>.plugin.settings.listLength)
+                .<span class="code-call">onChange</span>(async (value) =&gt; {
+                    <span class="code-keyword">this</span>.plugin.settings.listLength = value
+                    <span class="code-keyword">await</span> <span class="code-keyword">this</span>.plugin.<span class="code-call">saveSettings</span>()
+                })
+            )
+    }
+}
+
+<span class="code-keyword">const</span> DEFAULT_SETTINGS = {
+    listLength: <span class="code-literal">10</span>,
+}
+
+<span class="code-keyword">class</span> RecentEditedNotesPlugin <span class="code-keyword">extends</span> obsidian.Plugin {
+    settings = <span class="code-keyword">null</span>
+
+    async <span class="code-call">onload</span>() {
+        <span class="code-keyword">await</span> <span class="code-keyword">this</span>.<span class="code-call">loadSettings</span>()
+        <span class="code-keyword">this</span>.<span class="code-call">addSettingTab</span>(<span class="code-keyword">new</span> <span class="code-call">RecentEditedNotesSettingTab</span>(<span class="code-keyword">this</span>.app, <span class="code-keyword">this</span>))
+	    ...
+    }
+
+    async <span class="code-call">loadSettings</span>() {
+        <span class="code-keyword">this</span>.settings = Object.<span class="code-call">assign</span>({}, DEFAULT_SETTINGS, <span class="code-keyword">await</span> <span class="code-keyword">this</span>.<span class="code-call">loadData</span>())
+    }
+
+    async <span class="code-call">saveSettings</span>() {
+        <span class="code-keyword">await</span> <span class="code-keyword">this</span>.<span class="code-call">saveData</span>(<span class="code-keyword">this</span>.settings)
+    }
+}</code></pre>
+<p>We’ve declared a settings tab <code>RecentEditedNotesSettingTab</code>, filled it with a List length field, and registered it in the plugin. Saving and loading are also handled. Now, we’re ready to use this setting in our View. We’ll modify two places.</p>
+<p>The first one:</p>
+<pre><code class="language-diff">-container.<span class="code-call">createEl</span>(<span class="code-literal">'h4'</span>, { text: <span class="code-literal">'Top-10 recent edited notes'</span> })
++container.<span class="code-call">createEl</span>(<span class="code-literal">'h4'</span>, { text: `Top-${<span class="code-keyword">this</span>.plugin.settings.listLength} recent edited notes` })
+</code></pre>
+<p>The second one:</p>
+<pre><code class="language-diff">-<span class="code-keyword">const</span> files = <span class="code-call">getTopNFiles</span>(<span class="code-keyword">this</span>.plugin, <span class="code-literal">10</span>)
++<span class="code-keyword">const</span> files = <span class="code-call">getTopNFiles</span>(<span class="code-keyword">this</span>.plugin, <span class="code-keyword">this</span>.plugin.settings.listLength)</code></pre>
+<p>Now, if we go to the settings, we’ll find our plugin under the Community plugins section:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/on/sy/e1/onsye1e3ahnewh-sphwuius4sda.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>This is the only plugin with settings in my test vault, so it stands here in proud solitude.</p>
+<p>Now, let’s head to my personal Vault and test how the setting works when we change the value to 20:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/hv/m0/m5/hvm0m5i7rceofsuor2ysxwjks7m.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Done!</p>
+<p>Even while writing this article, I actively used this plugin to quickly get back to work.</p>
+<h2>Interim Summary</h2>
+<p>So, we’ve written three simple plugins. I hope I’ve managed to demonstrate the key point in Obsidian plugin development—you can simply sit down, create a couple of files, and start writing a plugin. No need to install anything.</p>
+<h4>What about mobile Obsidian?</h4>
+<p>If you have Obsidian Sync, you’ll get your plugins immediately after syncing your devices. Just make sure not to forget <code>"isDesktopOnly": false</code> in <code>manifest.json</code>! Otherwise, the plugins will appear on your mobile device but won’t activate.</p>
+<p>If you sync using another method, just ensure that the folders for your plugins are in the <code>.obsidian/plugins</code> directory, and everything will work as expected.</p>
+<h4>What about the fourth plugin?</h4>
+<p>We’ll write it together in the second article. It will be a bit larger and more serious, covering a new topic like advanced layout inside notes and applying CSS styles to that layout.</p>
+<h4>Where to find the source code</h4>
+<p>After the second article is released, I’ll provide a link to GitHub with all the plugins.</p>
+<h4>How to publish a plugin for the Obsidian community?</h4>
+<p>This goes beyond the scope of this article, and we <i>won’t</i> be publishing the plugins we wrote here. It’s not an ultimatum, but I feel that these plugins are too simple and niche, and I wouldn’t want to clutter the Community plugins section with them.</p>
+<p>As for the publishing process, there is an entire section in the documentation dedicated to this topic. You can start <a href="https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin">here</a>. In short, you’ll need a GitHub repository and a plugin formatted according to all rules and requirements, which must first go through Obsidian’s review team. If everything goes well after the iterative review process, your plugin will be published.</p>
+<hr>
+<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/861230/">habr.com</a>, used under CC BY 3.0. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>
