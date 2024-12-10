@@ -123,7 +123,7 @@ constexpr bool X = true;
 constexpr size_t N = 16;
 using Canvas = std::array<std::array<bool, N>, N>;
 
-constexpr Canvas life {{
+constexpr Canvas life { {
 	{_,X,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,X,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{X,X,X,_,_,_,_,_,_,_,_,_,_,_,_,_,},
@@ -140,7 +140,7 @@ constexpr Canvas life {{
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
-}};
+} };
 
 int main()
 {
@@ -427,9 +427,9 @@ We'll copy the contents of our `life` array into a file named `life.txt`:
 And in our C++ code, we'll implement a truly hacker-worthy inclusion:
 
 ```cpp
-constexpr Canvas life {{
+constexpr Canvas life { {
     #include "life.txt"
-}};
+} };
 ```
 
 From now on, we consider the `life.txt` file as our "rendering window." And, as you may have noticed, it simultaneously serves as part of the C++ code.

@@ -134,7 +134,7 @@ MathJax = {
 <span class="code-keyword">constexpr</span> size_t N = <span class="code-literal">16</span>;
 <span class="code-keyword">using</span> Canvas = std::array&lt;std::array&lt;<span class="code-keyword">bool</span>, N&gt;, N&gt;;
 
-<span class="code-keyword">constexpr</span> Canvas life {{
+<span class="code-keyword">constexpr</span> Canvas life { {
 	{_,X,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,X,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{X,X,X,_,_,_,_,_,_,_,_,_,_,_,_,_,},
@@ -151,7 +151,7 @@ MathJax = {
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
 	{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,},
-}};
+} };
 
 <span class="code-keyword">int</span> <span class="code-call">main</span>()
 {
@@ -370,9 +370,9 @@ cl /help</code></pre>
 {_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_},
 {_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_},</code></pre>
 <p>And in our C++ code, we'll implement a truly hacker-worthy inclusion:</p>
-<pre><code class="language-cpp"><span class="code-keyword">constexpr</span> Canvas life {{
+<pre><code class="language-cpp"><span class="code-keyword">constexpr</span> Canvas life { {
     #<span class="code-keyword">include</span> <span class="code-literal">"life.txt"</span>
-}};</code></pre>
+} };</code></pre>
 <p>From now on, we consider the <code>life.txt</code> file as our "rendering window." And, as you may have noticed, it simultaneously serves as part of the C++ code.</p>
 <p>Our clever plan is as follows:</p>
 <ul>
