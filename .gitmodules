@@ -11,3 +11,6 @@
 [submodule "ieee754_calculator"]
 	path = tools/ieee754_calculator
 	url = git@github.com:AskePit/ieee754-web.git
+[submodule "string_walker"]
+	path = tools/string_walker
+	url = git@github.com:AskePit/string-walker.git
