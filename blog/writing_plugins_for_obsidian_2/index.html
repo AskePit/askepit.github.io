@@ -87,9 +87,9 @@ MathJax = {
 <pre><code class="language-">rnbqkbnr/pp1ppppp/<span class="code-literal">2</span>p5/<span class="code-literal">8</span>/<span class="code-literal">4</span>P3/<span class="code-literal">8</span>/PPPP1PPP/RNBQKBNR</code></pre>
 <p>Rows are separated by slashes <code>/</code>. The letters stand for: <code>r</code> — rook, <code>n</code> — knight, <code>b</code> — bishop, <code>q</code> — queen, <code>k</code> — king, <code>p</code> — pawn. Uppercase letters are for white, lowercase for black. Numbers indicate the number of consecutive empty squares in the row. After the FEN string, there may be additional annotations regarding turn order, castling rights, and so on, but these aren’t relevant for our task.</p>
 <p>We want our plugin to work like this: in the note, we’ll write the FEN notation in a code block with the label <code>chess</code>:</p>
-<pre><code class="language-"></code></pre>
-<p>8/3k1P2/2N5/b7/5K2/4r3/3P4/8</p>
-<pre><code class="language-"></code></pre>
+<pre><code class="language-">```chess
+<span class="code-literal">8/3</span>k1P2/<span class="code-literal">2</span>N5/b7/<span class="code-literal">5</span>K2/<span class="code-literal">4</span>r3/<span class="code-literal">3</span>P4/<span class="code-literal">8</span>
+```</code></pre>
 <p>And in preview mode, the note should render a chessboard with pieces instead of the code block, looking something like this:</p>
 
 <div class="image">
@@ -188,11 +188,14 @@ MathJax = {
 <p>At first, I checked the functionality of these styles using a regular pair of HTML-CSS files in a browser, and it worked. But how do we apply this CSS in the plugin now? It's very simple — you create a file named <code>styles.css</code> (exactly this name!) and just place it in the folder where <code>main.js</code> is located. No additional steps are needed, the styles will be automatically applied.</p>
 <p>Now, let's test it on a simple note:</p>
 <pre><code class="language-"># Two rooks mate
-</code></pre>
-<p>8/8/4k3/R7/7R/8/8/6K1</p>
-<pre><code class="language-"></code></pre>
-<p>8/4k3/7R/R7/8/8/8/6K1</p>
-<pre><code class="language-"></code></pre>
+
+```chess
+<span class="code-literal">8/8/4</span>k3/R7/<span class="code-literal">7</span>R/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">6</span>K1
+```
+
+```chess
+<span class="code-literal">8</span>/<span class="code-literal">4</span>k3/<span class="code-literal">7</span>R/R7/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">6</span>K1
+```</code></pre>
 <p>We get:</p>
 
 <div class="image">
@@ -358,11 +361,14 @@ MathJax = {
 }</code></pre>
 <p>Now the plugin should render the chess positions according to the FEN description. Let's pull out our old template:</p>
 <pre><code class="language-"># Two rooks mate
-</code></pre>
-<p>8/8/4k3/R7/7R/8/8/6K1</p>
-<pre><code class="language-"></code></pre>
-<p>8/4k3/7R/R7/8/8/8/6K1</p>
-<pre><code class="language-"></code></pre>
+
+```chess
+<span class="code-literal">8/8/4</span>k3/R7/<span class="code-literal">7</span>R/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">6</span>K1
+```
+
+```chess
+<span class="code-literal">8</span>/<span class="code-literal">4</span>k3/<span class="code-literal">7</span>R/R7/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">8</span>/<span class="code-literal">6</span>K1
+```</code></pre>
 <p>The note takes the following appearance:</p>
 
 <div class="image">
@@ -398,11 +404,11 @@ MathJax = {
 }</code></pre>
 <p>As you can see, the class includes a <code>box-shadow</code> with some strange calculations. This is the result of my experiments with applying a "vignette" effect to the cell using different colors. In the end, it wasn't exactly a vignette, but the result satisfied me — you'll see soon.</p>
 <p>First, we need to figure out how to describe information about highlighted cells in an Obsidian note. I came up with the same scheme used by all the chess plugins I know:</p>
-<pre><code class="language-"></code></pre>
-<p>fen: rnbqkbnr/pp2pppp/2p5/3p4/3PP3/8/PPP2PPP/RNBQKBNR</p>
-<p>green: d7 d5</p>
-<p>red: e4</p>
-<pre><code class="language-"></code></pre>
+<pre><code class="language-">```chess
+fen: rnbqkbnr/pp2pppp/<span class="code-literal">2</span>p5/<span class="code-literal">3</span>p4/<span class="code-literal">3</span>PP3/<span class="code-literal">8</span>/PPP2PPP/RNBQKBNR
+green: d7 d5
+red: e4
+```</code></pre>
 <p>This means that the parser for the <code>BoardData</code> class will become more complex. It will also gain additional fields:</p>
 <pre><code class="language-javascript"><span class="code-keyword">class</span> BoardData {
 	...
@@ -473,10 +479,10 @@ MathJax = {
 <p>I don't know about you, but I'm happy with the result. The only thing missing for complete satisfaction is...</p>
 <h2><s>Coup</s> Reversal of the board</h2>
 <p>The previous image describes the Caro-Kann opening for Black. It's much more convenient to observe it from Black's side. I want to:</p>
-<pre><code class="language-"></code></pre>
-<p>...</p>
-<p>flipBoard: true</p>
-<pre><code class="language-"></code></pre>
+<pre><code class="language-">```chess
+...
+flipBoard: <span class="code-keyword">true</span>
+```</code></pre>
 <p>How to parse this field, I won’t bother showing, it's a trivial task. The slightly more complex task is—how do we actually flip the board? Use <code>transform</code>? Programmatically rewrite the cell addresses? Here, as usual, a pinch of hacky code comes into play, which has never hurt anyone:</p>
 <pre><code class="language-javascript"><span class="code-keyword">const</span> whitesBoardHtml =
 `&lt;div <span class="code-keyword">class</span>=<span class="code-literal">"board"</span>&gt;

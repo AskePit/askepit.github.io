@@ -156,14 +156,14 @@ D|·······<span class="code-literal">3</span>·<span class="code-literal">
 A|·<span class="code-literal">5</span>···<span class="code-literal">5</span>·········<span class="code-literal">5</span>·<span class="code-literal">3</span>···<span class="code-literal">3</span>·<span class="code-literal">0</span>·<span class="code-literal">0</span>·<span class="code-literal">3</span>·<span class="code-literal">3</span>·<span class="code-literal">4</span>·|
 E|·································|</code></pre>
 <p>We will format tablatures in notes using a code block like this:</p>
-<pre><code class="language-"></code></pre>
-<p>E|---------------------------------|</p>
-<p>B|---------------------------------|</p>
-<p>G|---------------------------------|</p>
-<p>D|-------3-5-4-3-------------------|</p>
-<p>A|-5---5---------5-3---3-0-0-3-3-4-|</p>
-<p>E|---------------------------------|</p>
-<pre><code class="language-"></code></pre>
+<pre><code class="language-">```tab
+E|---------------------------------|
+B|---------------------------------|
+G|---------------------------------|
+D|-------<span class="code-literal">3-5-4-3</span>-------------------|
+A|-<span class="code-literal">5</span>---<span class="code-literal">5</span>---------<span class="code-literal">5</span>-<span class="code-literal">3</span>---<span class="code-literal">3</span>-<span class="code-literal">0</span>-<span class="code-literal">0</span>-<span class="code-literal">3</span>-<span class="code-literal">3</span>-<span class="code-literal">4</span>-|
+E|---------------------------------|
+```</code></pre>
 <p>The plugin should only process blocks marked with <code>tab</code> or <code>tabs</code>.</p>
 <p>By the way, karma points to anyone who can guess what song this is from :)</p>
 <h3>Implementation</h3>
@@ -367,11 +367,11 @@ E|·································|</code></pr
 <h3>Task</h3>
 <p>Up until recently, I had the mighty <a href="https://blacksmithgu.github.io/obsidian-dataview/">Dataview</a> plugin installed in Obsidian. It's a <i>beast</i> of a plugin that can do everything short of launching a spacecraft. It brings SQL and JavaScript magic into your notes, so you can juggle your data and create clever summaries and extracts to your heart's content.</p>
 <p>All that computational abundance? Not my cup of tea. I had Dataview installed for one reason only: to keep a handy note with a list of the top 10 most recently edited files in my vault. All you had to do was create a note with the following content:</p>
-<pre><code class="language-"></code></pre>
-<p>TABLE file.ctime as "Time Modified"</p>
-<p>SORT file.ctime DESC</p>
-<p>LIMIT 10</p>
-<pre><code class="language-"></code></pre>
+<pre><code class="language-">```dataview
+TABLE file.ctime <span class="code-keyword">as</span> <span class="code-literal">"Time Modified"</span>
+SORT file.ctime DESC
+LIMIT <span class="code-literal">10</span>
+```</code></pre>
 <p>and in preview mode, it would display the result of this "SQL" query, complete with quick links to jump straight to the files in the summary:</p>
 
 <div class="image">
