@@ -3,28 +3,28 @@ prologue = '''
 <!DOCTYPE html>
 <html>
 <head lang="en">
-    <title>{title}</title>
+    <title>{{title}}</title>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{description}">
-    <meta name="keywords" content="{keywords}">
+    <meta name="description" content="{{description}}">
+    <meta name="keywords" content="{{keywords}}">
     <meta name="author" content="Nikolai Shalakin">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://askepit.github.io/blog/{url-title}/">
+    <link rel="canonical" href="https://askepit.github.io/blog/{{url-title}}/">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="{title}">
-    <meta property="og:description" content="{description}">
-    <meta property="og:image" content="{image}">
-    <meta property="og:url" content="https://askepit.github.io/blog/{url-title}/">
+    <meta property="og:title" content="{{title}}">
+    <meta property="og:description" content="{{description}}">
+    <meta property="og:image" content="{{image}}">
+    <meta property="og:url" content="https://askepit.github.io/blog/{{url-title}}/">
     <meta property="og:type" content="article">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{title}">
-    <meta name="twitter:description" content="{description}">
-    <meta name="twitter:image" content="{image}">
+    <meta name="twitter:title" content="{{title}}">
+    <meta name="twitter:description" content="{{description}}">
+    <meta name="twitter:image" content="{{image}}">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
@@ -39,7 +39,7 @@ prologue = '''
 <head lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{title}</title>
+    <title>{{title}}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
     </style>
@@ -94,8 +94,8 @@ epilogue = '''
 image = '''
 <div class="image">
     <figure>
-        <img src="{src}" alt="{caption}">
-        <figcaption>{caption}</figcaption>
+        <img src="{{src}}" alt="{{caption}}">
+        <figcaption>{{caption}}</figcaption>
     </figure>
 </div>
 '''
