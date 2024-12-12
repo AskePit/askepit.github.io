@@ -1,8 +1,15 @@
 ---
 tags:
   - article
-title: Write Obsidian plugins, part I
+title: Writing plugins for Obsidian, part I
+url-title: writing_plugins_for_obsidian_1
+description: After all the hype around Notion, people scattered in all directions, but somehow most ended up looking toward Obsidian. Internet was flooded with articles about Obsidian and plugins for Obsidian.
+keywords:
+  - Obsidian
+  - JavaScript
+image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/2af/b22/0a6/2afb220a6ff39c34634dc0f864e28642.png
 ---
+
 # Introduction
 
 After all the hype around Notion, people scattered in all directions, but somehow most ended up looking toward Obsidian. Internet was flooded with articles about Obsidian and plugins for Obsidian.

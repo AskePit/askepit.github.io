@@ -2,6 +2,35 @@
 <!DOCTYPE html>
 <html>
 <head lang="en">
+    <title>Git in conditions of extreme branch atomicity</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.">
+    <meta name="keywords" content="Git">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/git_in_conditions_of_extreme_branch_atomicity/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Git in conditions of extreme branch atomicity">
+    <meta property="og:description" content="How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.">
+    <meta property="og:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/bc9/110/357/bc911035716d0f9eaf5c66694a583aac.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/git_in_conditions_of_extreme_branch_atomicity/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Git in conditions of extreme branch atomicity">
+    <meta name="twitter:description" content="How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/bc9/110/357/bc911035716d0f9eaf5c66694a583aac.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<head lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Git in conditions of extreme branch atomicity</title>
@@ -47,6 +76,7 @@ MathJax = {
     </label>
 </label>
 <h1>Git in conditions of extreme branch atomicity</h1>
+<div class="parse-error">![[Pasted image 20240225230125.png]]</div>
 <p>How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.</p>
 <h2>Advantage of Small Branches</h2>
 <p>How are your Git branches organized? What do they look like, and what size are they?</p>

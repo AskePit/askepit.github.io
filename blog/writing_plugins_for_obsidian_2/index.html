@@ -2,9 +2,38 @@
 <!DOCTYPE html>
 <html>
 <head lang="en">
+    <title>Writing plugins for Obsidian, part II</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="I'm not a chess player, but I'm interested in it :) I have notes with chess sketches. And I'm definitely not alone in this, since right now there are three plugins in the Community plugins section that allow displaying a chessboard with pieces in a note.">
+    <meta name="keywords" content="Obsidian, JavaScript, Chess">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/writing_plugins_for_obsidian_2/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Writing plugins for Obsidian, part II">
+    <meta property="og:description" content="I'm not a chess player, but I'm interested in it :) I have notes with chess sketches. And I'm definitely not alone in this, since right now there are three plugins in the Community plugins section that allow displaying a chessboard with pieces in a note.">
+    <meta property="og:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/2af/b22/0a6/2afb220a6ff39c34634dc0f864e28642.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/writing_plugins_for_obsidian_2/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Writing plugins for Obsidian, part II">
+    <meta name="twitter:description" content="I'm not a chess player, but I'm interested in it :) I have notes with chess sketches. And I'm definitely not alone in this, since right now there are three plugins in the Community plugins section that allow displaying a chessboard with pieces in a note.">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/2af/b22/0a6/2afb220a6ff39c34634dc0f864e28642.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<head lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Write Obsidian plugins, part II</title>
+    <title>Writing plugins for Obsidian, part II</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
     </style>
@@ -46,7 +75,7 @@ MathJax = {
         <div class="slider"></div>
     </label>
 </label>
-<h1>Write Obsidian plugins, part II</h1>
+<h1>Writing plugins for Obsidian, part II</h1>
 <p>Let's continue writing our own plugins for Obsidian. You can find the first part of the article <a href="https://habr.com/ru/articles/861230/">here</a>. In it, we:</p>
 <ul>
 	<li>Discovered that writing plugins can be even easier than the official documentation suggests</li>

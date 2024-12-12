@@ -3,7 +3,15 @@ tags:
   - article
   - cpp
 title: constexpr Game of Life
+url-title: constexpr_game_of_life
+description: For over a decade now, C++ has had constexpr, a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations before the program even runs!
+keywords:
+  - C++
+  - constexpr
+  - Python
+image: https://habrastorage.org/webt/p1/t-/7c/p1t-7csilx5ekan-m7ryligjg3o.png
 ---
+
 # How It All Began
 
 For over a decade now, C++ has had [`constexpr`](https://en.cppreference.com/w/cpp/language/constexpr), a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations *before the program even runs*!

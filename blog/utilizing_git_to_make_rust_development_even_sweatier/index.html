@@ -2,6 +2,35 @@
 <!DOCTYPE html>
 <html>
 <head lang="en">
+    <title>Utilizing Git to make Rust development even sweatier</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore? Actually, the article is more about git than Rust, so if you're not particularly familiar with Rust, don't hesitate — the narrative will be more about the development flow than the language itself. Rust was chosen for the article mainly for its convenient package manager `cargo`, which makes the storytelling more laconic and illustrative.">
+    <meta name="keywords" content="Rust, Git, Linter">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/utilizing_git_to_make_rust_development_even_sweatier/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Utilizing Git to make Rust development even sweatier">
+    <meta property="og:description" content="Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore? Actually, the article is more about git than Rust, so if you're not particularly familiar with Rust, don't hesitate — the narrative will be more about the development flow than the language itself. Rust was chosen for the article mainly for its convenient package manager `cargo`, which makes the storytelling more laconic and illustrative.">
+    <meta property="og:image" content="{image}">
+    <meta property="og:url" content="https://askepit.github.io/blog/utilizing_git_to_make_rust_development_even_sweatier/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Utilizing Git to make Rust development even sweatier">
+    <meta name="twitter:description" content="Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore? Actually, the article is more about git than Rust, so if you're not particularly familiar with Rust, don't hesitate — the narrative will be more about the development flow than the language itself. Rust was chosen for the article mainly for its convenient package manager `cargo`, which makes the storytelling more laconic and illustrative.">
+    <meta name="twitter:image" content="{image}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<head lang="en">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Utilizing Git to make Rust development even sweatier</title>

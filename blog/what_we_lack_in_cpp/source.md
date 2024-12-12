@@ -3,7 +3,13 @@ tags:
   - article
   - cpp
 title: What we lack in C++
+url-title: what_we_lack_in_cpp
+description: C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language's standard library. How did we end up with these helper files, and when will this ever end?
+keywords:
+  - C++
+image: 
 ---
+
 C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language's standard library. How did we end up with these helper files, and when will this ever end?
 
 # Features that do not exist
