@@ -14,3 +14,6 @@
 [submodule "string_walker"]
 	path = tools/string_walker
 	url = git@github.com:AskePit/string-walker.git
+[submodule "tui_toons"]
+	path = tools/tui_toons
+	url = git@github.com:AskePit/tui-toons.git
