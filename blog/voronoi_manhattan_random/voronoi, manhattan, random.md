@@ -8,10 +8,12 @@ title: Voronoi, Manhattan, random
 url-title: voronoi_manhattan_random
 description: This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets. So, we had one programmer, one artist, an absolute lack of understanding of the workflow, an unfamiliar game engine, and a desire to create something. If you're curious about the mixup of Voronoi diagrams, a special case of Minkowski distance, polygon transformations, procedural generation, and noise—all wrapped up in a beautifully stylized package—this is the right place for you to read.
 keywords:
-  - Godot
-  - Gamedev
-  - C++
-  - Math
+  - godot
+  - gamedev
+  - c++
+  - math
+  - voronoi
+  - perlin noise
 image: https://habrastorage.org/r/w780/getpro/habr/upload_files/e7b/a2a/6b8/e7ba2a6b84de61ade5eca648c0bbbff7.jpg
 ---
 

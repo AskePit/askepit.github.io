@@ -6,9 +6,11 @@ title: constexpr Game of Life
 url-title: constexpr_game_of_life
 description: For over a decade now, C++ has had constexpr, a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations before the program even runs!
 keywords:
-  - C++
+  - c++
   - constexpr
-  - Python
+  - python
+  - game of life
+  - abnormal programming
 image: https://habrastorage.org/webt/p1/t-/7c/p1t-7csilx5ekan-m7ryligjg3o.png
 ---
 

@@ -6,7 +6,11 @@ title: Git in conditions of extreme branch atomicity
 url-title: git_in_conditions_of_extreme_branch_atomicity
 description: How are your branches organized in Git? What do they look like, and what size are they? Below, I'll tell you how to restrict yourself within limits and then deal with the consequences using a nifty life hack.
 keywords:
-  - Git
+  - git
+  - branches
+  - git flow
+  - programming
+  - version control
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/bc9/110/357/bc911035716d0f9eaf5c66694a583aac.png
 ---
 

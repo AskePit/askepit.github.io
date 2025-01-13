@@ -5,9 +5,10 @@ title: Writing plugins for Obsidian, part II
 url-title: writing_plugins_for_obsidian_2
 description: I'm not a chess player, but I'm interested in it :) I have notes with chess sketches. And I'm definitely not alone in this, since right now there are three plugins in the Community plugins section that allow displaying a chessboard with pieces in a note.
 keywords:
-  - Obsidian
-  - JavaScript
-  - Chess
+  - obsidian
+  - javascript
+  - plugins
+  - chess
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/2af/b22/0a6/2afb220a6ff39c34634dc0f864e28642.png
 ---
 

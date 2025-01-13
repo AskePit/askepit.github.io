@@ -7,8 +7,12 @@ title: Multithreading in games
 url-title: multithreading_in_games
 description: Modern games are rich in content, gameplay mechanics, and interactivity. A lot happens on the screen all at once—the world feels alive, responsive, and even without active player involvement, life continues to simmer, with multiple events unfolding simultaneously. Let’s dive into the details of how this diversity of in-game events is implemented and find out what role multithreading plays in all this, and how many cores a typical game needs.
 keywords:
-  - Gamedev
-  - Multithreading
+  - gamedev
+  - multithreading
+  - cpu
+  - gpu
+  - game engine
+  - game loop
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/df0/17e/1a7/df017e1a78cf6edff3a94fae12a975a2.png
 ---
 
