@@ -17,3 +17,6 @@
 [submodule "tui_toons"]
 	path = tools/tui_toons
 	url = git@github.com:AskePit/tui-toons.git
+[submodule "vehicule"]
+	path = tools/vehicule
+	url = git@github.com:AskePit/vehicule.git
