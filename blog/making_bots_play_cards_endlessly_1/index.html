@@ -1,0 +1,395 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>Making bots play cards endlessly, part I</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="So there I was, doing what I love—messing around with writing mini-games that no one but me would ever see. This time, I was tinkering with a card game, a knockoff of Inscryption. Well, more like a pale imitation with vague goals and even vaguer prospects.">
+    <meta name="keywords" content="python, gamedev, cards">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Making bots play cards endlessly, part I">
+    <meta property="og:description" content="So there I was, doing what I love—messing around with writing mini-games that no one but me would ever see. This time, I was tinkering with a card game, a knockoff of Inscryption. Well, more like a pale imitation with vague goals and even vaguer prospects.">
+    <meta property="og:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Making bots play cards endlessly, part I">
+    <meta name="twitter:description" content="So there I was, doing what I love—messing around with writing mini-games that no one but me would ever see. This time, I was tinkering with a card game, a knockoff of Inscryption. Well, more like a pale imitation with vague goals and even vaguer prospects.">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Making bots play cards endlessly, part I</h1>
+<h2>The Essence of the Problem</h2>
+<p>So there I was, doing what I love—messing around with writing mini-games that no one but me would ever see. This time, I was tinkering with a card game, a knockoff of <a href="https://store.steampowered.com/app/1092790/Inscryption/">Inscryption</a>. Well, more like a pale imitation with vague goals and even vaguer prospects. But one thing was clear: the core mechanic of the game was card-based combat, and it needed to be engaging enough to suck the player in for hours.</p>
+<p>When I first started this whole thing, designing the rules of a card game seemed ridiculously simple—throw together a dozen or two weird and wacky cards, set up a playing field with card slots, and come up with some straightforward combat rules. What could possibly go wrong?</p>
+<blockquote><b>Spoiler Alert</b>
+Let’s all keep count of how many times the word <i>unbalanced</i> appears in this article.</blockquote>
+<p>Once I actually sat down to implement it using the first approach that came to mind, I was immediately disappointed—I ended up with an <i>unbalanced</i>, boring mess. So, I scrapped it and tried again using a different approach, only to make it even worse. Classic case of "it'll be fine" turning into "why did I think this would be fine?"</p>
+<p>Before we go any further, let’s clarify what I was aiming for. Inscryption’s card game is <i>unbalanced</i> by design. All things being equal, the player has an inherent advantage. The game compensates for this <i>imbalance</i> through starting conditions and differences in player vs. opponent card pools. But I knew that if I started off in this <i>unbalanced</i> chaos, I’d never be able to properly control the evolution of the game. My plan was to first establish a fair, equal, sweaty, skill-based experience under symmetrical conditions. Only then, once I had this as a benchmark, would I tweak and modify things—stacking the odds either for or against the player as needed. Naturally, I completely botched this first step by trying to brute-force my way through.</p>
+<p>In the first version of the game, I figured that if both players had identical decks and their cards attacked each other simultaneously—each card hitting the one directly opposite—then it would result in a fair, intense showdown. Instead, I got a situation where, on average, all the cards annihilated each other, leaving the board perpetually empty. Riveting gameplay, right?</p>
+<p>Then I thought, okay, if in Inscryption the player moves first and then the opponent follows, I could just do the same—if I’m copying, might as well go all in. But this led to another problem: whoever went first had a massive advantage, making the game <i>unbalanced</i> again. Funny enough, a similar first-move advantage exists in chess, but there it’s subtle and gets evened out over many moves. Here, with just four or five miserable card slots and a handful of cards, that advantage was painfully obvious.</p>
+<h2>The Idea</h2>
+<p>I was feeling pretty down because I had no clue how to turn my <i>unbalanced</i> mess of a game into something remotely enjoyable. Randomly tweaking rules, blindly playtesting, and endlessly slogging through iteration after iteration? That sounded soul-crushingly boring.</p>
+<p>And then it hit me—why suffer through playing my own boring game when I could make a bot do it for me? Just throw in two bots, force them to duke it out in hundreds of game variations until they drop, and let them figure out (on my behalf, no less) the optimal set of rules.</p>
+<p>A fascinating and incredibly tempting idea. It’s always nice when the work does itself. The only catch, of course, was that in order for the work to do itself, I first had to put in a ridiculous amount of effort automating the very process that was supposed to relieve me of said effort. But hey, minor details. Once you're hooked on an idea, no amount of technicalities can scare you off.</p>
+<h2>Formalizing the Task</h2>
+<p>Before I could start writing any code, I had to go through a rather annoying stage. You see, all this <i>"let’s compare game results with different rules and decide which one is better"</i> stuff sounds suspiciously like something out of a humanities textbook. But we’re not here for vague feelings—we need numbers, something tangible, real parameters and metrics. And, surprise surprise, we had none. Worse still, it wasn’t immediately obvious where to get them.</p>
+<p>Let’s think this through: our bots play a thousand games using one set of rules, then another thousand games with slightly tweaked rules. What exactly are we measuring in the first thousand games? And in the second? And even if we do manage to measure <i>something</i>, how do we compare those results and decide which version is better? Yeah… not exactly shaping up to be an easy problem.</p>
+<h2>Let’s Start Writing Something—Anything</h2>
+<p>As you’ve probably guessed, I already had some groundwork laid for the card game. There were visual assets, code, and an engine in which all of this existed as a prototype—a prototype that currently made my blood boil due to its <i>unbalanced</i> nature.</p>
+<p>So, naturally, we won’t be using any of that. We’re starting from scratch. In Python.</p>
+<p>Why? Because this is a separate research task, and all those fancy engine features—assets, animations, visual effects—would just get in the way. What we need is a crude, ugly script running in a barebones console, tirelessly crunching numbers like a loyal workhorse. Then, armed with our beautifully fine-tuned results, we can return to our nice, cozy engine and implement the card game’s core mechanics <i>once and for all</i> (spoiler: not really).</p>
+<h2>Let’s Set Some Ground Rules</h2>
+<p>I have a pretty tough task ahead: explaining everything I did, walking you through all the problems and solutions, without drowning in excessive details. There’s a lot of code—it’s brilliant, of course—but dumping it all on you would be pointless.</p>
+<p>So, I’ll carefully break things down step by step, sprinkling in bits of code where necessary. Keep in mind, though, that I’m <i>not</i> here to explain the exact rules and mechanics of my game—because in the context of this discussion, that’s not the important part. What really matters is how to achieve proper game balance. And that’s exactly where we’ll focus our attention.</p>
+<h2>Writing the Game</h2>
+<p>Before the bots can start playing, we need to define the game rules.</p>
+<p>Let’s outline the key requirements so we can structure everything properly:</p>
+<ul>
+	<li>Some rules will be <i>fixed</i>. We won’t touch them, and we’ll justify this however we see fit—maybe they’re dictated by the lore, maybe they <i>capture the spirit</i> of our game, maybe we just like them, or maybe they’re our spouse’s/kid’s/cat’s favorite.</li>
+	<li>Some rules <i>should</i> be tweakable. In other words, we want multiple <i>variations</i> of the game. I decided to go with 2-3 versions, naming them Alpha, Beta, Gamma, etc.</li>
+	<li>If the game has multiple versions, then the bots must also have versions: Alpha-bot, Beta-bot, Gamma-bot, etc. Each bot is trained to play a specific variation of the game. <i>But</i>, let’s make things more interesting: each bot type should have different intelligence levels. So, for example, we’ll have AlphaIdiot, AlphaNormie, and AlphaStronk. This allows us to test how much the bot’s intelligence level influences success in the game—and from those observations, we might gain insights into the game’s balance and fairness.</li>
+	<li>The whole reason we’re doing this: game parameters. These are what we want to optimize automatically. We’re hoping that our bots will figure out the perfect balance for each game variation, making them all fair (at least from our <i>highly subjective</i> perspective). In my case, the key parameters include: the number of card slots on the board, deck size, deck composition, starting hand size, initial matchsticks for the player, and the number of matchsticks in the shared pool.</li>
+</ul>
+<p>Given all of this, our basic game class structure should look something like this:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> GameBase:
+    black_player: PlayerBase
+    white_player: PlayerBase
+
+    table: Table
+
+    ...
+
+    <span class="code-comment"># methods</span></code></pre>
+<p>Let’s break this down:</p>
+<ul>
+	<li>The name <code>GameBase</code> hints that this is the base version of the game. Variations like <code>AlphaGame</code>, <code>BetaGame</code>, and <code>GammaGame</code> will inherit from it. This class will contain methods for the <i>fixed</i> rules.</li>
+	<li>Similarly, <code>PlayerBase</code> is the parent class for our <code>GammaIdiot</code>, <code>AlphaNormie</code>, <code>BetaStronk</code>, etc. Each subclass will implement its own AI behavior. For example, the <code>make_move</code> method of the Idiot bot might just throw a random card onto a random slot. Meanwhile, the Stronk bot will analyze the board, assess threats, and make a calculated move—or even pass if that’s the best option.</li>
+	<li>The <code>table</code> object stores all game-related data: slots, decks, matchsticks, etc. But for now, we’re not too concerned about that.</li>
+</ul>
+<blockquote>If you’ve been itching to practice writing an <a href="https://en.wikipedia.org/wiki/Abstract_factory_pattern">abstract factory</a>, now’s your chance! Creating a game instance with <i>compatible</i> bot players of the appropriate intelligence level is a perfect use case. I’ll leave that as a challenge for those who want to dive deeper.</blockquote>
+<h3>Game Code</h3>
+<p>Each game variation—<code>AlphaGame</code>, <code>BetaGame</code>, <code>GammaGame</code>, etc.—follows the same development pattern:</p>
+<p>1. Inherit from <code>GameBase</code>.</p>
+<p>2. Implement the game’s state machine.</p>
+<p>A state machine makes writing game rules easy and structured. Let’s take <code>AlphaGame</code> as an example. First, I describe the rules and states in plain English:</p>
+<pre><code class="language-">## Start conditions
+
+- <span class="code-literal">2</span> cards <span class="code-keyword">in</span> a hand
+- <span class="code-literal">10</span> cards <span class="code-keyword">in</span> a deck
+- <span class="code-literal">5</span> matches
+- unlimited matches bank
+- <span class="code-literal">5</span> slots
+
+## Game states
+
+- WHITE_RESOURCE_TAKE. Options:
+    - Draw a card <span class="code-keyword">from</span> the deck
+    - Take a <span class="code-keyword">match</span> <span class="code-keyword">from</span> the bank
+    - Do nothing <span class="code-keyword">and</span> skip
+- WHITE_MOVE. Options:
+    - Place a <span class="code-keyword">new</span> card on the board by paying matches
+    - Do nothing <span class="code-keyword">and</span> skip
+- BLACK_RESOURCE_TAKE. Mirrors WHITE_RESOURCE_TAKE
+- BLACK_MOVE. Mirrors WHITE_MOVE
+- WHITE_STRIKE. Sequence:
+    - Choose attacker card <span class="code-keyword">and</span> target card
+    - Attack
+    - Counter-attack <span class="code-keyword">if</span> target survives
+- BLACK_STRIKE. Mirrors WHITE_STRIKE</code></pre>
+<p>With this plan in hand, I can now go full zombie coder mode and just translate the above into Python.</p>
+<h4>Defining States</h4>
+<pre><code class="language-python"><span class="code-keyword">class</span> <span class="code-call">State</span>(Enum):
+    WHITE_RESOURCE_TAKE = <span class="code-literal">0</span>
+    WHITE_MOVE = <span class="code-literal">1</span>
+    BLACK_RESOURCE_TAKE = <span class="code-literal">2</span>
+    BLACK_MOVE = <span class="code-literal">3</span>
+    WHITE_STRIKE = <span class="code-literal">4</span>
+    BLACK_STRIKE = <span class="code-literal">5</span>
+    GAME_OVER = <span class="code-literal">6</span></code></pre>
+<p>This still looks like plain English, just in a more structured form!</p>
+<h4>Game Class</h4>
+<p>The game itself is just a state machine. Without unnecessary noise, it looks like this:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> <span class="code-call">AlphaGame</span>(GameBase):
+    state: State
+
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        self.state = State.WHITE_RESOURCE_TAKE
+        <span class="code-call">super</span>().<span class="code-call">launch</span>()
+
+    <span class="code-keyword">def</span> <span class="code-call">update</span>(self) -&gt; bool:  <span class="code-comment"># Returns False when the game ends</span>
+        match self.state:
+            case State.WHITE_RESOURCE_TAKE:
+                self.<span class="code-call">white_resource_take</span>()
+            case State.WHITE_MOVE:
+                self.<span class="code-call">white_move</span>()
+            case State.BLACK_RESOURCE_TAKE:
+                self.<span class="code-call">black_resource_take</span>()
+            case State.BLACK_MOVE:
+                self.<span class="code-call">black_move</span>()
+            case State.WHITE_STRIKE:
+                self.<span class="code-call">white_strike</span>()
+            case State.BLACK_STRIKE:
+                self.<span class="code-call">black_strike</span>()
+            case State.GAME_OVER:
+                <span class="code-keyword">return</span> <span class="code-keyword">False</span>
+
+        <span class="code-keyword">return</span> <span class="code-keyword">True</span></code></pre>
+<h4>Running the State Machine</h4>
+<p>In the base class, we have a simple loop to run the game:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> GameBase:
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">while</span> self.<span class="code-call">update</span>():
+            <span class="code-keyword">pass</span></code></pre>
+<p>If the loop exits, the game is over. That’s it! Now all that’s left is to implement <code>self.white_resource_take()</code>, <code>self.white_move()</code>, <code>self.black_strike()</code>, etc. These methods contain the actual gameplay logic—bot moves and state transitions.</p>
+<h4>Example: <code>white_strike()</code></h4>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">white_strike</span>(self):
+    (attacker_slot, victim_slot) = self.white_player.<span class="code-call">strike</span>()
+
+    self.<span class="code-call">_cards_combat</span>(attacker_slot, victim_slot, Side.WHITE)
+    self.<span class="code-call">change_state</span>(State.BLACK_STRIKE)</code></pre>
+<p>Here, we see three main actions:</p>
+<ul>
+	<li>The bot’s logic is called via <code>self.white_player.strike()</code>.</li>
+	<li>The game processes the attack in <code>_cards_combat()</code>.</li>
+	<li>The game state transitions to <code>State.BLACK_STRIKE</code>.</li>
+</ul>
+<h4>Example: <code>strike()</code> for an Idiot Bot</h4>
+<p>Since we have different bot types, <code>self.white_player.strike()</code> will behave differently depending on the bot. Here’s how the dumbest bot, <code>AlphaIdiotPlayer</code>, implements it:</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">strike</span>(self) -&gt; tuple[int, int]:  <span class="code-comment"># (attacker_slot, victim_slot)</span>
+    attacker_slot = self.table.slots.<span class="code-call">get_random_slot</span>(self.side, SlotStatus.OCCUPIED)
+    victim_slot = self.table.slots.<span class="code-call">get_random_slot</span>(self.side.<span class="code-call">get_opposite</span>(), SlotStatus.OCCUPIED)
+
+    <span class="code-keyword">return</span> (attacker_slot, victim_slot)</code></pre>
+<p>This bot has full access to the game table and can make decisions based on the data. In this case, the <i>Idiot</i> just picks a random occupied slot for both the attacker and the target—because, well, he’s an Idiot.</p>
+<h3>Metrics</h3>
+<p>Now, metrics take the stage for the first time. These will help us quantify the quality of a game, compare different variations, and determine which one is <i>more better</i>™.</p>
+<p>Defining what makes a good game… turns out to be tricky. Translating it into numbers is even harder. I started with verbal descriptions and eventually boiled it down to these key points for my game:</p>
+<ul>
+	<li><b>Fairness</b>: Over a long run, two equally skilled players should have a 50/50 chance of winning.</li>
+	<li><b>Game length</b>: The game shouldn't be too short or too long—otherwise, it gets boring. I estimated that an engaging game should last around 10 rounds on average.</li>
+	<li><b>No deadlocks</b>: If games often result in a stalemate or become unplayable, that's <i>bad</i>. We want to avoid that.</li>
+</ul>
+<p>With these ideas in mind, I structured my metrics into three parameters:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> <span class="code-call">GameOverResult</span>(Enum):
+    NONE = <span class="code-literal">0</span>
+    WHITE_WINS = <span class="code-literal">1</span>
+    BLACK_WINS = <span class="code-literal">2</span>
+    DRAW = <span class="code-literal">3</span>
+    INFINITY = <span class="code-literal">4</span>
+
+@dataclass
+<span class="code-keyword">class</span> Metrics:
+    rounds: int = <span class="code-literal">0</span>
+    result: GameOverResult = GameOverResult.NONE
+    exhausted: bool = <span class="code-keyword">False</span></code></pre>
+<p>At the end of a game, we get a <code>Metrics</code> object. The core idea is:</p>
+<p>1. Define <i>ideal</i> metrics for a perfectly balanced game.</p>
+<p>2. Playtest a specific game variation and gather its actual metrics.</p>
+<p>3. Compare them. This allows us to:</p>
+<p>- Measure how close a game is to our <i>ideal</i>.</p>
+<p>- Compare different game variations against each other.</p>
+<h4>Collecting Metrics</h4>
+<p>Here’s a quick reminder of how a game runs:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> GameBase:
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">while</span> self.<span class="code-call">update</span>():
+            <span class="code-keyword">pass</span></code></pre>
+<p>All we need to do is call <code>game.launch()</code>, and the game plays itself. Inserting metric-tracking logic at the right places is straightforward.</p>
+<p>I won’t bore you with counting rounds or recording game results—that's trivial. What matters is that each completed game produces a <code>Metrics</code> object. From here, we can start analyzing and tweaking our game to find the best possible balance.</p>
+<h3>Playing the Game at Scale</h3>
+<p>To properly measure a game's balance under specific rules and parameters, I need to force bots to play the same game over and over. Running, say, <b>1,000 identical games</b> should provide a stable statistical picture.</p>
+<p>At the end of those 1,000 games, I'll have 1,000 <code>Metrics</code> objects. The problem? I wasn't initially sure what to do with them.</p>
+<h4>Organizing the Data</h4>
+<p>At first, I decided to just store these objects in a simple <a href="https://en.wikipedia.org/wiki/Parallel_array">Structure of Arrays (SoA)</a> format:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> BunchMetrics:
+    rounds: list[int] = <span class="code-call">field</span>(default_factory=list)
+    results: list[GameOverResult] = <span class="code-call">field</span>(default_factory=list)
+    exhausted: list[bool] = <span class="code-call">field</span>(default_factory=list)
+
+    <span class="code-keyword">def</span> <span class="code-call">add_metrics</span>(self, metric: Metrics):
+        self.rounds.<span class="code-call">append</span>(metric.rounds)
+        self.results.<span class="code-call">append</span>(metric.result)
+        self.exhausted.<span class="code-call">append</span>(metric.exhausted)</code></pre>
+<h4>Automating Multiple Runs</h4>
+<p>The <code>GameRepeater</code> class is responsible for running multiple games and collecting metrics:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> GameRepeater:
+    game: GameBase
+    bunch_metrics: BunchMetrics
+    execute_count: int
+
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-call">range</span>(self.execute_count):
+            self.game.<span class="code-call">launch</span>()
+            self.bunch_metrics.<span class="code-call">add_metrics</span>(self.game.<span class="code-call">get_metrics</span>())
+            self.game.<span class="code-call">reset</span>()</code></pre>
+<p>This class <b>repeatedly plays the same game</b> (with the same bots inside) and <b>stores the results</b>.</p>
+<h4>Visualizing the Process</h4>
+<p>This can be represented with a simple diagram:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/r/w1560/webt/ff/uz/rm/ffuzrmjbzpzwdlxrgosq53vc94y.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>You'll see later why this diagram, simple as it is, actually matters.</p>
+<h3>Averaging Metrics</h3>
+<p>Now that we've gathered a bunch of data, the next step is to extract something unified that we can compare against the ideal metrics. The task turned out to be more complex than I initially thought, so let's dive into how we can do this.</p>
+<blockquote><b>Disclaimer</b>: This chapter might turn into an ode to my lack of knowledge in libraries like Pandas and NumPy. But that’s not certain — feel free to let me know in the comments how real grown-ups solve this problem.</blockquote>
+<p>So, we have the <code>BunchMetrics</code>. How can we turn it into a single <code>Metrics</code>?</p>
+<h4>The Obvious Thought: Averaging</h4>
+<p>The first thing that comes to mind is to just average everything and get one <code>Metrics</code> object. However, this approach hits a roadblock quickly. Let's revisit the metrics:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> Metrics:
+    rounds: int = <span class="code-literal">0</span>
+    result: GameOverResult = GameOverResult.NONE
+    exhausted: bool = <span class="code-keyword">False</span></code></pre>
+<p>While we can easily average the number of rounds, it’s tricky to average a <code>bool</code> value. As for <code>GameOverResult</code>, there’s a problem: how do you average an <code>enum</code>? Moreover, even in the simplest case — the number of rounds — if we just average everything, we lose significant information. Consider:</p>
+<ul>
+	<li>What if we look at the median instead of the mean?</li>
+	<li>What if the median is significantly different from the mean? Could that provide useful insights?</li>
+	<li>What if two games out of a thousand lasted over 200 rounds?</li>
+	<li>What if ten games out of a thousand were completed in one round?</li>
+</ul>
+<p>The conclusions from such situations are secondary, but the key point is: I want to analyze all of this data together. That’s why I came up with the following structure:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> DataRange:
+    min: float = <span class="code-literal">0.0</span>
+    max: float = <span class="code-literal">0.0</span>
+    average: float = <span class="code-literal">0.0</span>
+    median: float = <span class="code-literal">0.0</span></code></pre>
+<h4>Moving in the Right Direction</h4>
+<ul>
+	<li><code>BunchMetrics</code> can easily be transformed into <code>DataRange</code> for each metric.</li>
+	<li><code>DataRange</code> gives us plenty of room to analyze the data.</li>
+</ul>
+<p>However, there’s one problem: the <code>result</code> field doesn’t fit into the <code>DataRange</code> concept:</p>
+<pre><code class="language-python">results: list[GameOverResult] = <span class="code-call">field</span>(default_factory=list[GameOverResult])</code></pre>
+<h4>Problem with Averaging <code>Enum</code> Types</h4>
+<p>When creating ideal metrics, I want to specify something like:</p>
+<blockquote>"My ideal game result distribution is as follows: White wins 49.75% of the time, Black wins 49.75%, Draws occur 0.5%, and other outcomes are 0%."</blockquote>
+<p>A <code>DataRange</code> doesn’t fit this well, so I came up with something else. It was lucky that while explaining the idea, it mapped perfectly to code, leading me to the following solution:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> ProbabilityTable:
+    table: dict[int, float] = <span class="code-call">field</span>(default_factory=dict[int, float])  <span class="code-comment"># key -&gt; probability proportion</span>
+
+    <span class="code-keyword">def</span> <span class="code-call">inc_value</span>(self, key: int, value: float):
+        <span class="code-keyword">if</span> key <span class="code-keyword">not</span> <span class="code-keyword">in</span> self.table:
+            self.table[key] = <span class="code-literal">0.0</span>
+        self.table[key] += value
+
+    <span class="code-keyword">def</span> <span class="code-call">normalize</span>(self):
+        total = <span class="code-literal">0.0</span>
+        <span class="code-keyword">for</span> val <span class="code-keyword">in</span> self.table.<span class="code-call">values</span>():
+            total += val
+
+        <span class="code-keyword">for</span> key <span class="code-keyword">in</span> self.table:
+            self.table[key] /= total
+        self.normalized = <span class="code-keyword">True</span>
+
+    <span class="code-keyword">def</span> <span class="code-call">get_probability</span>(self, key: int) -&gt; float:
+        <span class="code-keyword">if</span> <span class="code-keyword">not</span> self.normalized:
+            self.<span class="code-call">normalize</span>()
+
+        <span class="code-keyword">return</span> self.table[key]</code></pre>
+<p>This <code>ProbabilityTable</code> class stores normalized probabilities for each possible game outcome, which fits perfectly with what I needed.</p>
+<h4>Introducing <code>AveragedMetrics</code></h4>
+<p>Now we can introduce our "uber" data structure, the <code>AveragedMetrics</code> class:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> AveragedMetrics:
+    rounds: DataRange = <span class="code-call">field</span>(default_factory=DataRange)
+    result: ProbabilityTable = <span class="code-call">field</span>(default_factory=ProbabilityTable)  <span class="code-comment"># [GameOverResult -&gt; float]</span>
+    exhausted: DataRange = <span class="code-call">field</span>(default_factory=DataRange)</code></pre>
+<h4>Adding a Method to <code>BunchMetrics</code></h4>
+<p>The <code>BunchMetrics</code> class now has a method that produces averaged data:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> BunchMetrics:
+    ...
+    <span class="code-keyword">def</span> <span class="code-call">get_average</span>(self) -&gt; <span class="code-literal">'AveragedMetrics'</span>:
+        res = <span class="code-call">AveragedMetrics</span>()
+
+        res.rounds = DataRange.<span class="code-call">MakeFromList</span>(self.rounds)
+        res.result = ProbabilityTable.<span class="code-call">MakeFromList</span>(self.results)
+        res.exhausted = DataRange.<span class="code-call">MakeFromList</span>(self.exhausted)
+
+        <span class="code-keyword">return</span> res</code></pre>
+<p>The <code>MakeFromList</code> methods for <code>DataRange</code> and <code>ProbabilityTable</code> are not particularly complex, so I’ll skip their implementation here.</p>
+<h4>Defining Ideal Metrics</h4>
+<p>After all these data transformations, I came to another important conclusion: ideal metrics should also be represented as <code>AveragedMetrics</code>. For example:</p>
+<pre><code class="language-python">ideal_metrics = <span class="code-call">AveragedMetrics</span>(
+    rounds=<span class="code-call">DataRange</span>(min=<span class="code-literal">5</span>, max=<span class="code-literal">15</span>, average=<span class="code-literal">10</span>, median=<span class="code-literal">10</span>),
+    result=<span class="code-call">ProbabilityTable</span>(
+        table={
+            GameOverResult.BLACK_WINS: <span class="code-literal">0.4975</span>,
+            GameOverResult.WHITE_WINS: <span class="code-literal">0.4975</span>,
+            GameOverResult.DRAW: <span class="code-literal">0.005</span>,
+        }
+    ),
+    exhausted=<span class="code-call">DataRange</span>(min=<span class="code-literal">0</span>, max=<span class="code-literal">0</span>, average=<span class="code-literal">0</span>, median=<span class="code-literal">0</span>),
+)</code></pre>
+<h4>Benefits of This Approach</h4>
+<ul>
+	<li><b>Representation of game outcomes</b>: The probability table is the best way to express the desired outcome distribution. It’s simply impossible to do this with the <code>Metrics</code> class.</li>
+	<li><b>Granular control</b>: You can now specify not just ideal averages or medians, but also desired minimums and maximums, allowing for more detailed control and analysis.</li>
+</ul>
+<h3>What’s Next?</h3>
+<p>What comes next? Well, you’ll find out in the next article! Yes, that’s right. Here’s what you can expect in the next installment:</p>
+<ul>
+	<li><b>We’ll explore the combinatorial search of game rules and extract metrics.</b></li>
+	<li><b>We’ll learn how to compare two <code>AveragedMetrics</code> objects.</b> It sounds simple at first, but when you really think about it, it’s actually not. Why? Well, think about how you would compare two <i>almost</i> identical <code>AveragedMetrics</code> and how you would express the result of such a comparison.</li>
+	<li><b>Based on the metrics, we’ll identify the game with ideal parameters.</b></li>
+	<li><b>We’ll build an infinite miner for the best game rules, evolving from the best ones through code generation and modification.</b> (Yes, shock content ahead.)</li>
+	<li><b>Finally, we’ll create a game that won’t be <i>imbalanced</i> anymore.</b></li>
+</ul>
+<p>Stay tuned for all that exciting stuff coming soon!</p>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>
