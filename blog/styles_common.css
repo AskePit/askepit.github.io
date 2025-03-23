@@ -97,7 +97,7 @@ blockquote {
 
 @media only screen and (max-width: 1000px) {
     body {
-        margin: 15px;
+        margin: 7vw;
     }
     pre, code {
         font-size: 14px;
