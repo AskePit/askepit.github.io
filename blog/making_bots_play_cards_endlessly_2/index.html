@@ -1,0 +1,482 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>Making bots play cards endlessly, part II</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is [here](https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/). Highly recommended reading — otherwise, keeping up with the context will be a pain.">
+    <meta name="keywords" content="python, gamedev, cards">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/making_bots_play_cards_endlessly_2/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Making bots play cards endlessly, part II">
+    <meta property="og:description" content="We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is [here](https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/). Highly recommended reading — otherwise, keeping up with the context will be a pain.">
+    <meta property="og:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/making_bots_play_cards_endlessly_2/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Making bots play cards endlessly, part II">
+    <meta name="twitter:description" content="We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is [here](https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/). Highly recommended reading — otherwise, keeping up with the context will be a pain.">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Making bots play cards endlessly, part II</h1>
+<p>We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is <a href="https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/">here</a>. Highly recommended reading — otherwise, keeping up with the context will be a pain.</p>
+<p>So, in the previous episodes, we:</p>
+<ul>
+	<li>Experienced pain and <i>imbalance</i></li>
+	<li>Wrote the card game logic in Python</li>
+	<li>Introduced bots into the game and made them battle it out in thousands upon thousands of matches</li>
+	<li>Described the metrics we collect from the game and presented them in not one, not two, but three glorious forms: <code>Metrics</code>, <code>BunchMetrics</code>, <code>AveragedMetrics</code></li>
+	<li>Swore to ourselves that we’d see this through and finally extract those elusive optimal game settings</li>
+</ul>
+<h2>Varying the Game</h2>
+<p>By the end of the first article, we had a <code>GameRepeater</code> that kept spinning up the same game over and over again — thousands of times — so that the metrics collected from each match would be nicely averaged out, free from any wild statistical outliers.</p>
+<p>Now, with <code>GameRepeater</code> as our sturdy foundation, we can take things up a notch and start launching multiple <code>GameRepeater</code>s in sequence, each with different game parameters. After each run, we’ll have averaged metrics for each specific configuration — and we can compare how close those settings are to our <i>ideal metrics</i>, the ones we've oh-so-carefully imagined in our heads. The settings that end up closest to the ideal ones win. That’s the core idea.</p>
+<p>Before diving into building all this joy, I had a few questions for myself:</p>
+<ul>
+	<li>How exactly do I compare metrics? No, seriously — turns out our <code>AveragedMetrics</code>, as described in the previous article, aren’t exactly plug-and-play comparable without doing a bit of Googling for suitable comparison algorithms.</li>
+	<li>I had already figured out which game parameters I want to iterate over to find their optimal values — that part was sorted from the get-go. But how do I actually iterate over them? Do I just brute-force my way through every possible combination? Even then, I’ll still need to limit the value ranges somehow, or this thing will spiral out of control.</li>
+</ul>
+<p>So, I decided to put the first problem on the back burner and tackle the second one right away — since solving it would let us almost finish the main bot-herding algorithm once and for all.</p>
+<p>Alright then, let’s start with the game settings themselves. To figure out how to iterate through and combine them, we first need to see what exactly they consist of:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> GameSettings:
+    white_player_class: type[PlayerBase]
+    black_player_class: type[PlayerBase]
+    slots_count: int
+    initial_hand_cards: int
+    initial_deck_cards: int
+    initial_matches: int
+    deck: list[Card] = <span class="code-keyword">None</span></code></pre>
+<p>This class is used like this: you create and populate a <code>GameSettings</code> object, then hand it over to <code>GameBase</code>, which applies its fields to itself — changing the number of matches, bot players, and the deck composition accordingly.</p>
+<p>Now let’s talk about combining and brute-forcing these settings. The combinator itself (or rather, the data behind it) I envision like this:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> GameSettingsCombinator:
+    white_player_options: list[type[PlayerBase]]
+    black_player_options: list[type[PlayerBase]]
+    slots_count: range
+    initial_hand_cards: range
+    initial_deck_cards: range
+    initial_matches: range</code></pre>
+<p>Some points worth noting:</p>
+<ul>
+	<li>For numbers, the standard Python <a href="https://docs.python.org/2/library/functions.html#range"><code>range</code></a> works beautifully — it lets you define a minimum, maximum, and even the step size for what we want to iterate over</li>
+	<li>Bot variants are simply described as a list of classes — nothing fancy there</li>
+	<li>We’re skipping the <code>deck</code> setting for now, because that one’s a beast on its own — deck iteration is a complex, multi-layered ritual worthy of its own dedicated combinator (and article dessert)</li>
+</ul>
+<p>A <code>GameSettingsCombinator</code> like this can be configured, for example, like so:</p>
+<pre><code class="language-python">settings_combinator = <span class="code-call">GameSettingsCombinator</span>(
+	white_player_options=[AiAlphaNormalPlayer],
+	black_player_options=[AiAlphaNormalPlayer],
+	slots_count=<span class="code-call">range</span>(<span class="code-literal">3</span>, <span class="code-literal">6</span>+<span class="code-literal">1</span>),
+	initial_hand_cards=<span class="code-call">range</span>(<span class="code-literal">0</span>, <span class="code-literal">10</span>+<span class="code-literal">1</span>, <span class="code-literal">1</span>),
+	initial_deck_cards=<span class="code-call">range</span>(<span class="code-literal">10</span>, <span class="code-literal">40</span>+<span class="code-literal">1</span>, <span class="code-literal">5</span>),
+	initial_matches=<span class="code-call">range</span>(<span class="code-literal">0</span>, <span class="code-literal">50</span>+<span class="code-literal">1</span>, <span class="code-literal">5</span>)
+)</code></pre>
+<p>Here I’ve defined those very limits and step sizes for the settings — the ones I’m <i>more or less</i> happy with.</p>
+<p>Now for the juicy part: how would you write a method in <code>GameSettingsCombinator</code> that keeps giving birth to fresh variants, permutations, and combinations of all the settings above?</p>
+<p>If someone just thought <i>"Well, obviously, that should be a <a href="https://wiki.python.org/moin/Generators">generator</a>"</i>, then congrats — you and I are on the same wavelength.</p>
+<p>But I suspect no one is truly prepared for what I’m about to show next:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> GameSettingsCombinator:
+    white_player_options: list[type[PlayerBase]]
+    black_player_options: list[type[PlayerBase]]
+    slots_count: range
+    initial_hand_cards: range
+    initial_deck_cards: range
+    initial_matches: range
+
+    <span class="code-comment"># omg</span>
+    <span class="code-keyword">def</span> <span class="code-call">__iter__</span>(self) -&gt; Generator[GameSettings, <span class="code-keyword">None</span>, <span class="code-keyword">None</span>]:
+        <span class="code-keyword">for</span> white_player_class <span class="code-keyword">in</span> self.white_player_options:
+            <span class="code-keyword">for</span> black_player_class <span class="code-keyword">in</span> self.black_player_options:
+                <span class="code-keyword">for</span> slots <span class="code-keyword">in</span> self.slots_count:
+                    <span class="code-keyword">for</span> hand_cards <span class="code-keyword">in</span> self.initial_hand_cards:
+                        <span class="code-keyword">for</span> deck_cards <span class="code-keyword">in</span> self.initial_deck_cards:
+                            <span class="code-keyword">for</span> matches <span class="code-keyword">in</span> self.initial_matches:
+                                <span class="code-keyword">yield</span> <span class="code-call">GameSettings</span>(
+                                    white_player_class,
+                                    black_player_class,
+                                    slots,
+                                    hand_cards,
+                                    deck_cards,
+                                    matches,
+                                    <span class="code-keyword">None</span>
+                                )
+
+    <span class="code-keyword">def</span> <span class="code-call">get_combinations_count</span>(self) -&gt; int:
+        <span class="code-keyword">return</span> <span class="code-call">len</span>(self.white_player_options) \
+            * <span class="code-call">len</span>(self.black_player_options) \
+            * <span class="code-call">len</span>(self.slots_count) \
+            * <span class="code-call">len</span>(self.initial_hand_cards) \
+            * <span class="code-call">len</span>(self.initial_deck_cards) \
+            * <span class="code-call">len</span>(self.initial_matches)</code></pre>
+<p>Oof. Don’t ask me about the time complexity of this “algorithm” — it’s a generator with lazy evaluation!</p>
+<p>...Though who am I kidding — that’s not going to save the program one bit, since it’ll still grind through <i>every</i> single combination all the way to the bitter end.</p>
+<p>So, how are we going to squeeze out those combinations? With the <code>SettingsTester</code> class — which, let’s be honest, is what this entire journey has been leading up to:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> SettingsTester:
+    game_class: type[GameBase]
+    settings_combinator: GameSettingsCombinator
+    ideal_metrics: AveragedMetrics
+
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">for</span> settings <span class="code-keyword">in</span> self.settings_combinator:
+            <span class="code-keyword">for</span> deck <span class="code-keyword">in</span> self.deck_combinator:
+                executer = <span class="code-call">GameRepeater</span>(self.game_class, settings, <span class="code-literal">1000</span>)
+		        executer.<span class="code-call">launch</span>()
+		        averaged = executer.bunch_metrics.<span class="code-call">get_average</span>()
+
+		        <span class="code-comment"># а че дальше-то?</span></code></pre>
+<p>Here I've shown <code>SettingsTester</code> in a <i>very</i> simplified form, because the original version does a whole bunch of extra bells and whistles — things like timing the runs, showing a progress bar in the console, and so on.</p>
+<p>I mean, you’ve seen the generator — you <i>get</i> how long that kind of code can run, right? I don’t remember the exact numbers, but I always just let the script churn overnight, because it could easily take hours.</p>
+<p>The diagram of game executions gains new layers of complexity:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/64/mn/xx/64mnxx19be33iwqnkzrxodul9qo.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>However, as you can probably tell, <code>SettingsTester</code> is clearly incomplete. Right now, we know how to <i>extract</i> metrics — but we have no idea how to actually <i>pick the best one</i>.</p>
+<p>And without that, well... our script — and everything we’ve done so far — kind of loses its point, doesn’t it?</p>
+<h2>How to Compare Metrics</h2>
+<p>Once upon a time, I asked ChatGPT how to properly compare the <i>similarity</i> of two numbers when they can lie anywhere within an arbitrary range. What I wanted was a neat little number between 0.0 and 1.0 — where 0.0 means “these numbers don’t even <i>know</i> each other,” and 1.0 means “these are the same soul in different bodies.”</p>
+<p>The soulless machine convinced me that there's already an algorithm for this, named after a scientist I'd never heard of. The algorithm actually works in reverse — it calculates the <i>difference</i> between two values on a 0.0 to 1.0 scale, which you can easily invert by subtracting the result from one. ChatGPT handed me the formula like this:</p>
+<p class="latex">$$
+difference(a,b) = \frac{∣a−b∣}{max(a,b)}
+$$</p>
+<p>I had no complaints — I ran a couple of very scientific (read: minimal and lazy) test cases, and the results <i>seemed</i> convincing. Let’s double-check together whether this approach still holds up:</p>
+<p>We’ll try to get a “difference coefficient” for 10 vs. 10000. These are obviously very different. Definitely <i>more</i> different than, say, 10 and 100 — or 10 and 11. And 10 vs. 10 should be zero difference, of course. Let's do the math:</p>
+<p class="latex">$$
+difference(10,10000) = \frac{9990}{10000} = 0.999
+$$</p>
+<p class="latex">$$
+difference(10,100) = \frac{90}{100} = 0.9
+$$</p>
+<p class="latex">$$
+difference(10,20) = \frac{10}{20} = 0.5
+$$</p>
+<p class="latex">$$
+difference(10,11) = \frac{1}{11} = 0.091
+$$</p>
+<p class="latex">$$
+difference(10,10) = \frac{0}{10} = 0
+$$</p>
+<p>Looks decent enough: very different numbers yield high differences, close ones yield low values — <i>nuff said</i>. Since the denominator is the larger of the two numbers, the normalization uses the “more extreme” value, which didn’t bother me. I mean, just look what happens if you normalize using the <i>smaller</i> number:</p>
+<p class="latex">$$
+difference(10,10000) = \frac{9990}{10} = 999.0
+$$</p>
+<p>Yeah. That way lies madness.</p>
+<p>So I just inverted the formula to get the similarity I originally wanted:</p>
+<p class="latex">$$
+similarity(a,b) = 1.0 - difference(a,b)
+$$</p>
+<p>and walked away happy.</p>
+<p>But things got weird when I started writing this article — probably a year after that blessed <s>confession</s> chat session. I had, of course, completely forgotten the name of that scientist ChatGPT proudly dropped on me back then. I dug through my chat history to flex that name here for you — only to find I’d deleted the conversation. I tend to do periodic spring cleaning in my chat archive, which in this case came back to bite me.</p>
+<p>I decided to go around the problem and simply fed my own code (which, ironically, was based on ChatGPT's own advice) back into the machine and asked, “Hey, what’s this algorithm called?”</p>
+<p>The soulless machine shrugged and said, “Dunno. But it <i>kinda</i> looks like a <s>general prosecutor</s> modified <a href="https://en.wikipedia.org/wiki/Canberra_distance#:~:text=The%20Canberra%20distance%20is%20a,of%20L%E2%82%81%20\(Manhattan\">Canberra distance</a>%20distance.),” which does in fact look suspiciously like mine (yes, <i>mine</i>), but it’s still different:</p>
+<p class="latex">$$
+difference(a,b) = \frac{∣a−b∣}{|a| + |b|}
+$$</p>
+<p>This method is also perfectly valid — definitely not worse than the <i>max-based</i> approach. It normalizes based on both values, which arguably makes more sense, but in practice doesn’t dramatically change the outcome:</p>
+<p class="latex">$$
+difference(10,10000) = \frac{9990}{10010} = 0.998
+$$</p>
+<p class="latex">$$
+difference(10,100) = \frac{90}{110} = 0.818
+$$</p>
+<p class="latex">$$
+difference(10,20) = \frac{10}{30} = 0.333
+$$</p>
+<p class="latex">$$
+difference(10,11) = \frac{1}{21} = 0.048
+$$</p>
+<p class="latex">$$
+difference(10,10) = \frac{0}{20} = 0
+$$</p>
+<p>Sure, you could say the numbers are “a bit off,” but from my not-so-mathematically-trained point of view, either formula is <i>good enough</i> for our task.</p>
+<p>What <i>isn’t</i> good enough, though? ChatGPT’s memory. Keep track of what it says. Call it out. Laugh on it.</p>
+<blockquote>Any mathematicians in the room? Sound off in the comments — what’s your take on these two formulas?</blockquote>
+<hr>
+<p>Alright — now, having this mathematical basis at hand, how do we compare metrics? Our metrics aren’t just numbers — they are something more complex. Let’s start with the <code>DataRange</code> class. Let me remind you what it looks like:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> DataRange:
+    min: float = <span class="code-literal">0.0</span>
+    max: float = <span class="code-literal">0.0</span>
+    average: float = <span class="code-literal">0.0</span>
+    median: float = <span class="code-literal">0.0</span></code></pre>
+<p>How shall we compute the <i>similarity</i> of two <code>DataRange</code> objects? We need to apply a bit of heuristic magic to get the result we want. Here’s what I ended up with:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> DataRange:
+    ...
+    <span class="code-keyword">def</span> <span class="code-call">get_similarity_coeff</span>(self, other: <span class="code-literal">'DataRange'</span>) -&gt; float:
+        <span class="code-keyword">def</span> <span class="code-call">safe_max</span>(one, another):
+            max_val = <span class="code-call">max</span>(one, another)
+            <span class="code-keyword">if</span> max_val == <span class="code-literal">0</span>:
+                max_val = <span class="code-literal">1</span>
+            <span class="code-keyword">return</span> max_val
+
+        <span class="code-keyword">def</span> <span class="code-call">diff_coeff</span>(one, another):
+            <span class="code-keyword">return</span> <span class="code-call">abs</span>(one - another) / <span class="code-call">safe_max</span>(one, another)
+
+        <span class="code-keyword">def</span> <span class="code-call">similarity_coeff</span>(one, another):
+            <span class="code-keyword">return</span> <span class="code-literal">1.0</span> - <span class="code-call">diff_coeff</span>(one, another)
+
+        min_similarity = <span class="code-call">similarity_coeff</span>(self.min, other.min)
+        max_similarity = <span class="code-call">similarity_coeff</span>(self.max, other.max)
+        med_similarity = <span class="code-call">similarity_coeff</span>(self.median, other.median)
+
+        MEDIAN_WEIGHT = <span class="code-literal">0.7</span>
+        MIN_MAX_WEIGHT = (<span class="code-literal">1.0</span> - MEDIAN_WEIGHT) / <span class="code-literal">2.0</span>
+
+        <span class="code-keyword">return</span> MIN_MAX_WEIGHT * min_similarity + MIN_MAX_WEIGHT * max_similarity + MEDIAN_WEIGHT * med_similarity</code></pre>
+<p>What’s important here is that for my specific <code>DataRange</code> class, I decided it makes sense to lean heavily on the <i>median</i> when computing similarity—without completely ignoring the min and max, which should also play a role in the outcome. But let’s be honest: if two <code>DataRange</code> objects \[10; 100\] and \[12; 80\] share the same median—say, 40—then those two ranges <i>have</i> to be pretty close. After all, the range’s minimum and maximum are usually outliers—deviations from the mean or median. So, in this concrete case, I arbitrarily assigned a <i>70%</i> weight to the median’s influence on similarity, and split the remaining influence between min and max at <i>15%</i> each.</p>
+<blockquote>As you might have noticed, I’m no mathematician, and my familiarity with statistics and data analysis is—if I’m honest—basically surface level. So if you want to tell me in the comments why my approach is just amateur daydreaming and how it <i>really</i> should be calculated, we’ll all come out ahead.</blockquote>
+<hr>
+<p>Alright, we’ve got one more class we want to compare: <code>ProbabilityTable</code>:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> ProbabilityTable:
+    table: dict[int, float]</code></pre>
+<p>An example of the data stored in an object of this class (schematic):</p>
+<pre><code class="language-python">{
+	GameOverResult.WHITE_WINS: <span class="code-literal">0.4</span>,
+	GameOverResult.BLACK_WINS: <span class="code-literal">0.6</span>,
+}
+
+<span class="code-keyword">and</span>
+
+{
+	GameOverResult.WHITE_WINS: <span class="code-literal">0.6</span>,
+	GameOverResult.BLACK_WINS: <span class="code-literal">0.3</span>,
+	GameOverResult.DRAW: <span class="code-literal">0.1</span>,
+}</code></pre>
+<p>Here, for comparing objects, we can apply a different kind of heuristic. The main ace up our sleeve is that the numbers in the dictionary are, by definition, already normalized to the \[0; 1\] range—so I figured we could compute their <i>difference</i> simply as $difference(a,b) = |a-b|$. Then we convert that to <i>similarity</i> using the inversion we already know: $similarity(a,b) = 1.0 - difference(a,b)$.</p>
+<p>Finally, we take the arithmetic mean over the entire map—and voilà: the comparison is done.</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> ProbabilityTable:
+...
+    <span class="code-keyword">def</span> <span class="code-call">get_similarity_coeff</span>(self, other: <span class="code-literal">'ProbabilityTable'</span>) -&gt; float:
+        n = <span class="code-literal">0</span>
+        sum = <span class="code-literal">0.0</span>
+
+        <span class="code-keyword">for</span> key, value <span class="code-keyword">in</span> self.table.<span class="code-call">items</span>():
+            <span class="code-keyword">if</span> key <span class="code-keyword">in</span> other.table:
+                sum += <span class="code-literal">1.0</span> - <span class="code-call">abs</span>(value - other.table[key])
+                n += <span class="code-literal">1</span>
+
+        <span class="code-keyword">return</span> sum / n <span class="code-keyword">if</span> n &gt; <span class="code-literal">0</span> <span class="code-keyword">else</span> <span class="code-literal">0</span></code></pre>
+<hr>
+<p>We’re approaching the final boss — the <code>AveragedMetrics</code> class. This is the ultimate target we need to be able to compare. Let’s recap what data the class holds:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> AveragedMetrics:
+    rounds: DataRange
+    result: ProbabilityTable
+    exausted: DataRange</code></pre>
+<p>We can see that we already know how to compare all three fields against each other, so all that remains is to somehow <i>average</i> the three results—and voilà. We could take the simple route we used in <code>ProbabilityTable</code>—just compute the arithmetic mean—or we could go for the more elaborate approach, like in <code>DataRange</code>, and introduce custom weights. Since <code>AveragedMetrics</code> is pretty much <i>the</i> class that drives our entire program, we’re leaning toward the flexibility of fine-tuning, and will implement custom weights for each of its fields:</p>
+<pre><code class="language-python">@dataclass
+<span class="code-keyword">class</span> AveragedMetrics:
+    rounds: DataRange = <span class="code-call">field</span>(default_factory=DataRange)
+    result: ProbabilityTable = <span class="code-call">field</span>(default_factory=ProbabilityTable) <span class="code-comment"># [GameOverResult -&gt; float]</span>
+    exausted: DataRange = <span class="code-call">field</span>(default_factory=DataRange)
+
+    _PROPS_COUNT = <span class="code-literal">3</span>
+
+    rounds_similarity_weight : float = <span class="code-literal">1.0</span> / <span class="code-call">float</span>(_PROPS_COUNT)
+    result_similarity_weight : float = <span class="code-literal">1.0</span> / <span class="code-call">float</span>(_PROPS_COUNT)
+    exausted_similarity_weight : float = <span class="code-literal">1.0</span> / <span class="code-call">float</span>(_PROPS_COUNT)
+
+    <span class="code-keyword">def</span> <span class="code-call">set_weights</span>(self, rounds_similarity_weight : float, result_similarity_weight : float, exausted_similarity_weight : float):
+        sum = rounds_similarity_weight + result_similarity_weight + exausted_similarity_weight
+
+        self.rounds_similarity_weight = rounds_similarity_weight / sum
+        self.result_similarity_weight = result_similarity_weight / sum
+        self.exausted_similarity_weight = exausted_similarity_weight / sum
+
+    <span class="code-keyword">def</span> <span class="code-call">get_similarity_coeff</span>(self, other: <span class="code-literal">'AveragedMetrics'</span>) -&gt; float:
+        similar = (\
+            self.rounds.<span class="code-call">get_similarity_coeff</span>(other.rounds)     * self.rounds_similarity_weight + \
+            self.result.<span class="code-call">get_similarity_coeff</span>(other.result)     * self.result_similarity_weight + \
+            self.exausted.<span class="code-call">get_similarity_coeff</span>(other.exausted) * self.exausted_similarity_weight \
+        )
+        <span class="code-keyword">return</span> similar</code></pre>
+<p>In the end, we got the best of both worlds: by default, the class computes similarity via the arithmetic mean (see <code>_PROPS_COUNT</code> and how it’s used). But if you wish, you can set arbitrary weights via the <code>AveragedMetrics.set_weights</code> method.</p>
+<p>Congratulations to us — we can now compare <code>AveragedMetrics</code>, and therefore determine which game parameters are closest to our ideal metrics and which configurations lag far behind. This was the key barrier on our journey, and we’ve overcome it together.</p>
+<h2>Farming the Deck</h2>
+<p>Remember the game-settings generator? Oh yes — now we need a second one, just like it, for the card deck. I spent a long time thinking about how to show you its full implementation, then realized that diving into all the details would bring little benefit or clarity.</p>
+<p>In short: the deck contains strong, weak, and regular cards. They differ by the sum of their attack and health stats. The total deck size and the counts of weak/strong/regular cards are <i>fixed</i> — that’s an invariant we don’t want to change for any gameplay, design, or artistic reasons. What <i>we</i> want to vary are the individual attack/health stats for each card, of course within the constraints of its rank. There are a few more nuances, invariants, and heuristics that complicate generating card combinations, but they’re out of scope for this article since they don’t add meaningful value right now.</p>
+<p>So let the deck combinator remain a black box for us, exposing only its main combinatorial method:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> DeckCombinator:
+	<span class="code-keyword">def</span> <span class="code-call">__iter__</span>(self) -&gt; Generator[list[Card], <span class="code-keyword">None</span>, <span class="code-keyword">None</span>]:
+		...</code></pre>
+<p>The key takeaway is that this deck combinator produces <i>no fewer</i> combinations than the previous terrifying game-settings combinator. Which means our script is in for an even longer ride.</p>
+<h2>Combinatorics Ready</h2>
+<p>Now our missing puzzle pieces are assembled, and we can plug them into the spot where we got stuck:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> SettingsTester:
+    game_class: type[GameBase]
+    settings_combinator: GameSettingsCombinator
+    ideal_metrics: AveragedMetrics
+
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">for</span> settings <span class="code-keyword">in</span> self.settings_combinator:
+            <span class="code-keyword">for</span> deck <span class="code-keyword">in</span> self.deck_combinator:
+                executer = <span class="code-call">GameRepeater</span>(self.game_class, settings, <span class="code-literal">1000</span>)
+		        executer.<span class="code-call">launch</span>()
+		        averaged = executer.bunch_metrics.<span class="code-call">get_average</span>()
+
+		        <span class="code-comment"># а че дальше-то?</span></code></pre>
+<p>Now we’re in a position to answer the question “so what’s next?” and wrap up <code>SettingsTester</code>:</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+	<span class="code-keyword">for</span> settings <span class="code-keyword">in</span> self.settings_combinator:
+		<span class="code-keyword">for</span> deck <span class="code-keyword">in</span> self.deck_combinator:
+			executer = <span class="code-call">GameRepeater</span>(self.game_class, settings, <span class="code-literal">1000</span>)
+			executer.<span class="code-call">launch</span>()
+			averaged = executer.bunch_metrics.<span class="code-call">get_average</span>()
+
+			similarity = self.ideal_metrics.<span class="code-call">get_similarity_coeff</span>(averaged)
+
+	        rate = <span class="code-call">SettingsRate</span>(<span class="code-call">deepcopy</span>(settings), averaged, similarity)
+	        self.top_settings_list.<span class="code-call">apply</span>(rate)</code></pre>
+<p>In other words, for each new settings combination we ran the bots through a thousand matches, collected the metrics, compared them to our <i>ideal metrics</i>, and computed a similarity score. That score—along with other useful info (for any post-analysis)—gets packed into a <code>SettingsRate</code> object and sent off into a special ranking list that keeps the top 10 best game configurations.</p>
+<p>Once the script finishes its lengthy run, we end up with our top 10 game settings that deliver the experience closest to our imagined ideal. The only catch is not to mess up those ideal metrics!</p>
+<p>Why keep a top 10 when we could just grab the single best result? Well, it might turn out that the top three are all roughly equal in terms of metrics, but we simply <i>prefer</i> the settings that landed in second or third place for any arbitrary reason. Or maybe we want to understand the gap in performance between consecutive entries. Personally, I rarely picked just the number-one result—often there was a slightly lower scorer that was more <i>elegant</i> by some other measure. And hey, that matters too.</p>
+<p>So that’s it—we’ve achieved our goal. We can now compute the best settings. Time to wrap things up?</p>
+<h2>Mining the Game</h2>
+<p>There’s no way we can wrap this up yet!</p>
+<p>First off, randomness plays a huge role here, so there’s always a chance that the second or third run of the script will spit out different numbers with different results—and that’s perfectly fine.</p>
+<p>What’s even more important is that our implementation actually has two <i>independently</i> improvable stories happening in parallel: the overall game settings and the deck composition. They even live in separate generators. And for the most part, they don’t step on each other’s toes.</p>
+<p>Pretty soon, after manually running the script in different modes, I realized we could squeeze even more out of this. Check it out:</p>
+<p>1. First, run our script <b>with a fixed deck composition</b>, varying only the game settings.</p>
+<p>2. We get some “best settings” result, which we save off somewhere.</p>
+<p>3. Run the script again—this time <b>locking in those improved game settings</b> we just found, and instead <b>varying the deck composition</b>.</p>
+<p>4. We get an improved deck composition, which we also save off.</p>
+<p>5. Repeat from step 1, ad infinitum.</p>
+<p>My hypothesis is that this way, we can “mine” game settings forever, continually improving them. Eventually, the script will simply hit the ceiling of our <i>ideal metric</i> and start churning out roughly the same high-quality results, with only random noise-level variations.</p>
+<p>Moreover, in subsequent runs of our <code>SettingsTester</code>, we can choose to either only admit results that are <i>strictly better</i> than anything we’ve seen before into the top list—or kick back and let each script run start from scratch, hoping it will self-improve. At first glance, the former seems like the <i>only</i> “correct” approach, but in practice it quickly plateaus, denying the combinator a chance to, let’s say, “evolve,” even if that comes at the cost of a temporary dip in performance.</p>
+<p>One more nice bonus of this alternating approach is that we massively <i>reduce</i> the runtime of a single script round, since we replace this:</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+    <span class="code-keyword">for</span> settings <span class="code-keyword">in</span> self.settings_combinator:
+	    <span class="code-keyword">for</span> deck <span class="code-keyword">in</span> self.deck_combinator:
+		    ...</code></pre>
+<p>to</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+	<span class="code-keyword">if</span> mode == SETTINGS:
+	    <span class="code-keyword">for</span> settings <span class="code-keyword">in</span> self.settings_combinator:
+		    ...
+	<span class="code-keyword">else</span>:
+	    <span class="code-keyword">for</span> deck <span class="code-keyword">in</span> self.deck_combinator:
+		    ...</code></pre>
+<p>…dramatically reducing the combinatorial load per run, which used to make my script choke.</p>
+<p>So atop our multi-layered cake, we add yet another entity: <code>SettingsMiner</code>:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/lt/bk/jg/ltbkjgxxu-_uztgalar_hfefboq.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>You get the idea: a miner that endlessly runs a combinator, which runs the repeater <i>O(n^x)</i> times, which runs the game 1,000 times per configuration. Sounds painfully slow—and it is, because “endlessly” is <i>really</i> slow. A single round of <code>SettingsTester</code>, depending on the combinator settings, can take anywhere from tens of minutes to hours on a beefy PC. Pretty awesome, right?</p>
+<p>In very schematic form, <code>SettingsMiner</code> looks like this:</p>
+<pre><code class="language-python"><span class="code-keyword">class</span> SettingsMiner:
+    <span class="code-keyword">def</span> <span class="code-call">__init__</span>(self):
+	    self.<span class="code-call">_read_settigs</span>()
+
+    <span class="code-keyword">def</span> <span class="code-call">launch</span>(self):
+        <span class="code-keyword">while</span> <span class="code-keyword">True</span>:
+            self.<span class="code-call">_mine_round</span>()
+            self.<span class="code-call">_flush_settings</span>()
+            self.<span class="code-call">_switch_mode</span>()</code></pre>
+<p>Noteworthy: every improvement that <code>SettingsMiner</code> uncovers I write to a file on the hard drive. This is necessary for a couple of reasons. First, I can stop and restart <code>SettingsMiner</code> at any time without losing any results. Second, I have a recorded, saved result that I can use elsewhere or even pull back into the game.</p>
+<p>What’s even more fun is that I’m not just dumping the resulting game settings into some config file — nooo — I’m generating <i>Python code</i> into a special file:</p>
+<pre><code class="language-python"><span class="code-keyword">from</span> alpha_game_package.alpha_player <span class="code-keyword">import</span> AiAlphaNormalPlayer
+<span class="code-keyword">from</span> core_types <span class="code-keyword">import</span> Card, CardType
+<span class="code-keyword">from</span> game <span class="code-keyword">import</span> GameSettings
+
+auto_refined_cards_pool : dict[str, list[Card]] = {  <span class="code-comment"># actual type is dict[type[GameBase], list[Card]]</span>
+	<span class="code-literal">'AlphaGame'</span>: [
+		<span class="code-call">Card</span>(CardType.BEAST, <span class="code-literal">'rat'</span>, <span class="code-literal">1</span>, <span class="code-literal">3</span>, <span class="code-literal">1</span>),
+		<span class="code-call">Card</span>(CardType.BEAST, <span class="code-literal">'wasp'</span>, <span class="code-literal">2</span>, <span class="code-literal">2</span>, <span class="code-literal">1</span>),
+        ...
+		<span class="code-call">Card</span>(CardType.MAGIC, <span class="code-literal">'black book'</span>, <span class="code-literal">4</span>, <span class="code-literal">4</span>, <span class="code-literal">3</span>),
+	],
+}
+
+auto_refined_game_settings : dict[str, GameSettings] = { <span class="code-comment"># actual type is dict[type[GameBase], GameSettings]</span>
+	<span class="code-literal">'AlphaGame'</span>: <span class="code-call">GameSettings</span>(
+		white_player_class  = AiAlphaNormalPlayer,
+		black_player_class  = AiAlphaNormalPlayer,
+		slots_count         = <span class="code-literal">5</span>,
+		initial_hand_cards  = <span class="code-literal">5</span>,
+		initial_deck_cards  = <span class="code-literal">20</span>,
+		initial_matches     = <span class="code-literal">5</span>,
+		deck                = auto_refined_cards_pool[<span class="code-literal">'AlphaGame'</span>],
+		print_log_to_stdout = <span class="code-keyword">False</span>
+	),
+}
+
+auto_refined_similarity : dict[str, float] = { <span class="code-comment"># actual type is dict[type[GameBase], float]</span>
+	<span class="code-literal">'AlphaGame'</span>: <span class="code-literal">0.9756566604127581</span>,
+}
+
+last_mode : dict[str, float] = { <span class="code-comment"># actual type is dict[type[GameBase], int]</span>
+	<span class="code-literal">'AlphaGame'</span>: <span class="code-literal">0</span>,
+}</code></pre>
+<p>The file is then reloaded on the fly and used again. It looks something like this:</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">_reload_settings</span>(self):
+	<span class="code-keyword">global</span> auto_refined_settings
+	importlib.<span class="code-call">reload</span>(auto_refined_settings)
+	<span class="code-keyword">import</span> auto_refined_settings
+	<span class="code-call">sleep</span>(<span class="code-literal">1</span>) <span class="code-comment"># to be sure that reimport is done</span></code></pre>
+<p>First of all, it’s <i>awesome</i>. I mean, I’m, you know, <a href="https://askepit.github.io/blog/constexpr_game_of_life/">a connoisseur of such things</a>. And secondly, these settings can be easily loaded by other test scripts that live alongside the main code and serve as sandboxes for testing. Thanks to this setup, they always have the very best settings available to grab and use.</p>
+<p>I won’t dive into the details of <code>SettingsMiner</code> here, because what’s valuable is the <i>idea</i> itself, and the implementation is long and tangled—not because it contains anything <i>especially</i> profound, but simply due to a plethora of nuances, preferences, conveniences, and, well, some semblance of architecture and so on.</p>
+<h2>Aftertaste</h2>
+<p>The aftertaste of all this is mixed — perhaps there are <i>faster</i> and <i>more reliable</i> ways to find <i>balanced</i> game settings. After all, one could have just hired a game designer. But I figure the tool we’ve built, while directly applicable only to my never-released game, can still serve as a handy guide for gathering metrics on your own side projects.</p>
+<p>Did this tool actually help me improve the game? Honestly, I’m not sure :) Does it even matter, if it gave me an excuse to write a bunch of curious code? Besides, I had fun — so the time wasn’t wasted.</p>
+<hr>
+<small>© Nikolai Shalakin. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

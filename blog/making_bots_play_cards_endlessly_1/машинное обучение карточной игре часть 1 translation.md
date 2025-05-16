@@ -10,7 +10,6 @@ keywords:
   - cards
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png
 ---
-
 # The Essence of the Problem
 
 So there I was, doing what I love—messing around with writing mini-games that no one but me would ever see. This time, I was tinkering with a card game, a knockoff of [Inscryption](https://store.steampowered.com/app/1092790/Inscryption/). Well, more like a pale imitation with vague goals and even vaguer prospects. But one thing was clear: the core mechanic of the game was card-based combat, and it needed to be engaging enough to suck the player in for hours.
@@ -468,3 +467,6 @@ What comes next? Well, you’ll find out in the next article! Yes, that’s righ
 - **Finally, we’ll create a game that won’t be _imbalanced_ anymore.**
 
 Stay tuned for all that exciting stuff coming soon!
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>
