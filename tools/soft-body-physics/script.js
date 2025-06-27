@@ -452,7 +452,38 @@ function spawnGrid(pos, rows, cols) {
     nodes.push(...nodeGrid.flat())
 }
 
-spawnGrid(new Vec2(200, 200), 2, 4)
+function spawnCircle(pos, radius, segments = 8) {
+    const angleStep = (Math.PI * 2) / segments
+    const nodeGrid = []
+    const center = new Node(NODE_MASS)
+    center.position = pos
+
+    // radiuses
+    for (let i = 0; i < segments; i++) {
+        const angle = i * angleStep
+        const x = pos.x + Math.cos(angle) * radius
+        const y = pos.y + Math.sin(angle) * radius
+        const node = new Node(NODE_MASS)
+        node.position = new Vec2(x, y)
+        nodeGrid.push(node)
+
+        const spring = new Spring(center, node, radius, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    // segments
+    for (let i = 0; i < segments; i++) {
+        const n1 = nodeGrid[i]
+        const n2 = nodeGrid[(i + 1) % segments]
+        const spring = new Spring(n1, n2, radius, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    nodes.push(center, ...nodeGrid)
+}
+
+spawnGrid(new Vec2(canvas.width / 2 - 200, 150), 2, 4)
+spawnCircle(new Vec2(canvas.width / 2, 600), 100)
 
 function update(dt) {
     for (node of nodes) {
