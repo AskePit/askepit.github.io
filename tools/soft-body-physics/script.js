@@ -172,7 +172,6 @@ class Node {
     }
 
     render() {
-        // Draw selection highlight if this node is selected
         if (this === selectedNode) {
             ctx.beginPath()
             ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2)
@@ -181,7 +180,6 @@ class Node {
             ctx.stroke()
         }
 
-        // Draw the node
         ctx.beginPath()
         ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
         ctx.fillStyle = '#a3d5ff'
@@ -364,10 +362,9 @@ function render() {
 
 requestAnimationFrame(loop)
 
-let selectedNode = null // Track the currently selected node
+let selectedNode = null
 let isDragging = false
 
-// Convert page coordinates to canvas coordinates
 function getCanvasPoint(pageX, pageY) {
     const rect = canvas.getBoundingClientRect()
     return {
@@ -376,7 +373,6 @@ function getCanvasPoint(pageX, pageY) {
     }
 }
 
-// Find the closest node to a point within a certain radius
 function findClosestNode(x, y, maxDistance = 30) {
     let closest = null
     let minDist = maxDistance
@@ -395,29 +391,33 @@ function findClosestNode(x, y, maxDistance = 30) {
     return closest
 }
 
-canvas.addEventListener('mousedown', (e) => {
+const selectNode = (e) => {
     const point = getCanvasPoint(e.pageX, e.pageY)
     selectedNode = findClosestNode(point.x, point.y)
-    isDragging = true
 
     if (selectedNode) {
+        isDragging = true
         selectedNode.blockForces()
     }
-})
+}
+canvas.addEventListener('mousedown', selectNode)
 
-canvas.addEventListener('mouseup', (e) => {
+const unselectNode = (e) => {
     isDragging = false
 
     if (selectedNode) {
         selectedNode.unblockForces()
         selectedNode = null
     }
-})
+}
+canvas.addEventListener('mouseup', unselectNode)
+canvas.addEventListener('mouseleave', unselectNode)
 
-canvas.addEventListener('mousemove', (e) => {
+const moveSelectedNode = (e) => {
     if (isDragging && selectedNode) {
         const point = getCanvasPoint(e.pageX, e.pageY)
         selectedNode.position.x = point.x
         selectedNode.position.y = point.y
     }
-})
+}
+canvas.addEventListener('mousemove', moveSelectedNode)
