@@ -134,6 +134,28 @@ class Node {
         this.forceBlocked = false
     }
 
+    zeroVelocity() {
+        this.velocity.zero()
+    }
+
+    clampPositionByCanvas() {
+        if (this.position.x <= 0) {
+            this.position.x = 0
+            this.zeroVelocity()
+        } else if (this.position.x >= canvas.width) {
+            this.position.x = canvas.width
+            this.zeroVelocity()
+        }
+
+        if (this.position.y <= 0) {
+            this.position.y = 0
+            this.zeroVelocity()
+        } else if (this.position.y >= canvas.height) {
+            this.position.y = canvas.height
+            this.zeroVelocity()
+        }
+    }
+
     update(dt) {
         if (this.forceBlocked) {
             return
@@ -145,6 +167,7 @@ class Node {
         if (!acceleration.isZero()) {
             this.velocity.addVec( acceleration.mul(dt) )
             this.position.addVec( this.velocity.multiplied(dt) )
+            this.clampPositionByCanvas()
         }
     }
 
