@@ -20,6 +20,30 @@ function loop(currentTime) {
     requestAnimationFrame(loop)
 }
 
+function mixColors(color1, color2, ratio) {
+    const r1 = (color1 >> 16) & 0xff
+    const g1 = (color1 >> 8) & 0xff
+    const b1 = color1 & 0xff
+
+    const r2 = (color2 >> 16) & 0xff
+    const g2 = (color2 >> 8) & 0xff
+    const b2 = color2 & 0xff
+
+    const r = Math.round(r1 + (r2 - r1) * ratio)
+    const g = Math.round(g1 + (g2 - g1) * ratio)
+    const b = Math.round(b1 + (b2 - b1) * ratio)
+
+    return (r << 16) | (g << 8) | b
+}
+
+function lerpRGB(color1, color2, t) {
+    // color1 and color2 are arrays: [r, g, b], t in [0, 1]
+    const r = Math.round(color1[0] + (color2[0] - color1[0]) * t)
+    const g = Math.round(color1[1] + (color2[1] - color1[1]) * t)
+    const b = Math.round(color1[2] + (color2[2] - color1[2]) * t)
+    return `rgb(${r}, ${g}, ${b})`
+}
+
 class Vec2 {
     x = 0
     y = 0
@@ -204,6 +228,7 @@ class Spring {
         this.node1 = node1
         this.node2 = node2
         this.length = length
+        this.lengthSq = length * length
         this.stiffness = stiffness
         this.damping = damping
     }
@@ -240,14 +265,93 @@ class Spring {
     render() {
         const dx = this.node2.position.x - this.node1.position.x
         const dy = this.node2.position.y - this.node1.position.y
-        const distance = dx * dx + dy * dy
-        const tension = Math.abs(distance - this.length*this.length) / (this.length * this.length) // normalized tension
-        const colorIntensity = 255 - Math.min(255, Math.floor(tension * 255)) // scale to 0-255
-        ctx.strokeStyle = `rgb(${colorIntensity}, ${colorIntensity}, ${colorIntensity})` // red color based on tension
-        ctx.lineWidth = 1
+
+        const restDist = this.lengthSq
+        const realDist = dx * dx + dy * dy
+
+        let tension = Math.abs(realDist - restDist) / restDist // normalized tension
+        if (tension > 1) {
+            tension = 1
+        } else if (tension < 0) {
+            tension = 0
+        }
+
+        this.drawSpring(tension)
+    }
+
+    drawSpring(tension) {
+        const light = [255, 255, 255]
+        const dark = [255, 0, 0]
+        const color = lerpRGB(light, dark, tension)
+        const tailLen = 20 // length of straight tail at each end
+        const zigzagAmp = 3 // amplitude of zigzag
+        const zigzagStep = 3 // px, adjust for density
+        const lineThickness = 0.7 // px
+
+        const x1 = this.node1.position.x
+        const y1 = this.node1.position.y
+        const x2 = this.node2.position.x
+        const y2 = this.node2.position.y
+
+        // Vector from node1 to node2
+        const dx = x2 - x1
+        const dy = y2 - y1
+        const len = Math.sqrt(dx * dx + dy * dy)
+
+        if (len < 1) {
+            // Too short, just draw a line
+            ctx.strokeStyle = color
+            ctx.lineWidth = lineThickness
+            ctx.beginPath()
+            ctx.moveTo(x1, y1)
+            ctx.lineTo(x2, y2)
+            ctx.stroke()
+            return
+        }
+
+        // Unit direction vector
+        const ux = dx / len
+        const uy = dy / len
+
+        // Perpendicular vector for zigzag
+        const px = -uy
+        const py = ux
+
+        // Start and end points for zigzag (after tails)
+        const sx = x1 + ux * tailLen
+        const sy = y1 + uy * tailLen
+        const ex = x2 - ux * tailLen
+        const ey = y2 - uy * tailLen
+
+        // Zigzag step size (distance between zigzag points)
+        const zigzagCount = Math.max(2, Math.round(Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2) / zigzagStep))
+
+        ctx.strokeStyle = color
+        ctx.lineWidth = lineThickness
         ctx.beginPath()
-        ctx.moveTo(this.node1.position.x, this.node1.position.y) // from
-        ctx.lineTo(this.node2.position.x, this.node2.position.y) // to
+
+        // Draw tail from node1 to start of zigzag
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(sx, sy)
+
+        // Draw zigzag
+        for (let i = 0; i <= zigzagCount; i++) {
+            const t = i / zigzagCount
+            const zx = sx + (ex - sx) * t
+            const zy = sy + (ey - sy) * t
+            let offset = 0
+            if (i > 0 && i < zigzagCount) {
+                offset = (i % 2 === 0 ? -1 : 1) * zigzagAmp
+            }
+            ctx.lineTo(
+                zx + px * offset,
+                zy + py * offset
+            )
+        }
+
+        // Draw tail from end of zigzag to node2
+        ctx.lineTo(x2, y2)
+
         ctx.stroke()
     }
 }
@@ -306,6 +410,8 @@ function spawnGrid(pos, rows, cols) {
         }
     }
 
+    const linkedNodes = []
+
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
             const n1 = nodeGrid[i][j]
@@ -321,6 +427,20 @@ function spawnGrid(pos, rows, cols) {
                 [n3, n4],
                 [n4, n1],
             ]) {
+                let alreadyLinked = false
+                for (const existingPair of linkedNodes) {
+                    if ((existingPair[0] === pair[0] && existingPair[1] === pair[1]) ||
+                        (existingPair[0] === pair[1] && existingPair[1] === pair[0])) {
+                        alreadyLinked = true // already linked
+                        break
+                    }
+                }
+                if (!alreadyLinked) {
+                    linkedNodes.push(pair)
+                } else {
+                    continue
+                }
+
                 const dx = pair[1].position.x - pair[0].position.x
                 const dy = pair[1].position.y - pair[0].position.y
                 const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS, SPRING_DAMPING)
