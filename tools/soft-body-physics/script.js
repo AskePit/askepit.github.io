@@ -103,11 +103,6 @@ class Vec2 {
     }
 }
 
-class Constant {
-    static Infinity = Infinity
-    static OneFrame = -Infinity
-}
-
 class Node {
     mass // kg
     position = new Vec2()
@@ -125,11 +120,11 @@ class Node {
         this.force.zero()
     }
 
-    setForce(force, applyTime = Constant.Infinity) {
+    setForce(force) {
         this.force = force
     }
 
-    addForce(force, applyTime = Constant.Infinity) {
+    addForce(force) {
         this.force.addVec(force)
     }
 
@@ -242,8 +237,8 @@ class Spring {
         const fx = totalForce * nx
         const fy = totalForce * ny
 
-        this.node1.addForce(new Vec2(fx, fy), Constant.OneFrame)
-        this.node2.addForce(new Vec2(-fx, -fy), Constant.OneFrame)
+        this.node1.addForce(new Vec2(fx, fy))
+        this.node2.addForce(new Vec2(-fx, -fy))
     }
 
     render() {
