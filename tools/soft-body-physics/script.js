@@ -335,14 +335,28 @@ class Spring {
     }
 }
 
-const nodes = []
-const springs = []
+const nodesBatch = []
+const springsBatch = []
+const actors = []
+
+class Actor {
+    nodes = []
+    springs = []
+
+    register() {
+        nodesBatch.push(...this.nodes)
+        springsBatch.push(...this.springs)
+        actors.push(this)
+    }
+}
 
 const NODE_MASS = 0.01 // kg
 const SPRING_STIFFNESS = 10 // N/m
 const SPRING_DAMPING = 0.06 // N/(m/s)
 
 function spawnSquare(pos /*Vec2*/) {
+    const actor = new Actor()
+
     const SQUARE_SIZE = 100 // px
 
     const node1 = new Node(NODE_MASS)
@@ -355,10 +369,7 @@ function spawnSquare(pos /*Vec2*/) {
     node3.position = new Vec2(pos.x + SQUARE_SIZE * 2, pos.y + SQUARE_SIZE * 2)
     node4.position = new Vec2(pos.x + SQUARE_SIZE, pos.y + SQUARE_SIZE * 2)
 
-    nodes.push(node1)
-    nodes.push(node2)
-    nodes.push(node3)
-    nodes.push(node4)
+    actor.nodes = [node1, node2, node3, node4]
 
     for (const pair of [
         [node1, node3],
@@ -371,11 +382,16 @@ function spawnSquare(pos /*Vec2*/) {
         const dx = pair[1].position.x - pair[0].position.x
         const dy = pair[1].position.y - pair[0].position.y
         const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
+        actor.springs.push(spring)
     }
+
+    actor.register()
+    return actor
 }
 
 function spawnGrid(pos, rows, cols) {
+    const actor = new Actor()
+
     const CELL_SIZE = 100 // px
 
     const nodeGrid = []
@@ -388,6 +404,8 @@ function spawnGrid(pos, rows, cols) {
             nodeGrid[i][j] = node
         }
     }
+
+    actor.nodes = nodeGrid.flat()
 
     const linkedNodes = []
 
@@ -423,15 +441,18 @@ function spawnGrid(pos, rows, cols) {
                 const dx = pair[1].position.x - pair[0].position.x
                 const dy = pair[1].position.y - pair[0].position.y
                 const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS, SPRING_DAMPING)
-                springs.push(spring)
+                actor.springs.push(spring)
             }
         }
     }
 
-    nodes.push(...nodeGrid.flat())
+    actor.register()
+    return actor
 }
 
 function spawnCircle1(pos, radius, segments = 8) {
+    const actor = new Actor()
+
     const angleStep = (Math.PI * 2) / segments
     const nodeGrid = []
     const center = new Node(NODE_MASS)
@@ -447,7 +468,7 @@ function spawnCircle1(pos, radius, segments = 8) {
         nodeGrid.push(node)
 
         const spring = new Spring(center, node, radius, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
+        actor.springs.push(spring)
     }
 
     // segments
@@ -455,13 +476,18 @@ function spawnCircle1(pos, radius, segments = 8) {
         const n1 = nodeGrid[i]
         const n2 = nodeGrid[(i + 1) % segments]
         const spring = new Spring(n1, n2, radius, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
+        actor.springs.push(spring)
     }
 
-    nodes.push(center, ...nodeGrid)
+    actor.nodes = [center, ...nodeGrid]
+
+    actor.register()
+    return actor
 }
 
 function spawnCircle2(pos, radius, segments = 8) {
+    const actor = new Actor()
+
     const nodeGrid = []
 
     const angleStep = (Math.PI * 2) / segments
@@ -479,64 +505,34 @@ function spawnCircle2(pos, radius, segments = 8) {
     // segments
     for (let i = 0; i < segments; i++) {
         const n1 = nodeGrid[i]
-        const n2 = nodeGrid[(i + 1) % segments]
+        
+        for (let j = 1; j <= 4; j++) {
+            const n2 = nodeGrid[(i + j) % segments]
 
-        const dx = n2.position.x - n1.position.x
-        const dy = n2.position.y - n1.position.y
-        const distance = Math.sqrt(dx*dx + dy*dy)
-        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
+            const dx = n2.position.x - n1.position.x
+            const dy = n2.position.y - n1.position.y
+            const distance = Math.sqrt(dx*dx + dy*dy)
+            const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+            actor.springs.push(spring)
+        }
     }
 
-    // binds
-    for (let i = 0; i < segments; i++) {
-        const n1 = nodeGrid[i]
-        const n2 = nodeGrid[(i + 2) % segments]
+    actor.nodes = nodeGrid
 
-        const dx = n2.position.x - n1.position.x
-        const dy = n2.position.y - n1.position.y
-        const distance = Math.sqrt(dx*dx + dy*dy)
-        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
-    }
-
-    // binds 2
-    for (let i = 0; i < segments; i++) {
-        const n1 = nodeGrid[i]
-        const n2 = nodeGrid[(i + 3) % segments]
-
-        const dx = n2.position.x - n1.position.x
-        const dy = n2.position.y - n1.position.y
-        const distance = Math.sqrt(dx*dx + dy*dy)
-        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
-    }
-
-    // binds 3
-    for (let i = 0; i < segments; i++) {
-        const n1 = nodeGrid[i]
-        const n2 = nodeGrid[(i + 4) % segments]
-
-        const dx = n2.position.x - n1.position.x
-        const dy = n2.position.y - n1.position.y
-        const distance = Math.sqrt(dx*dx + dy*dy)
-        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
-        springs.push(spring)
-    }
-
-    nodes.push(...nodeGrid)
+    actor.register()
+    return actor
 }
 
 function update(dt) {
-    for (node of nodes) {
+    for (node of nodesBatch) {
         node.zeroForce()
     }
 
-    for (spring of springs) {
+    for (spring of springsBatch) {
         spring.update(dt)
     }
 
-    for (node of nodes) {
+    for (node of nodesBatch) {
         node.update(dt)
     }
 }
@@ -544,11 +540,11 @@ function update(dt) {
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    for (spring of springs) {
+    for (spring of springsBatch) {
         spring.render()
     }
 
-    for (node of nodes) {
+    for (node of nodesBatch) {
         node.render()
     }
 }
@@ -570,7 +566,7 @@ function findClosestNode(x, y, maxDistance = 30) {
     let closest = null
     let minDist = maxDistance
 
-    for (const node of nodes) {
+    for (const node of nodesBatch) {
         const dx = node.position.x - x
         const dy = node.position.y - y
         const distance = Math.sqrt(dx * dx + dy * dy)
