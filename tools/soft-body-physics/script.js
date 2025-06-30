@@ -20,22 +20,6 @@ function loop(currentTime) {
     requestAnimationFrame(loop)
 }
 
-function mixColors(color1, color2, ratio) {
-    const r1 = (color1 >> 16) & 0xff
-    const g1 = (color1 >> 8) & 0xff
-    const b1 = color1 & 0xff
-
-    const r2 = (color2 >> 16) & 0xff
-    const g2 = (color2 >> 8) & 0xff
-    const b2 = color2 & 0xff
-
-    const r = Math.round(r1 + (r2 - r1) * ratio)
-    const g = Math.round(g1 + (g2 - g1) * ratio)
-    const b = Math.round(b1 + (b2 - b1) * ratio)
-
-    return (r << 16) | (g << 8) | b
-}
-
 function lerpRGB(color1, color2, t) {
     // color1 and color2 are arrays: [r, g, b], t in [0, 1]
     const r = Math.round(color1[0] + (color2[0] - color1[0]) * t)
@@ -280,7 +264,7 @@ class Spring {
     }
 
     drawSpring(tension) {
-        const light = [255, 255, 255]
+        const light = [100, 100, 255]
         const dark = [255, 0, 0]
         const color = lerpRGB(light, dark, tension)
         const tailLen = 20 // length of straight tail at each end
@@ -452,7 +436,7 @@ function spawnGrid(pos, rows, cols) {
     nodes.push(...nodeGrid.flat())
 }
 
-function spawnCircle(pos, radius, segments = 8) {
+function spawnCircle1(pos, radius, segments = 8) {
     const angleStep = (Math.PI * 2) / segments
     const nodeGrid = []
     const center = new Node(NODE_MASS)
@@ -482,8 +466,71 @@ function spawnCircle(pos, radius, segments = 8) {
     nodes.push(center, ...nodeGrid)
 }
 
-spawnGrid(new Vec2(canvas.width / 2 - 200, 150), 2, 4)
-spawnCircle(new Vec2(canvas.width / 2, 600), 100)
+function spawnCircle2(pos, radius, segments = 8) {
+    const nodeGrid = []
+
+    const angleStep = (Math.PI * 2) / segments
+
+    // nodes
+    for (let i = 0; i < segments; i++) {
+        const angle = i * angleStep
+        const x = pos.x + Math.cos(angle) * radius
+        const y = pos.y + Math.sin(angle) * radius
+        const node = new Node(NODE_MASS)
+        node.position = new Vec2(x, y)
+        nodeGrid.push(node)
+    }
+
+    // segments
+    for (let i = 0; i < segments; i++) {
+        const n1 = nodeGrid[i]
+        const n2 = nodeGrid[(i + 1) % segments]
+
+        const dx = n2.position.x - n1.position.x
+        const dy = n2.position.y - n1.position.y
+        const distance = Math.sqrt(dx*dx + dy*dy)
+        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    // binds
+    for (let i = 0; i < segments; i++) {
+        const n1 = nodeGrid[i]
+        const n2 = nodeGrid[(i + 2) % segments]
+
+        const dx = n2.position.x - n1.position.x
+        const dy = n2.position.y - n1.position.y
+        const distance = Math.sqrt(dx*dx + dy*dy)
+        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    // binds 2
+    for (let i = 0; i < segments; i++) {
+        const n1 = nodeGrid[i]
+        const n2 = nodeGrid[(i + 3) % segments]
+
+        const dx = n2.position.x - n1.position.x
+        const dy = n2.position.y - n1.position.y
+        const distance = Math.sqrt(dx*dx + dy*dy)
+        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    // binds 3
+    for (let i = 0; i < segments; i++) {
+        const n1 = nodeGrid[i]
+        const n2 = nodeGrid[(i + 4) % segments]
+
+        const dx = n2.position.x - n1.position.x
+        const dy = n2.position.y - n1.position.y
+        const distance = Math.sqrt(dx*dx + dy*dy)
+        const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+        springs.push(spring)
+    }
+
+    nodes.push(...nodeGrid)
+}
 
 function update(dt) {
     for (node of nodes) {
@@ -572,3 +619,62 @@ const moveSelectedNode = (e) => {
     }
 }
 canvas.addEventListener('mousemove', moveSelectedNode)
+
+const framelessCategoryPanel = document.getElementById('categoryFramelessPanel')
+const framedCategoryPanel = document.getElementById('categoryFramedPanel')
+
+const panels = [framelessCategoryPanel, framedCategoryPanel]
+
+function showCategoryFramelessPanel() {
+    hideAllPanels()
+    framelessCategoryPanel.style.visibility = 'visible'
+}
+
+function showCategoryFramedPanel() {
+    hideAllPanels()
+    framedCategoryPanel.style.visibility = 'visible'
+}
+
+function hideAllPanels() {
+    for (const panel of panels) {
+        panel.style.visibility = 'hidden'
+    }
+}
+canvas.addEventListener('mousedown', hideAllPanels)
+
+function spawnFramelessBox() {
+    spawnSquare(new Vec2(canvas.width / 2 - 200, 150))
+    framelessCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramelessBlock() {
+    spawnGrid(new Vec2(canvas.width / 2 - 200, 150), 2, 4)
+    framelessCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramelessCircle1() {
+    spawnCircle1(new Vec2(canvas.width / 2, 600), 100)
+    framelessCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramelessCircle2() {
+    spawnCircle2(new Vec2(canvas.width / 2, 600), 100)
+    framelessCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramedBox() {
+    framedCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramedBlock() {
+    framedCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramedCircle1() {
+    framedCategoryPanel.style.visibility = 'hidden'
+}
+
+function spawnFramedCircle2() {
+    framedCategoryPanel.style.visibility = 'hidden'
+}
+

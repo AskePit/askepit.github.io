@@ -12,6 +12,22 @@
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+  <div class="categories">
+    <div id="categoryFrameless" class="spawnCategoryButton" onclick="showCategoryFramelessPanel()">Frameless</div>
+    <div id="categoryFramed" class="spawnCategoryButton" onclick="showCategoryFramedPanel()">Framed</div>
+  </div>
+  <div id="categoryFramelessPanel" class="spawnCategoryPanel">
+    <div id="spawnFramelessBoxButton" class="spawnButton" onclick="spawnFramelessBox()">Box</div>
+    <div id="spawnFramelessBlockButton" class="spawnButton" onclick="spawnFramelessBlock()">Block</div>
+    <div id="spawnFramelessCircle1Button" class="spawnButton" onclick="spawnFramelessCircle1()">Circle1</div>
+    <div id="spawnFramelessCircle2Button" class="spawnButton" onclick="spawnFramelessCircle2()">Circle2</div>
+  </div>
+  <div id="categoryFramedPanel" class="spawnCategoryPanel">
+    <div id="spawnFramedBoxButton" class="spawnButton" onclick="spawnFramedBox()">Box</div>
+    <div id="spawnFramedBlockButton" class="spawnButton" onclick="spawnFramedBlock()">Block</div>
+    <div id="spawnFramedCircle1Button" class="spawnButton" onclick="spawnFramedCircle1()">Circle1</div>
+    <div id="spawnFramedCircle2Button" class="spawnButton" onclick="spawnFramedCircle1()">Circle2</div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
