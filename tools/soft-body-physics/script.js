@@ -213,6 +213,10 @@ class Spring {
     }
 
     update(dt) {
+        if (this.node1.forceBlocked && this.node2.forceBlocked) {
+            return
+        }
+
         const dx = this.node2.position.x - this.node1.position.x
         const dy = this.node2.position.y - this.node1.position.y
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -237,8 +241,14 @@ class Spring {
         const fx = totalForce * nx
         const fy = totalForce * ny
 
-        this.node1.addForce(new Vec2(fx, fy))
-        this.node2.addForce(new Vec2(-fx, -fy))
+        if (this.node1.forceBlocked) {
+            this.node2.addForce(new Vec2(2 * -fx, 2 * -fy))
+        } else if (this.node2.forceBlocked) {
+            this.node1.addForce(new Vec2(2 * fx, 2 * fy))
+        } else {
+            this.node1.addForce(new Vec2(fx, fy))
+            this.node2.addForce(new Vec2(-fx, -fy))
+        }
     }
 
     render() {
@@ -335,17 +345,157 @@ class Spring {
     }
 }
 
+class Frame {
+    points = [] // Vec2, local
+
+    freezedNodes = [] // global
+    loosyNodes = [] // global
+    springs = [] // freezed <-> loosy
+
+    mass = 0
+    position = new Vec2() // global
+    velocity = new Vec2()
+    force = new Vec2()
+    forceBlocked = false
+
+    constructor(globalPoints = [], nodeMass, stiffness = 1, damping = 1) {
+        let pointsSum = new Vec2()
+        for (const p of globalPoints) {
+            pointsSum.addVec(p)
+        }
+        // calc points global center
+        this.position = pointsSum.div(globalPoints.length)
+
+        globalPoints.forEach((point) => {
+            this.points.push(point.clone())
+        })
+        for (const p of this.points) {
+            p.subVec(this.position)
+        }
+
+        this.mass = 0
+
+        for (const point of globalPoints) {
+            const freezedNode = new Node(0)
+            freezedNode.blockForces()
+            freezedNode.position = point.clone()
+
+            const loosyNode = new Node(nodeMass)
+            loosyNode.position = point.clone()
+
+            this.freezedNodes.push(freezedNode)
+            this.loosyNodes.push(loosyNode)
+
+            this.mass += loosyNode.mass
+
+            const spring = new Spring(freezedNode, loosyNode, 0, stiffness, damping)
+            this.springs.push(spring)
+        }
+    }
+
+    move(offset) {
+        this.position.addVec(offset)
+        for (const node of this.freezedNodes) {
+            node.position.addVec(offset)
+        }
+        for (const point of this.points) {
+            point.addVec(offset)
+        }
+    }
+
+    update(dt) {
+        if (this.forceBlocked) {
+            return
+        }
+
+        const acceleration = this.force.divided(this.mass)
+        this.force.zero()
+
+        if (!acceleration.isZero()) {
+            this.velocity.addVec( acceleration.mul(dt) )
+
+            const offset = this.velocity.multiplied(dt)
+            console.log(offset)
+            this.move(offset)
+        }
+    }
+
+    render() {
+        for (let i = 1; i<this.freezedNodes.length; ++i) {
+            const p1 = this.freezedNodes[i-1].position
+            const p2 = this.freezedNodes[i].position
+
+            ctx.strokeStyle = '#000'
+            ctx.lineWidth = 2
+            ctx.beginPath()
+
+            ctx.moveTo(p1.x, p1.y)
+            ctx.lineTo(p2.x, p2.y)
+            ctx.stroke()
+        }
+    }
+
+    clampPositionByCanvas() {
+        let minX = 99999999
+        let maxX = -99999999
+        let minY = 99999999
+        let maxY = -99999999
+
+        this.freezedNodes.forEach((node) => {
+            const pos = node.position
+            minX = Math.min(minX, pos.x)
+            maxX = Math.max(maxX, pos.x)
+            minY = Math.min(minY, pos.y)
+            maxY = Math.max(maxY, pos.y)
+        })
+
+        if (minX < 0 && maxX > canvas.width) {
+            // nothing can be done here
+            return
+        }
+
+        if (minY < 0 && maxY > canvas.height) {
+            // nothing can be done here
+            return
+        }
+
+        let correction = new Vec2()
+        if (minX < 0) {
+            correction.x = -minX;
+        }
+        if (maxX > canvas.width) {
+            correction.x = canvas.width - maxX;
+        }
+        if (minY < 0) {
+            correction.y = -minY;
+        }
+        if (maxY > canvas.height) {
+            correction.y = canvas.height - maxY;
+        }
+
+        this.move(correction)
+    }
+}
+
 const nodesBatch = []
 const springsBatch = []
+const framesBatch = []
 const actors = []
 
 class Actor {
     nodes = []
     springs = []
+    frames = [] // frames own their springs and nodes
 
     register() {
         nodesBatch.push(...this.nodes)
         springsBatch.push(...this.springs)
+        framesBatch.push(...this.frames)
+
+        for (const frame of this.frames) {
+            nodesBatch.push(...frame.loosyNodes)
+            springsBatch.push(...frame.springs)
+        }
         actors.push(this)
     }
 }
@@ -385,6 +535,28 @@ function spawnSquare(pos /*Vec2*/) {
         actor.springs.push(spring)
     }
 
+    actor.register()
+    return actor
+}
+
+function spawnFramedSquare(pos /*Vec2*/) {
+    const actor = new Actor()
+
+    const SQUARE_SIZE = 100 // px
+
+    const frame = new Frame(
+        [
+            new Vec2(pos.x + SQUARE_SIZE, pos.y + SQUARE_SIZE),
+            new Vec2(pos.x + SQUARE_SIZE * 2, pos.y + SQUARE_SIZE),
+            new Vec2(pos.x + SQUARE_SIZE * 2, pos.y + SQUARE_SIZE * 2),
+            new Vec2(pos.x + SQUARE_SIZE, pos.y + SQUARE_SIZE * 2)
+        ],
+        NODE_MASS, SPRING_STIFFNESS, SPRING_DAMPING
+    )
+
+    frame.force = new Vec2(0, 0)
+
+    actor.frames.push(frame)
     actor.register()
     return actor
 }
@@ -524,15 +696,19 @@ function spawnCircle2(pos, radius, segments = 8) {
 }
 
 function update(dt) {
-    for (node of nodesBatch) {
+    for (const node of nodesBatch) {
         node.zeroForce()
     }
 
-    for (spring of springsBatch) {
+    for (const frame of framesBatch) {
+        frame.update(dt)
+    }
+
+    for (const spring of springsBatch) {
         spring.update(dt)
     }
 
-    for (node of nodesBatch) {
+    for (const node of nodesBatch) {
         node.update(dt)
     }
 }
@@ -540,11 +716,15 @@ function update(dt) {
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    for (spring of springsBatch) {
+    for (const frame of framesBatch) {
+        frame.render()
+    }
+
+    for (const spring of springsBatch) {
         spring.render()
     }
 
-    for (node of nodesBatch) {
+    for (const node of nodesBatch) {
         node.render()
     }
 }
@@ -654,6 +834,7 @@ function spawnFramelessCircle2() {
 }
 
 function spawnFramedBox() {
+    spawnFramedSquare(new Vec2(canvas.width / 2 - 200, 150))
     framedCategoryPanel.style.visibility = 'hidden'
 }
 
