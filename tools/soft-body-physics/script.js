@@ -29,8 +29,27 @@ function lerpRGB(color1, color2, t) {
 }
 
 class Vec2 {
-    x = 0
-    y = 0
+    #_x = 0;
+    #_y = 0;
+
+    get x() {
+        return this.#_x;
+    }
+
+    set x(value) {
+        if (Number.isNaN(value)) {
+            console.warn(`x was set to NaN!`, new Error().stack);
+        }
+        this.#_x = value;
+    }
+
+    get y() {
+        return this.#_y;
+    }
+
+    set y(value) {
+        this.#_y = value;
+    }
 
     constructor(x = 0, y = 0) {
         this.x = x
@@ -164,6 +183,10 @@ class Node {
             return
         }
 
+        if (this.force.isZero()) {
+            return
+        }
+
         const acceleration = this.force.divided(this.mass)
         this.zeroForce()
 
@@ -221,6 +244,10 @@ class Spring {
         const dy = this.node2.position.y - this.node1.position.y
         const distance = Math.sqrt(dx * dx + dy * dy)
         const forceMagnitude = (distance - this.length) / this.stiffness
+
+        if (forceMagnitude == 0) {
+            return
+        }
 
         // Spring direction
         const nx = dx / distance
@@ -393,7 +420,11 @@ class Frame {
         }
     }
 
-    move(offset) {
+    moveAbs(pos) {
+        this.moveRel(pos.subVec(this.position))
+    }
+
+    moveRel(offset) {
         this.position.addVec(offset)
         for (const node of this.freezedNodes) {
             node.position.addVec(offset)
@@ -415,8 +446,9 @@ class Frame {
             this.velocity.addVec( acceleration.mul(dt) )
 
             const offset = this.velocity.multiplied(dt)
-            console.log(offset)
-            this.move(offset)
+            this.moveRel(offset)
+
+            this.clampPositionByCanvas()
         }
     }
 
@@ -425,7 +457,7 @@ class Frame {
             const p1 = this.freezedNodes[i-1].position
             const p2 = this.freezedNodes[i].position
 
-            ctx.strokeStyle = '#000'
+            ctx.strokeStyle = this === selectedFrame ? '#0f0' : '#000'
             ctx.lineWidth = 2
             ctx.beginPath()
 
@@ -435,7 +467,7 @@ class Frame {
         }
     }
 
-    clampPositionByCanvas() {
+    getAabb() { // [Vec2, Vec2] which is [leftTop and rightBottom]
         let minX = 99999999
         let maxX = -99999999
         let minY = 99999999
@@ -449,31 +481,37 @@ class Frame {
             maxY = Math.max(maxY, pos.y)
         })
 
-        if (minX < 0 && maxX > canvas.width) {
+        return [new Vec2(minX, minY), new Vec2(maxX, maxY)]
+    }
+
+    clampPositionByCanvas() {
+        const [leftTop, rightBottom] = this.getAabb()
+
+        if (leftTop.x < 0 && rightBottom.x > canvas.width) {
             // nothing can be done here
             return
         }
 
-        if (minY < 0 && maxY > canvas.height) {
+        if (leftTop.y < 0 && rightBottom.y > canvas.height) {
             // nothing can be done here
             return
         }
 
         let correction = new Vec2()
-        if (minX < 0) {
-            correction.x = -minX;
+        if (leftTop.x < 0) {
+            correction.x = -leftTop.x;
         }
-        if (maxX > canvas.width) {
-            correction.x = canvas.width - maxX;
+        if (rightBottom.x > canvas.width) {
+            correction.x = canvas.width - rightBottom.x;
         }
-        if (minY < 0) {
-            correction.y = -minY;
+        if (leftTop.y < 0) {
+            correction.y = -leftTop.y;
         }
-        if (maxY > canvas.height) {
-            correction.y = canvas.height - maxY;
+        if (rightBottom.y > canvas.height) {
+            correction.y = canvas.height - rightBottom.y;
         }
 
-        this.move(correction)
+        this.moveRel(correction)
     }
 }
 
@@ -551,10 +589,10 @@ function spawnFramedSquare(pos /*Vec2*/) {
             new Vec2(pos.x + SQUARE_SIZE * 2, pos.y + SQUARE_SIZE * 2),
             new Vec2(pos.x + SQUARE_SIZE, pos.y + SQUARE_SIZE * 2)
         ],
-        NODE_MASS, SPRING_STIFFNESS, SPRING_DAMPING
+        NODE_MASS, SPRING_STIFFNESS*3, SPRING_DAMPING/10
     )
 
-    frame.force = new Vec2(0, 0)
+    // frame.velocity = new Vec2(100, 0)
 
     actor.frames.push(frame)
     actor.register()
@@ -732,6 +770,7 @@ function render() {
 requestAnimationFrame(loop)
 
 let selectedNode = null
+let selectedFrame = null
 let isDragging = false
 
 function getCanvasPoint(pageX, pageY) {
@@ -740,6 +779,17 @@ function getCanvasPoint(pageX, pageY) {
         x: pageX - rect.left,
         y: pageY - rect.top
     }
+}
+
+function findClosestFrame(x, y) {
+    for (const frame of framesBatch) {
+        const aabb = frame.getAabb()
+        if (x >= aabb[0].x && x <= aabb[1].x && y >= aabb[0].y && y <= aabb[1].y) {
+            return frame
+        }
+    }
+    
+    return null
 }
 
 function findClosestNode(x, y, maxDistance = 30) {
@@ -760,8 +810,15 @@ function findClosestNode(x, y, maxDistance = 30) {
     return closest
 }
 
-const selectNode = (e) => {
+const selectObject = (e) => {
     const point = getCanvasPoint(e.pageX, e.pageY)
+    selectedFrame = findClosestFrame(point.x, point.y)
+    if (selectedFrame) {
+        selectedNode = null
+        isDragging = true
+        return
+    }
+
     selectedNode = findClosestNode(point.x, point.y)
 
     if (selectedNode) {
@@ -769,27 +826,38 @@ const selectNode = (e) => {
         selectedNode.blockForces()
     }
 }
-canvas.addEventListener('mousedown', selectNode)
+canvas.addEventListener('mousedown', selectObject)
 
-const unselectNode = (e) => {
+const unselectObject = (e) => {
     isDragging = false
 
     if (selectedNode) {
         selectedNode.unblockForces()
         selectedNode = null
     }
+    if (selectedFrame) {
+        selectedFrame = null
+    }
 }
-canvas.addEventListener('mouseup', unselectNode)
-canvas.addEventListener('mouseleave', unselectNode)
+canvas.addEventListener('mouseup', unselectObject)
+canvas.addEventListener('mouseleave', unselectObject)
 
-const moveSelectedNode = (e) => {
-    if (isDragging && selectedNode) {
-        const point = getCanvasPoint(e.pageX, e.pageY)
+const moveSelectedObject = (e) => {
+    if (!isDragging) {
+        return
+    }
+
+    const point = getCanvasPoint(e.pageX, e.pageY)
+
+    if (selectedNode) {
         selectedNode.position.x = point.x
         selectedNode.position.y = point.y
     }
+    if (selectedFrame) {
+        selectedFrame.moveAbs(new Vec2(point.x, point.y))
+    }
 }
-canvas.addEventListener('mousemove', moveSelectedNode)
+canvas.addEventListener('mousemove', moveSelectedObject)
 
 const framelessCategoryPanel = document.getElementById('categoryFramelessPanel')
 const framedCategoryPanel = document.getElementById('categoryFramedPanel')
