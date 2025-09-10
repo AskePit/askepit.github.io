@@ -21,31 +21,36 @@ canvas {
     left: 20px;
 }
 
+.spawnCategoryButton, .spawnButton, .spawnCategoryPanel {
+    border: solid #6879d0 1px;
+    border-radius: 2px;
+    background-color: white;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.spawnCategoryButton, .spawnButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    margin: 5px;
+}
+
 .spawnCategoryButton {
     position: relative;
     width: 100px;
-    height: 50px;
-    border: solid black 2px;
-    margin: 5px;
-
-    background-color: white;
-    border-radius: 10px;
-
-    text-align: center;
 }
 
 .spawnCategoryPanel {
+    border-width: 1px;
     visibility: hidden;
     display: flex;
     flex-direction: column;
     position: fixed;
     width: 100px;
     height: auto;
-    border: solid black 2px;
     top: 50px;
-
-    background-color: white;
-    border-radius: 10px;
 }
 
 #categoryFramelessPanel {
@@ -57,13 +62,5 @@ canvas {
 }
 
 .spawnButton {
-    width: 50px;
-    height: 50px;
-    border: solid black 2px;
-    margin: 5px;
-
-    background-color: white;
-    border-radius: 10px;
-
-    text-align: center;
+    width: auto;
 }

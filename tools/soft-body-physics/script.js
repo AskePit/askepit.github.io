@@ -242,12 +242,14 @@ class Spring {
 
         const dx = this.node2.position.x - this.node1.position.x
         const dy = this.node2.position.y - this.node1.position.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        const forceMagnitude = (distance - this.length) / this.stiffness
+        let distance = Math.sqrt(dx * dx + dy * dy)
+        const forceMagnitude = (distance - this.length) * this.stiffness
 
         if (forceMagnitude == 0) {
             return
         }
+
+        distance = Math.max(distance, 0.01) // hackity hack! prevents zero distance and following Nan poisoning
 
         // Spring direction
         const nx = dx / distance
@@ -375,9 +377,9 @@ class Spring {
 class Frame {
     points = [] // Vec2, local
 
-    freezedNodes = [] // global
-    loosyNodes = [] // global
-    springs = [] // freezed <-> loosy
+    freezedNodes = [] // global. Frame owns freezed nodes
+    loosyNodes = [] // global. Frame owns loosy nodes
+    springs = [] // freezed <-> loosy. Frame owns those springs, actor owns external springs which connect loosy nodes
 
     mass = 0
     position = new Vec2() // global
@@ -539,8 +541,8 @@ class Actor {
 }
 
 const NODE_MASS = 0.01 // kg
-const SPRING_STIFFNESS = 10 // N/m
-const SPRING_DAMPING = 0.06 // N/(m/s)
+const SPRING_STIFFNESS = 1 // N/m
+const SPRING_DAMPING = 0.1 // N/(m/s) I recommend [0.001; 0.1]
 
 function spawnSquare(pos /*Vec2*/) {
     const actor = new Actor()
@@ -569,7 +571,7 @@ function spawnSquare(pos /*Vec2*/) {
     ]) {
         const dx = pair[1].position.x - pair[0].position.x
         const dy = pair[1].position.y - pair[0].position.y
-        const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS, SPRING_DAMPING)
+        const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS*10, SPRING_DAMPING)
         actor.springs.push(spring)
     }
 
@@ -589,12 +591,37 @@ function spawnFramedSquare(pos /*Vec2*/) {
             new Vec2(pos.x + SQUARE_SIZE * 2, pos.y + SQUARE_SIZE * 2),
             new Vec2(pos.x + SQUARE_SIZE, pos.y + SQUARE_SIZE * 2)
         ],
-        NODE_MASS, SPRING_STIFFNESS*3, SPRING_DAMPING/10
+        NODE_MASS, SPRING_STIFFNESS*1, SPRING_DAMPING*2
     )
-
-    // frame.velocity = new Vec2(100, 0)
-
     actor.frames.push(frame)
+
+    const node1 = frame.loosyNodes[0]
+    const node2 = frame.loosyNodes[1]
+    const node3 = frame.loosyNodes[2]
+    const node4 = frame.loosyNodes[3]
+
+    // actor.nodes.push(node1)
+    // actor.nodes.push(node2)
+    // actor.nodes.push(node3)
+    // actor.nodes.push(node4)
+
+    for (const pair of [
+        [node1, node3],
+        [node2, node4],
+        [node1, node2],
+        [node2, node3],
+        [node3, node4],
+        [node4, node1],
+    ]) {
+        const dx = pair[1].position.x - pair[0].position.x
+        const dy = pair[1].position.y - pair[0].position.y
+        const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS*10, SPRING_DAMPING)
+        actor.springs.push(spring)
+    }
+
+    // frame.velocity = new Vec2(1000, 0)
+
+    
     actor.register()
     return actor
 }
@@ -650,7 +677,7 @@ function spawnGrid(pos, rows, cols) {
 
                 const dx = pair[1].position.x - pair[0].position.x
                 const dy = pair[1].position.y - pair[0].position.y
-                const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS, SPRING_DAMPING)
+                const spring = new Spring(pair[0], pair[1], Math.sqrt(dx * dx + dy * dy), SPRING_STIFFNESS/2, SPRING_DAMPING)
                 actor.springs.push(spring)
             }
         }
@@ -677,7 +704,7 @@ function spawnCircle1(pos, radius, segments = 8) {
         node.position = new Vec2(x, y)
         nodeGrid.push(node)
 
-        const spring = new Spring(center, node, radius, SPRING_STIFFNESS, SPRING_DAMPING)
+        const spring = new Spring(center, node, radius, SPRING_STIFFNESS*2, SPRING_DAMPING)
         actor.springs.push(spring)
     }
 
@@ -685,7 +712,7 @@ function spawnCircle1(pos, radius, segments = 8) {
     for (let i = 0; i < segments; i++) {
         const n1 = nodeGrid[i]
         const n2 = nodeGrid[(i + 1) % segments]
-        const spring = new Spring(n1, n2, radius, SPRING_STIFFNESS, SPRING_DAMPING)
+        const spring = new Spring(n1, n2, radius, SPRING_STIFFNESS*2, SPRING_DAMPING)
         actor.springs.push(spring)
     }
 
@@ -722,7 +749,7 @@ function spawnCircle2(pos, radius, segments = 8) {
             const dx = n2.position.x - n1.position.x
             const dy = n2.position.y - n1.position.y
             const distance = Math.sqrt(dx*dx + dy*dy)
-            const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS, SPRING_DAMPING)
+            const spring = new Spring(n1, n2, distance, SPRING_STIFFNESS/8, SPRING_DAMPING)
             actor.springs.push(spring)
         }
     }
@@ -918,3 +945,4 @@ function spawnFramedCircle2() {
     framedCategoryPanel.style.visibility = 'hidden'
 }
 
+spawnFramelessBlock()
