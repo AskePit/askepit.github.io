@@ -67,7 +67,7 @@ MathJax = {
 <p>For over a decade now, C++ has had <a href="https://en.cppreference.com/w/cpp/language/constexpr"><code>constexpr</code></a>, a feature that allows programmers to dump part of the workload onto the compiler. When I first encountered it, it blew my mind—imagine the compiler crunching some pretty complex calculations <i>before the program even runs</i>!</p>
 <p>At some point, a thought struck me: if the compiler can calculate everything for you, then <b>why bother with runtime at all</b>? What are you going to do there—print out some results? Come on, that's lame. Totally unsportsmanlike.</p>
 <p>And that's exactly when my challenge was born:</p>
-<blockquote>"Hands off" or "don’t even think about running the exe file."</blockquote>
+<blockquote><p>"Hands off" or "don’t even think about running the exe file."</p></blockquote>
 <h2>Setting the Goal</h2>
 <p>Let’s spell out the main idea one more time for clarity: we want to write a program, compile it, and have <b>all</b> computations happen <i>during compilation</i>. Actually running the program? <i>Not interested.</i></p>
 <p>But the code <b>must work</b>.</p>
@@ -114,7 +114,7 @@ MathJax = {
     <span class="code-keyword">return</span> <span class="code-call">twice</span>(<span class="code-literal">17</span>);
 }</code></pre>
 <p>The program will exit with code <code>34</code>, and the calculation <code>17 * 2</code> will have been performed during compilation, meaning the binary will simply store the result <code>34</code>.</p>
-<blockquote>Of course, we’re talking theory here, so let’s skip over the fact that the compiler can optimize such trivial multiplication all on its own, even without explicitly using <code>constexpr</code>. For the sake of this discussion, let’s pretend the compiler won’t bother without it.</blockquote>
+<blockquote><p>Of course, we’re talking theory here, so let’s skip over the fact that the compiler can optimize such trivial multiplication all on its own, even without explicitly using <code>constexpr</code>. For the sake of this discussion, let’s pretend the compiler won’t bother without it.</p></blockquote>
 <p>Now, let’s tweak things to make compile-time execution <i>impossible</i>:</p>
 <pre><code class="language-cpp"><span class="code-keyword">constexpr int</span> <span class="code-call">twice</span>(<span class="code-keyword">int</span> n)
 {
@@ -138,7 +138,7 @@ MathJax = {
 <pre><code class="language-"><span class="code-keyword">error</span> C3615: <span class="code-keyword">constexpr</span> <span class="code-keyword">function</span> <span class="code-literal">'twice'</span> cannot result <span class="code-keyword">in</span> a constant expression</code></pre>
 <p>Okay, but what if I want to guarantee that my function always, <i>always</i> runs in a compile-time context? Enter <a href="https://en.cppreference.com/w/cpp/types/is_constant_evaluated"><code>std::is_constant_evaluated</code></a> from C++20. This is a <code>constexpr</code> function you can call inside another <code>constexpr</code> function to check if you’re <i>actually</i> in a <code>constexpr</code> context or if you’ve been downgraded to runtime. Because, of course, the C++ standards committee loves its complexities.</p>
 <p>In our case, we <i>need</i> to ensure we’re operating in a compile-time context. Any deviation from this course should ideally result in a compilation error. Sure, we could wrap ourselves in layers of <code>constexpr</code> and sprinkle some <code>std::is_constant_evaluated</code> checks. But, fortunately, the same C++20 also introduced the <a href="https://en.cppreference.com/w/cpp/language/consteval"><code>consteval</code></a> specifier. Think of it as <code>constexpr</code> on steroids: it marks a method as being <i>exclusively</i> for compile-time execution. Any attempt to use it at runtime will immediately throw a righteous compilation error. And that’s exactly what we need—strict guarantees that the compiler’s exe will sweat, not ours.</p>
-<blockquote>This article uses C++20 features and, when necessary, dips into C++23. Not everyone can unleash these wonders in production, but hey, that’s just life as a C++ developer.</blockquote>
+<blockquote><p>This article uses C++20 features and, when necessary, dips into C++23. Not everyone can unleash these wonders in production, but hey, that’s just life as a C++ developer.</p></blockquote>
 <h2>Starting the Game of Life</h2>
 <p>Let’s begin by writing some code without worrying about <code>consteval</code> or other quirks for now. We’ll sort that out as we go.</p>
 <p>So, we need a canvas of a specific size. I’m going with 16x16. Later, you’ll see why I chose this size and (hopefully) admire the cleverness.</p>

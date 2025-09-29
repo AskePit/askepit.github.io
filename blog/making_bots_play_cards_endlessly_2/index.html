@@ -240,7 +240,7 @@ difference(10,10) = \frac{0}{20} = 0
 $$</p>
 <p>Sure, you could say the numbers are “a bit off,” but from my not-so-mathematically-trained point of view, either formula is <i>good enough</i> for our task.</p>
 <p>What <i>isn’t</i> good enough, though? ChatGPT’s memory. Keep track of what it says. Call it out. Laugh on it.</p>
-<blockquote>Any mathematicians in the room? Sound off in the comments — what’s your take on these two formulas?</blockquote>
+<blockquote><p>Any mathematicians in the room? Sound off in the comments — what’s your take on these two formulas?</p></blockquote>
 <hr>
 <p>Alright — now, having this mathematical basis at hand, how do we compare metrics? Our metrics aren’t just numbers — they are something more complex. Let’s start with the <code>DataRange</code> class. Let me remind you what it looks like:</p>
 <pre><code class="language-python">@dataclass
@@ -274,7 +274,7 @@ $$</p>
 
         <span class="code-keyword">return</span> MIN_MAX_WEIGHT * min_similarity + MIN_MAX_WEIGHT * max_similarity + MEDIAN_WEIGHT * med_similarity</code></pre>
 <p>What’s important here is that for my specific <code>DataRange</code> class, I decided it makes sense to lean heavily on the <i>median</i> when computing similarity—without completely ignoring the min and max, which should also play a role in the outcome. But let’s be honest: if two <code>DataRange</code> objects \[10; 100\] and \[12; 80\] share the same median—say, 40—then those two ranges <i>have</i> to be pretty close. After all, the range’s minimum and maximum are usually outliers—deviations from the mean or median. So, in this concrete case, I arbitrarily assigned a <i>70%</i> weight to the median’s influence on similarity, and split the remaining influence between min and max at <i>15%</i> each.</p>
-<blockquote>As you might have noticed, I’m no mathematician, and my familiarity with statistics and data analysis is—if I’m honest—basically surface level. So if you want to tell me in the comments why my approach is just amateur daydreaming and how it <i>really</i> should be calculated, we’ll all come out ahead.</blockquote>
+<blockquote><p>As you might have noticed, I’m no mathematician, and my familiarity with statistics and data analysis is—if I’m honest—basically surface level. So if you want to tell me in the comments why my approach is just amateur daydreaming and how it <i>really</i> should be calculated, we’ll all come out ahead.</p></blockquote>
 <hr>
 <p>Alright, we’ve got one more class we want to compare: <code>ProbabilityTable</code>:</p>
 <pre><code class="language-python">@dataclass

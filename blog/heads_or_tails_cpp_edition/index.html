@@ -1,0 +1,1570 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>Heads or tails. C++ edition</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="John Edmund Kerrich is known as the man who flipped a coin 10,000 times to test the law of large numbers in practice. It's not reliably known how long that tedious experiment took">
+    <meta name="keywords" content="c++, simd, avx2, math, abnormal programming">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/heads_or_tails_cpp_edition/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Heads or tails. C++ edition">
+    <meta property="og:description" content="John Edmund Kerrich is known as the man who flipped a coin 10,000 times to test the law of large numbers in practice. It's not reliably known how long that tedious experiment took">
+    <meta property="og:image" content="https://habrastorage.org/getpro/habr/upload_files/69f/dc8/7cf/69fdc87cf8117018af05edf4438a99ec.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/heads_or_tails_cpp_edition/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Heads or tails. C++ edition">
+    <meta name="twitter:description" content="John Edmund Kerrich is known as the man who flipped a coin 10,000 times to test the law of large numbers in practice. It's not reliably known how long that tedious experiment took">
+    <meta name="twitter:image" content="https://habrastorage.org/getpro/habr/upload_files/69f/dc8/7cf/69fdc87cf8117018af05edf4438a99ec.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Heads or tails. C++ edition</h1>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/getpro/habr/upload_files/69f/dc8/7cf/69fdc87cf8117018af05edf4438a99ec.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>John Edmund Kerrich is known as the man who flipped a coin 10,000 times to test the law of large numbers in practice. It's not reliably known how long that tedious experiment took him, but circumstances helped him one way or another: he was in German captivity, and - however ironic or mocking that may sound - he had a lot of free time. Also, John had an assistant, Eric Christensen, who probably doubled the speed of the experiment.</p>
+<p>This story made me think about the heavy price and the time costs by which some pre-computer-era experiments were achieved. With this article I want to pay tribute to those persistent fellows like Kerrich, and show how far we've come in progress. And how you can coolly mix that with C++, optimization, multithreading, and a pinch of somewhat insane programming.</p>
+<h2>What I want</h2>
+<p>In Kerrich's experiment heads and tails came up 5067 and 4933 times respectively. Simple arithmetic shows that's 50.67% versus 49.33%. In other words, the results approach the theoretical 50%, although they still show noticeable deviations. I would say <i>very visible</i> deviations. Of course, it all depends on how greedy you are and on the precision you want to achieve. For some people even 50.67% may seem close enough to 50%, and the experiment exhaustive and completely finished.</p>
+<p>Looking at those results, I wondered how far one could push the experiment, even if not by fiddling with a real coin. I was more interested in the point when we <i>really dangerously</i> approach 50%, and how much time it would take. The question is, of course, more provocative or, at best, naive than serious, because it contains glaring holes:</p>
+<ul>
+	<li>Fact: only an infinite continuation of the experiment will finish (ha-ha, "finish") with a 50% / 50% result.</li>
+	<li>It would be very useful to decide up front what precision we would consider sufficient to stop the experiment.</li>
+	<li>If we bite off more than we can chew and insist that only the exact 50% with absolutely no deviation whatsoever will do, we are doomed to an experiment that can never finish, so it's not even worth starting.</li>
+</ul>
+<p>Given that, I decided to postpone setting strict bounds and conditions and simply probe this elusive probability - out of curiosity and fun - making the experiment rules as I go.</p>
+<h2>Primary idea</h2>
+<p>The first thing I wanted - to flip the coin as many times as the software and hardware would allow, but without going completely nuts in the process. For example, flip the coin as many times as fits into a 32-bit unsigned integer. Even better - 64-bit. Brute-force iterate over the entire range of numbers, toss the coin during the loop, record the result, measure the elapsed time.</p>
+<p>I'll run the experiment in the following environment: Windows, x64, Visual Studio 2022, C++20.</p>
+<p>Let's go.</p>
+<h2>Carefully preparing for the experiment</h2>
+<p>We'll start from the big picture.</p>
+<p>First, I needed to write a toy framework on top of which I could flexibly run all the calculations:</p>
+<ul>
+	<li>Repeatedly execute a chunk of useful work</li>
+	<li>Measure time</li>
+	<li>Display it on-screen in an easily digestible form</li>
+</ul>
+<p>I ideally saw all three kinds of work nested like a matryoshka of the following form:</p>
+<pre><code class="language-cpp"><span class="code-call">measure</span>( <span class="code-call">spin</span>(doWork) )
+<span class="code-comment">// careful, pseudocode ahead! proper syntax and semantics are not respected here</span></code></pre>
+<p>In other words: we want to measure and display (<code>measure</code>) a repeatedly executed (<code>spin</code>) chunk of work (<code>doWork</code>). As a bonus, the approach should be totally generic, so I could cannibalize this code for my other day-to-day needs if necessary.</p>
+<h3>Measuring time</h3>
+<p>I want a <code>measure</code> function that takes a callback of interest as a parameter, runs it, and measures its execution time. In the most basic form I imagine it like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">using namespace</span> std::chrono;
+<span class="code-keyword">using</span> Clock = high_resolution_clock;
+
+<span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">measure</span>(Func&& f)
+{
+    <span class="code-keyword">auto</span> start = Clock::<span class="code-call">now</span>();
+
+    <span class="code-call">f</span>();
+
+    <span class="code-keyword">auto</span> dt = Clock::<span class="code-call">now</span>() - start;
+    std::cout &lt;&lt; dt &lt;&lt; std::endl;
+}</code></pre>
+<p>Simple as that: start the timer, call the function, record the execution time, print it out. A call might look like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">doWork</span>() {
+    std::cout &lt;&lt; <span class="code-literal">"FFFUUU "</span> &lt;&lt; std::endl;
+}
+
+<span class="code-call">measure</span>(doWork);</code></pre>
+<p>As a result, the console will print:</p>
+<pre><code class="language-">FFFUUU
+<span class="code-literal">36100</span>ns</code></pre>
+<p>It really works, but the current version of <code>measure</code> has problems:</p>
+<ul>
+	<li>The signature of the callable doesn't allow any arguments, and the function's return value can't be extracted from the <code>measure(...)</code> call.</li>
+	<li>The precision of <a href="https://en.cppreference.com/w/cpp/chrono/high_resolution_clock.html"><code>high_resolution_clock</code></a> in my environment - nanoseconds, so when we try to print any measurement it will be shown in nanoseconds no matter how large the result is. That's unreadable.</li>
+</ul>
+<p>First, let's deal with the first problem. It can be solved by seasoning <code>measure</code> with <i>a pretty good pinch</i> of all the most modern (and maybe not-so-modern) C++ tricks:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Func, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">auto</span> <span class="code-call">measure</span>(Func&& f, Args... args) -&gt; <span class="code-keyword">decltype</span>(<span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...))
+{
+    <span class="code-keyword">auto</span> start = Clock::<span class="code-call">now</span>();
+
+    <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (std::is_same_v&lt;<span class="code-keyword">decltype</span>(<span class="code-call">f</span>()), <span class="code-keyword">void</span>&gt;) {
+        <span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...);
+        <span class="code-keyword">auto</span> dt = Clock::<span class="code-call">now</span>() - start;
+        std::cout &lt;&lt; dt &lt;&lt; std::endl;
+    } <span class="code-keyword">else</span> {
+        <span class="code-keyword">auto</span> res = <span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...);
+        <span class="code-keyword">auto</span> dt = Clock::<span class="code-call">now</span>() - start;
+        std::cout &lt;&lt; dt &lt;&lt; std::endl;
+        <span class="code-keyword">return</span> res;
+    }
+}
+
+<span class="code-keyword">void</span> <span class="code-call">echo</span>(std::string_view s) {
+    std::cout &lt;&lt; s &lt;&lt; std::endl;
+}
+
+<span class="code-keyword">int</span> <span class="code-call">sum</span>(<span class="code-keyword">int</span> a, <span class="code-keyword">int</span> b) {
+    <span class="code-keyword">return</span> a + b;
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-call">measure</span>(std::<span class="code-call">bind</span>(echo, <span class="code-literal">"hey!"</span>));
+    std::cout &lt;&lt; std::endl;
+
+    <span class="code-keyword">int</span> ab = <span class="code-call">measure</span>(std::<span class="code-call">bind</span>(sum, <span class="code-literal">12</span>, <span class="code-literal">2000</span>));
+    std::cout &lt;&lt; ab &lt;&lt; std::endl;
+    <span class="code-keyword">return</span> <span class="code-literal">0</span>;
+}</code></pre>
+<p>Output to the screen:</p>
+<pre><code class="language-">hey!
+<span class="code-literal">151100</span>ns
+
+<span class="code-literal">200</span>ns
+<span class="code-literal">2012</span></code></pre>
+<p>Variadic templates, <code>decltype</code>, and <code>constexpr</code> merged in a single ecstasy on a tiny patch of code so that <code>measure</code> turned into a many-faced joker: it can return a value or not; it can take one set of arguments or another.</p>
+<p>In fact, we made <code>measure</code> into something like a Python decorator. You can also wrap the repeating piece of code in a lambda:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Func, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">auto</span> <span class="code-call">measure</span>(Func&& f, Args... args) -&gt; <span class="code-keyword">decltype</span>(<span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...))
+{
+    <span class="code-keyword">auto</span> start = Clock::<span class="code-call">now</span>();
+
+    <span class="code-keyword">auto</span> summarize = [&start]() {
+        <span class="code-keyword">auto</span> dt = Clock::<span class="code-call">now</span>() - start;
+        std::cout &lt;&lt; dt &lt;&lt; std::endl;
+    };
+
+    <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (std::is_same_v&lt;<span class="code-keyword">decltype</span>(<span class="code-call">f</span>()), <span class="code-keyword">void</span>&gt;) {
+        <span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...);
+        <span class="code-call">summarize</span>();
+    } <span class="code-keyword">else</span> {
+        <span class="code-keyword">auto</span> res = <span class="code-call">f</span>(std::forward&lt;Args&gt;(args)...);
+        <span class="code-call">summarize</span>();
+        <span class="code-keyword">return</span> res;
+    }
+}</code></pre>
+<p>I think I’ll stick with this version.</p>
+<hr>
+<p>Now, about the problem of printing time. The STL doesn’t provide a unified solution for <i>smart</i> <code>duration</code> output. If your <code>duration&lt;&gt;</code> is <code>seconds</code>, it’ll just print the integer number of seconds, and the fractional part will be lost — meaning 1.5 seconds will turn into <code>1s</code>. If your <code>duration&lt;&gt;</code> is <code>milliseconds</code>, it’ll show <code>ms</code>, and so on. See for yourself what the standard library can do:</p>
+<pre><code class="language-cpp"><span class="code-keyword">using namespace</span> std::chrono_literals;
+
+<span class="code-keyword">auto</span> d = <span class="code-literal">987</span><span class="code-literal">'654'</span><span class="code-literal">321</span><span class="code-literal">'978ns;
+
+std::cout &lt;&lt; d &lt;&lt; std::endl;
+std::cout &lt;&lt; duration_cast&lt;microseconds&gt;(d) &lt;&lt; std::endl;
+std::cout &lt;&lt; duration_cast&lt;milliseconds&gt;(d) &lt;&lt; std::endl;
+std::cout &lt;&lt; duration_cast&lt;seconds&gt;(d) &lt;&lt; std::endl;
+std::cout &lt;&lt; duration_cast&lt;minutes&gt;(d) &lt;&lt; std::endl;</span></code></pre>
+<p>Output to the screen:</p>
+<pre><code class="language-"><span class="code-literal">200000000000</span>ns
+<span class="code-literal">200000000</span>us
+<span class="code-literal">200000</span>ms
+<span class="code-literal">200</span>s
+<span class="code-literal">3</span>min</code></pre>
+<blockquote><p><b>Note</b>: The kind of time output you see above is available only starting with C++20. Back in C++17, <code>std::cout &lt;&lt; d</code> wouldn’t compile at all — you’d have to do it like this: <code>std::cout &lt;&lt; d.count()</code>. And the output would lack suffixes like <code>ms</code>, <code>s</code>, <code>min</code>, etc. — just a plain number.</p></blockquote>
+<p>I started wondering how I would <i>actually</i> want to see measurement times. How to visually represent 200,000,000,000 nanoseconds in a sensible way? At first, I leaned toward casting <code>duration</code> sequentially into hours, minutes, seconds, milliseconds, etc., until we got a result greater than zero. Then 200,000,000,000 nanoseconds would turn into <code>3min</code>. That’s not bad, and the fractional part might not matter much at that scale… or would it?</p>
+<p>I hesitated, then decided that if I break the duration into <i>all</i> its components down to nanoseconds — for example, <code>2min 36s 649ms 551us 558ns</code> — I would get ultimate clarity: readability, precision, and no ambiguity. So I implemented exactly that option:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Dur&gt;
+<span class="code-keyword">void</span> <span class="code-call">prettyPrintDuration</span>(Dur dur)
+{
+    <span class="code-keyword">auto</span> h = duration_cast&lt;hours&gt;(dur);
+    <span class="code-keyword">if</span> (h.<span class="code-call">count</span>()) { std::cout &lt;&lt; h &lt;&lt; <span class="code-literal">" "</span>; dur -= h; }
+
+    <span class="code-keyword">auto</span> m = duration_cast&lt;minutes&gt;(dur);
+    <span class="code-keyword">if</span> (m.<span class="code-call">count</span>()) { std::cout &lt;&lt; m &lt;&lt; <span class="code-literal">" "</span>; dur -= m; }
+
+    <span class="code-keyword">auto</span> s = duration_cast&lt;seconds&gt;(dur);
+    <span class="code-keyword">if</span> (s.<span class="code-call">count</span>()) { std::cout &lt;&lt; s &lt;&lt; <span class="code-literal">" "</span>; dur -= s; }
+
+    <span class="code-keyword">auto</span> ms = duration_cast&lt;milliseconds&gt;(dur);
+    <span class="code-keyword">if</span> (ms.<span class="code-call">count</span>()) { std::cout &lt;&lt; ms &lt;&lt; <span class="code-literal">" "</span>; dur -= ms; }
+
+    <span class="code-keyword">auto</span> us = duration_cast&lt;microseconds&gt;(dur);
+    <span class="code-keyword">if</span> (us.<span class="code-call">count</span>()) { std::cout &lt;&lt; us &lt;&lt; <span class="code-literal">" "</span>; dur -= us; }
+
+    <span class="code-keyword">auto</span> ns = duration_cast&lt;nanoseconds&gt;(dur);
+    <span class="code-keyword">if</span> (ns.<span class="code-call">count</span>()) { std::cout &lt;&lt; ns &lt;&lt; <span class="code-literal">" "</span>; dur -= ns; }
+
+    std::cout &lt;&lt; std::endl;
+}</code></pre>
+<p>Testing:</p>
+<pre><code class="language-cpp"><span class="code-keyword">using namespace</span> std::chrono_literals;
+
+<span class="code-keyword">auto</span> d = <span class="code-literal">987</span><span class="code-literal">'654'</span><span class="code-literal">321</span><span class="code-literal">'978ns;
+prettyPrintDuration(d);</span></code></pre>
+<p>We get:</p>
+<pre><code class="language-"><span class="code-literal">16</span>min <span class="code-literal">27</span>s <span class="code-literal">654</span>ms <span class="code-literal">321</span>us <span class="code-literal">978</span>ns</code></pre>
+<p>Some might say it’s too long. I’d say I’ll look at this time as deeply as I need to. For our current task, it’s more than sufficient.</p>
+<h3>Controlled spinning</h3>
+<p>Another general-purpose function we’ll need: <code>spin</code>. It should perform the same work a specified number of times.</p>
+<p>In its simplest form, it could look like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">spin</span>(Func&& f, size_t count)
+{
+    <span class="code-keyword">for</span> (size_t i = <span class="code-literal">0</span>; i&lt;count; ++i) {
+        <span class="code-call">f</span>();
+    }
+}</code></pre>
+<p>It’s very simple. But since my idea was to iterate over the entire range of an unsigned integer type, I wanted to delegate all the range-bound calculations to <code>spin</code> as well. At this stage, I don’t yet know whether I’ll be using <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code>, or <code>uint64_t</code> as the type. I know for sure that <code>uint8_t</code> will be useful for quick tests — 256 iterations will likely fit entirely on the screen and complete almost instantly for any reasonably heavy workload.</p>
+<p>Okay, it’s enough to pass the desired type as a template argument:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;std::unsigned_integral T, <span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">spin</span>(Func&& f)
+{
+    <span class="code-keyword">for</span> (T i = <span class="code-literal">0</span>; i &lt; std::numeric_limits&lt;T&gt;::<span class="code-call">max</span>(); ++i) {
+        <span class="code-call">f</span>();
+    }
+}</code></pre>
+<p>But that’s a trap! If you run <code>spin&lt;uint8_t&gt;(...)</code>, it will loop from 0 to 254 — one iteration short of the full range [0; 255]. Let’s fix it by changing <code>&lt;</code> to <code>&lt;=</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;std::unsigned_integral T, <span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">spin</span>(Func&& f)
+{
+    <span class="code-keyword">for</span> (T i = <span class="code-literal">0</span>; i &lt;= std::numeric_limits&lt;T&gt;::<span class="code-call">max</span>(); ++i) {
+        <span class="code-call">f</span>();
+    }
+}</code></pre>
+<p>But that’s a trap! Congratulations — you’re in an infinite loop, because any number is always <code>&lt;=</code> its maximum. That’s how it turned out there’s no clean one-liner to iterate over the entire range. Sure, if you give the variable <code>i</code> the type <code>uintmax_t</code>, it will work as intended for 8, 16, and (possibly) 32 bits. But when we get to 64 bits — which <code>uintmax_t</code> is on many platforms — we face the same trap again.</p>
+<p>In the end, I came to this awkward compromise:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;std::unsigned_integral T, <span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">spin</span>(Func&& f)
+{
+    <span class="code-keyword">for</span> (T i = <span class="code-literal">0</span>; ; ++i) {
+        <span class="code-call">f</span>();
+        <span class="code-keyword">if</span> (i == std::numeric_limits&lt;T&gt;::<span class="code-call">max</span>()) <span class="code-keyword">break</span>;
+    }
+}</code></pre>
+<p>Carefully probe the counter after each useful work execution, exiting the loop just a moment before disaster strikes.</p>
+<hr>
+<p>So now we have everything we need to run work and take measurements:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">doWork</span>() {
+    std::cout &lt;&lt; <span class="code-literal">"F"</span>;
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-call">measure</span>([](){ spin&lt;uint8_t&gt;(doWork); });
+    <span class="code-keyword">return</span> <span class="code-literal">0</span>;
+}</code></pre>
+<p>And we get 256 ($2^8$) prime <code>F</code>s printed to the screen:</p>
+<pre><code class="language-">FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF6ms <span class="code-literal">342</span>us <span class="code-literal">500</span>ns</code></pre>
+<p>That’s the end of our preparatory digression from the main topic of the article — let’s start flipping the coin!</p>
+<h2>Flipping the coin</h2>
+<p>What we need first and foremost is a way to generate a random boolean, or a zero and one. The canonical C++ way to generate random numbers is:</p>
+<pre><code class="language-cpp">std::mt19937 <span class="code-call">gen</span>(std::random_device{}());
+std::uniform_int_distribution <span class="code-call">uni</span>(<span class="code-literal">0</span>, <span class="code-literal">1</span>);</code></pre>
+<p>Everything else for the coin flipping is just a matter of coding without much thought:</p>
+<pre><code class="language-cpp"><span class="code-keyword">using</span> BigInt = uint8_t;
+std::mt19937 <span class="code-call">gen</span>(std::random_device{}());
+std::uniform_int_distribution <span class="code-call">uni</span>(<span class="code-literal">0</span>, <span class="code-literal">1</span>);
+BigInt heads = <span class="code-literal">0</span>;
+BigInt tails = <span class="code-literal">0</span>;
+
+<span class="code-keyword">void</span> <span class="code-call">doWork</span>() {
+    <span class="code-keyword">int</span> res = <span class="code-call">uni</span>(gen);
+    <span class="code-keyword">if</span> (res == <span class="code-literal">1</span>) {
+        ++heads;
+    } <span class="code-keyword">else</span> <span class="code-keyword">if</span> (res == <span class="code-literal">0</span>) {
+        ++tails;
+    } <span class="code-keyword">else</span> {
+        <span class="code-call">assert</span>(<span class="code-keyword">false</span>);
+    }
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-call">measure</span>([](){ spin&lt;BigInt&gt;(doWork); });
+
+    <span class="code-keyword">const</span> <span class="code-keyword">double</span> headsPercent = heads / <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(std::numeric_limits&lt;BigInt&gt;::<span class="code-call">max</span>()) * <span class="code-literal">100.0</span>;
+    <span class="code-keyword">const</span> <span class="code-keyword">double</span> tailsPercent = tails / <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(std::numeric_limits&lt;BigInt&gt;::<span class="code-call">max</span>()) * <span class="code-literal">100.0</span>;
+
+    std::cout &lt;&lt; <span class="code-literal">"Heads: "</span> &lt;&lt; +heads &lt;&lt; <span class="code-literal">", "</span> &lt;&lt; headsPercent &lt;&lt; <span class="code-literal">"%"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="code-literal">"Tails: "</span> &lt;&lt; +tails &lt;&lt; <span class="code-literal">", "</span> &lt;&lt; tailsPercent &lt;&lt; <span class="code-literal">"%"</span> &lt;&lt; std::endl;
+
+    <span class="code-keyword">return</span> <span class="code-literal">0</span>;
+}</code></pre>
+<blockquote><p><b>Note:</b> notice — I wrote <code>+heads</code> and <code>+tails</code> when printing to the screen. This isn’t accidental, and it’s needed for <code>uint8_t</code>, which otherwise gets interpreted by <code>std::cout</code> as a <code>char</code> type, producing ASCII gibberish instead of numbers. The <code>+</code> forces the cast of the symbol to a number and avoids this.</p></blockquote>
+<p>As our "big number" — <code>BigInt</code> — we’ll take <code>uint8_t</code> for testing. We flip the coin with our measure/spin machinery, count the percentages, and get:</p>
+<pre><code class="language-"><span class="code-literal">2</span>us <span class="code-literal">700</span>ns
+Heads: <span class="code-literal">122</span>, <span class="code-literal">47.8431</span>%
+Tails: <span class="code-literal">134</span>, <span class="code-literal">52.549</span>%</code></pre>
+<p>Hooray, we’ve run our first coin-flipping experiment, and it took just 2.7 microseconds! Yes, 256 is not Kerrich’s 10,000, so the percentages scatter quite a bit. But overall, it looks fine. At least that’s what I thought.</p>
+<p>However, one must stay vigilant — while tinkering with the code, at some point I accidentally got this perfect result where heads and tails matched exactly:</p>
+<pre><code class="language-"><span class="code-literal">2</span>us <span class="code-literal">700</span>ns
+Heads: <span class="code-literal">128</span>, <span class="code-literal">50.1961</span>%
+Tails: <span class="code-literal">128</span>, <span class="code-literal">50.1961</span>%</code></pre>
+<p>…and I realized my calculations were flawed. As you can see, the sum of probabilities 50.1961% and 50.1961% ends up slightly over 100%.</p>
+<p>The cause was dividing by <code>std::numeric_limits&lt;BigInt&gt;::max()</code>. In fact, we should have divided by one number larger. But where to get such a number if this is the maximum? In the end, I decided not to overcomplicate things — just cast that number to <code>double</code>, add one, and then divide. Fortunately, <code>double</code> is flexible enough, though it doesn’t guarantee exact representation of large numbers, so we must remember this solution is approximate. But at the early stage, it’s good enough:</p>
+<pre><code class="language-cpp"><span class="code-keyword">const double</span> headsPercent = heads / (<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(std::numeric_limits&lt;BigInt&gt;::<span class="code-call">max</span>()) + <span class="code-literal">1.0</span>) * <span class="code-literal">100.0</span>;
+<span class="code-keyword">const</span> <span class="code-keyword">double</span> tailsPercent = tails / (<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(std::numeric_limits&lt;BigInt&gt;::<span class="code-call">max</span>()) + <span class="code-literal">1.0</span>) * <span class="code-literal">100.0</span>;</code></pre>
+<p>Cumbersome, but hey — this is C++. Still, after about a dozen tries I hit 128/128 again:</p>
+<pre><code class="language-"><span class="code-literal">2</span>us <span class="code-literal">304</span>ns
+Heads: <span class="code-literal">128</span>, <span class="code-literal">50</span>%
+Tails: <span class="code-literal">128</span>, <span class="code-literal">50</span>%</code></pre>
+<p>And now the percentages are calculated correctly.</p>
+<blockquote><p>By the way, a question for mathematicians: what’s the probability of getting such a probability? :) In a short span of time, I got exactly 128 heads versus 128 tails twice! At larger numbers, such a match is probably extremely unlikely, and I haven’t seen it anywhere beyond 256 coin flips.</p></blockquote>
+<p>Now let’s break the scientist’s record by flipping the coin more than 10,000 times. The <code>uint16_t</code> type allows us to run 65,536 iterations — just what we need. Let’s change <code>BigInt</code> to <code>uint16_t</code> and we get:</p>
+<pre><code class="language-"><span class="code-literal">569</span>us <span class="code-literal">400</span>ns
+Heads: <span class="code-literal">32685</span>, <span class="code-literal">49.8734</span>%
+Tails: <span class="code-literal">32851</span>, <span class="code-literal">50.1266</span>%</code></pre>
+<p>Well — our 50.1266% already has less error than Kerrich’s 50.67%.</p>
+<p>But there’s an interesting point. To bring it up, I have to admit I omitted another old experiment.</p>
+<p>Half a century before John Edmund Kerrich flipped a coin 10,000 times, another scientist, Karl Pearson, did the same with his students. They ran even more iterations — a crazy 24,000 flips, with results of 12,012 to 11,988, or 50.05% versus 49.95%.</p>
+<p>My generator with 65,536 coin flips performs two and a half times more flips, yet the percentage more often stays around \[50.1%; 50.2%\], which is “worse” than Pearson’s results, although sometimes it approaches his results and sometimes slightly undershoots them. From this, we could cautiously conclude that 24,000 or 65,000 coin flips don’t differ significantly in terms of statistical results.</p>
+<p>Either Pearson lied.</p>
+<p>Or my generator lies.</p>
+<p>Or I’m lying.</p>
+<h2>Isolating the experiment</h2>
+<p>As you might guess, the next plan is to push further. We’ll use 32-bit and 64-bit ranges for iteration and see the results. I suspect some keen readers already sense something is off, but at this stage I felt completely fine and suspected nothing. More on that later…</p>
+<p>I didn’t want to change the <code>BigInt</code> type, recompile the program, and rerun the experiment every time. Automation, remember? Besides, the idea struck me that it would be nice to see a summary table with a progression — experiments run consecutively for 8-, 16-, 32-, and 64-bit ranges, with results calculated and logged.</p>
+<p>But for such a multi-step experiment, our code wasn’t ready at all. What were we missing?:</p>
+<ul>
+	<li>We need to iterate over <code>[uint8_t, uint16_t, uint32_t, uint64_t]</code>. You get it? — we need to iterate over types. That’s not fun.</li>
+	<li>We need to encapsulate all the logic and experiment data in a class so the code can be reused.</li>
+</ul>
+<p>Alright, let’s start with something simpler and declare the long-overdue <code>Experiment</code> class:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> BigInt&gt;
+<span class="code-keyword">struct</span> Experiment
+{
+    std::mt19937 gen {std::random_device{}()};
+    std::uniform_int_distribution&lt;<span class="code-keyword">int</span>&gt; uni {<span class="code-literal">0</span>, <span class="code-literal">1</span>};
+    BigInt heads = <span class="code-literal">0</span>;
+    BigInt tails = <span class="code-literal">0</span>;
+
+    <span class="code-keyword">void</span> <span class="code-call">tossCoin</span>() {
+        <span class="code-keyword">int</span> res = <span class="code-call">uni</span>(gen);
+        <span class="code-keyword">if</span> (res == <span class="code-literal">1</span>) {
+            ++heads;
+        }
+        <span class="code-keyword">else</span> <span class="code-keyword">if</span> (res == <span class="code-literal">0</span>) {
+            ++tails;
+        }
+        <span class="code-keyword">else</span> {
+            <span class="code-call">assert</span>(<span class="code-keyword">false</span>);
+        }
+    }
+};</code></pre>
+<p>Well, that was too simple. So let’s move on to the tricky part.</p>
+<p>Iterating over types — that’s something in the realm of templates, metaprogramming, right? Looks like it. Let’s think step-by-step: we want something like</p>
+<pre><code class="language-cpp"><span class="code-keyword">for</span> (type : Types) {
+    f&lt;type&gt;();
+}
+<span class="code-comment">// careful, pseudocode ahead! proper syntax and semantics are not respected here</span></code></pre>
+<p>where <code>Types</code> is a list of types, and <code>f</code> is a templated function. Only this is pseudocode.</p>
+<p>But how do we get actual C++? There are variadic templates, whose unpacking can essentially "generate" code as a virtual list, similar to the good old macros. That is, the task can be reduced to something like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> ...Types, <span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">forEachType</span>(Types..., Func f)
+{
+    (f&lt;Types&gt;(), ...);
+}
+<span class="code-comment">// careful, pseudocode ahead! proper syntax and semantics are not respected here</span></code></pre>
+<p>So you don’t have to rack your brain, here’s a hint: the expression <code>(f&lt;Types&gt;(), ...);</code> should theoretically expand into</p>
+<pre><code class="language-cpp">(f&lt;uint8_t&gt;(), f&lt;uint16_t&gt;(), f&lt;uint32_t&gt;(), f&lt;uint64_t&gt;());</code></pre>
+<p>That is, into a comma operator that lists the expression for each type and executes each in sequence. Just don’t forget — we’re still in pseudocode, and as it stands it won’t compile!</p>
+<p>But our last pseudocode wasn’t far from the truth, and if we file it down a bit into proper C++, it will work:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span>... Ts, <span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">void</span> <span class="code-call">forEachType</span>(F&& f, Ts...)
+{
+    (f.<span class="code-keyword">template</span> <span class="code-keyword">operator</span>()&lt;Ts&gt; (), ...);
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-call">forEachType</span>([]&lt;<span class="code-keyword">typename</span> T&gt;() {
+        std::cout &lt;&lt; +std::numeric_limits&lt;T&gt;::<span class="code-call">max</span>() &lt;&lt; std::endl;
+    }, uint8_t{}, uint16_t{}, uint32_t{}, uint64_t{});
+}</code></pre>
+<p>Just don’t ask me anything about <code>template operator()</code>, please — I barely understand its necessity myself, but it only works with it.</p>
+<p>Output to the screen:</p>
+<pre><code class="language-cpp"><span class="code-literal">255
+65535
+4294967295
+18446744073709551615</span></code></pre>
+<p>Let me say right away — I don’t like this implementation for several reasons:</p>
+<ul>
+	<li>The type list can only be written at the end of the argument list, and no other way. You can’t declare <code>forEachType</code> as <code>void forEachType(Ts..., F&& f)</code> — attempting to call such a function will cause a compilation error.</li>
+	<li>You have to create fake variables like <code>uint32_t{}</code> just to make the function call syntactically correct. One fake object per type.</li>
+</ul>
+<p>Both problems can be <i>almost</i> solved by a trick — hiding the type list behind an additional entity:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span>... Ts&gt;
+<span class="code-keyword">struct</span> TypeList {};</code></pre>
+<p>Now the variadic template is hidden behind the <code>TypeList</code> object, and from the outside — it’s a single unified object, which can be moved forward into <code>forEachType</code>. Here’s how it works:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span>... Ts&gt;
+<span class="code-keyword">struct</span> TypeList {};
+
+<span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span>... Ts, <span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">void</span> <span class="code-call">forEachType</span>(TypeList&lt;Ts...&gt;, F&& f)
+{
+    (f.<span class="code-keyword">template</span> <span class="code-keyword">operator</span>()&lt;Ts&gt; (), ...);
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-call">forEachType</span>(TypeList&lt;uint8_t, uint16_t, uint32_t, uint64_t&gt;{}, []&lt;<span class="code-keyword">typename</span> T&gt;() {
+        std::cout &lt;&lt; +std::numeric_limits&lt;T&gt;::<span class="code-call">max</span>() &lt;&lt; std::endl;
+    });
+}</code></pre>
+<p>Yes, we’re still creating a fake object — <code>TypeList&lt;&gt;{}</code> — but there’s only one, so I consider it a good compromise. We ended up with another neat trick worth keeping for other projects.</p>
+<h2>First results</h2>
+<p>Now we can execute our plan and run the experiment with iterations of different sizes:</p>
+<pre><code class="language-"><span class="code-literal">8</span> bits
+<span class="code-literal">8</span>us <span class="code-literal">200</span>ns
+Heads: <span class="code-literal">120</span>, <span class="code-literal">46.875</span>%
+Tails: <span class="code-literal">136</span>, <span class="code-literal">53.125</span>%
+
+<span class="code-literal">16</span> bits
+<span class="code-literal">571</span>us <span class="code-literal">600</span>ns
+Heads: <span class="code-literal">32735</span>, <span class="code-literal">49.9496</span>%
+Tails: <span class="code-literal">32801</span>, <span class="code-literal">50.0504</span>%
+
+<span class="code-literal">32</span> bits
+<span class="code-literal">35</span>s <span class="code-literal">839</span>ms <span class="code-literal">225</span>us <span class="code-literal">500</span>ns
+Heads: <span class="code-literal">2147474281</span>, <span class="code-literal">49.9998</span>%
+Tails: <span class="code-literal">2147493015</span>, <span class="code-literal">50.0002</span>%
+
+<span class="code-literal">64</span> bits
+</code></pre>
+<p>Well, 4 billion flips from a 32-bit domain after 35 seconds already give a pretty good result: 50.0002% versus 49.9998%. That’s significantly better than the experiments of Messrs. Pearson and Kerrich.</p>
+<p>You might think I forgot to copy-paste part of the text and accidentally skipped the <code>64 bits</code> result, but no. Those who sensed something fishy back a chapter ago — rejoice, you were right: running the full 64-bit range can take an enormous amount of time.</p>
+<p>I didn’t give up and decided to <i>wait a bit longer</i> — I let the program run overnight. In the morning, I found the console still stuck on the same unchanged screen, and I decided to wait <i>a bit longer</i>. Only when that didn’t help, and by evening the screen still showed nothing below the <code>64 bits</code> line — only then did I start suspecting something.</p>
+<p>Let’s look at how many numbers fit into different bit widths:</p>
+<pre><code class="language-"> <span class="code-literal">8</span> bit: <span class="code-literal">256</span>
+<span class="code-literal">16</span> bit: <span class="code-literal">65536</span>
+<span class="code-literal">32</span> bit: <span class="code-literal">4294967296</span>
+<span class="code-literal">64</span> bit: <span class="code-literal">18446744073709551616</span></code></pre>
+<p>If you look closely, you’ll see the sequence grows quadratically, and 18,446,744,073,709,551,616 is nothing but 4,294,967,296 × 4,294,967,296. In other words, if flipping a coin in the 32-bit domain took me 35 seconds, then the 64-bit domain would finish execution in about 4,294,967,296 times longer…</p>
+<pre><code class="language-"><span class="code-literal">35</span> * <span class="code-literal">4</span> <span class="code-literal">294</span> <span class="code-literal">967</span> <span class="code-literal">296</span> seconds =
+<span class="code-literal">150</span> <span class="code-literal">323</span> <span class="code-literal">855</span> <span class="code-literal">360</span> seconds =
+<span class="code-literal">2</span> <span class="code-literal">505</span> <span class="code-literal">397</span> <span class="code-literal">589.33</span> minutes =
+<span class="code-literal">41</span> <span class="code-literal">756</span> <span class="code-literal">626.48</span> hours =
+<span class="code-literal">1</span> <span class="code-literal">739</span> <span class="code-literal">859.44</span> days =
+<span class="code-literal">4</span> <span class="code-literal">766.74</span> years</code></pre>
+<p>Oh indeed.</p>
+<p>The date of Jesus’ second coming is closer to us than the date of experiment completion.</p>
+<p>In short, traversing the full 64-bit range is evidently unrealistic. Even if we imagine flipping the coin in the 32-bit domain takes just 1 millisecond, the 64-bit domain would still take about</p>
+<pre><code class="language-"><span class="code-literal">4 294 967 296</span> (four billions) milliseconds =
+<span class="code-literal">4</span> <span class="code-literal">294</span> <span class="code-literal">967.296</span> (four millions) seconds =
+<span class="code-literal">71</span> <span class="code-literal">582.79</span> minutes =
+<span class="code-literal">1</span> <span class="code-literal">193.05</span> hours =
+<span class="code-literal">49.7</span> days</code></pre>
+<p>Alright — half a month! Not four thousand years, of course, but getting a 32-bit run down to 1 millisecond seems unrealistic anyway.</p>
+<hr>
+<p>At this point it became clear the current plan had to change, because a 32-bit range is too small for us, and a 64-bit range is unimaginably huge, and however many times we flip the coin in the end, it will be more than 4,294,967,296 (four billion) but far less than 18,446,744,073,709,551,616 (eighteen quintillion).</p>
+<p>Keeping these numbers in mind, I adjusted the course of the experiment:</p>
+<ul>
+	<li>We abandon the idea of iterating over ranges of 8-, 16-, 32-, and 64-bit numbers — now our working range is fixed at 64 bits, and we can work within it without worrying about overflow. Iterating over types, which we just built, is discarded.</li>
+	<li>We take <code>uintmax_t</code>, which is <code>uint64_t</code> on the vast majority of platforms, and make it our universal type with <code>using BigInt = uintmax_t</code> for further work in the experiment.</li>
+	<li>Most importantly: we commit to ruthless optimization of the program execution to achieve the maximum number of coin flips per unit of time. <b>C++ goes hard</b>.</li>
+</ul>
+<h2>Optimizations</h2>
+<p>The plan is simple — we’ll try to squeeze the maximum speed out of coin flipping. The more coins we flip in a unit of time, the better.</p>
+<p>To iteratively improve performance, we need objective measurements. If a code tweak produces a faster result (while preserving correct algorithm functionality), we keep it and move on.</p>
+<p>A key question remains: how to get objective measurements. I’ll tell you right away — I won’t bother making the benchmark perfectly sterile. There will always be people saying: “you measured wrong.” For example:</p>
+<ul>
+	<li>because measurements were done on only one machine;</li>
+	<li>because I didn’t care about the problem of "(un)warmed" cache;</li>
+	<li>because performance gains were within statistical noise;</li>
+	<li><p>because someone thinks iterations were too few and the experiment should be repeated 10,000 times and averaged to be sure.</p>
+<p>… and so on with any other remarks that inevitably arise when benchmarking.</p></li>
+</ul>
+<p>So here are the measurement conditions:</p>
+<ul>
+	<li>One machine: i5-12600K, 3.7 GHz, 16 logical processors, 64GB RAM (memory won’t be a limit)</li>
+	<li>I simply use the results of my <code>measure</code> function as the benchmark</li>
+	<li>I don’t run thousands of repetitions because flipping coins itself is already a massive multi-billion iteration of the same operation. I figured that’s enough.</li>
+	<li>Sometimes I manually ran the benchmark several times just to make sure results were stable. I didn’t automate this.</li>
+	<li>I know about Google Benchmark. But I’m here to touch the code with my own hands and torture my brain, not to integrate third-party solutions and kill the fun.</li>
+</ul>
+<p>Another important point: to make measurements comparable, we must define the number of coin flips we will measure. Before optimizations, it was hard to guess a suitable number. One could think that 4,294,967,296 is a good candidate since it took 35 seconds — long enough to be meaningful. But if our optimizations are too effective, that number could drop to mere milliseconds, at which point measurement differences would fall into statistical noise.</p>
+<p>I’ll fudge this retroactively, because — as you understand — the article is written after the experiment is finished, and I know what awaits at the end. So I’ll settle on <b>68,719,476,736 iterations</b> as my benchmark. That’s 4,294,967,296 × 16, i.e. sixteen runs of a 32-bit number range.</p>
+<blockquote><p>Why not choose a nice round number, you ask? — After all, if we no longer need all those $2^{32}$, $2^{64}$, why not do 10 billion, 50 billion flips, etc.?</p>
+<p>The first answer: I forgot and didn’t think about it! — even after scrapping the original idea I just kept multiplying 4,294,967,296 by bigger and bigger values. Brain deformation, nothing else.</p>
+<p>The second answer: we’ll need it later. During further optimizations, we’ll end up with a restriction: the number of flips must be a multiple of 64, and later this requirement will increase, but it will always be tied to powers of two. With my brutal 4,294,967,296 this condition is automatically satisfied.</p></blockquote>
+<h3>Let’s lock in what we have</h3>
+<p>Let’s lock the main pre-optimization code so you have a fairly complete picture:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Func&gt;
+<span class="code-keyword">void</span> <span class="code-call">spin</span>(BigInt n, Func&& f)
+{
+    <span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; n; ++i) {
+        <span class="code-call">f</span>();
+    }
+}
+
+<span class="code-keyword">struct</span> Experiment
+{
+    std::mt19937 gen {std::random_device{}()};
+    std::uniform_int_distribution&lt;<span class="code-keyword">int</span>&gt; uni {<span class="code-literal">0</span>, <span class="code-literal">1</span>};
+    BigInt heads = <span class="code-literal">0</span>;
+    BigInt tails = <span class="code-literal">0</span>;
+
+    <span class="code-keyword">void</span> <span class="code-call">tossCoin</span>() {
+        <span class="code-keyword">int</span> res = <span class="code-call">uni</span>(gen);
+        <span class="code-keyword">if</span> (res == <span class="code-literal">1</span>) {
+            ++heads;
+        }
+        <span class="code-keyword">else</span> <span class="code-keyword">if</span> (res == <span class="code-literal">0</span>) {
+            ++tails;
+        }
+        <span class="code-keyword">else</span> {
+            <span class="code-call">assert</span>(<span class="code-keyword">false</span>);
+        }
+    }
+};
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-keyword">constexpr</span> BigInt N = <span class="code-literal">68</span><span class="code-literal">'719'</span><span class="code-literal">476</span><span class="code-literal">'736ll;
+
+    Experiment experiment;
+    measure([&experiment, N]() {
+        spin(N,
+            std::bind(&Experiment::tossCoin, &experiment)
+        );
+    });
+}</span></code></pre>
+<p>Execution time of this code:</p>
+<pre><code class="language-">Time:  <span class="code-literal">20</span>min <span class="code-literal">41</span>s <span class="code-literal">897</span>ms <span class="code-literal">383</span>us <span class="code-literal">600</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">699</span> <span class="code-literal">204</span>, <span class="code-literal">49.9999</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">777</span> <span class="code-literal">532</span>, <span class="code-literal">50.0001</span>%</code></pre>
+<p>A painfully long 20 minutes and 42 seconds to flip the coin 68 billion times. That’s our starting point.</p>
+<blockquote><p>Notice the console output — I made a small improvement to display large numbers in a formatted style: <code>34 359 699 204</code> instead of <code>34359699204</code>. Adding spaces to a string isn’t hard, and readability for numbers of this magnitude improves <i>dramatically</i>.</p></blockquote>
+<h3>How to optimize</h3>
+<p>During my research, I tested quite a lot of optimization hypotheses — some successful, some dead ends. Below is a brief summary of the successful ones. The chronology will be a bit chaotic, but that reflects my real journey, jumping from one insight to another.</p>
+<h3>Dissecting randomness</h3>
+<p>First, I decided to tackle these guys:</p>
+<pre><code class="language-cpp">std::mt19937 gen {std::random_device{}()};
+std::uniform_int_distribution&lt;<span class="code-keyword">int</span>&gt; uni {<span class="code-literal">0</span>, <span class="code-literal">1</span>};</code></pre>
+<p>They were too suspicious, and there were too many of them.</p>
+<p>First, I tried switching to a classic C approach: <a href="https://en.cppreference.com/w/cpp/numeric/random/srand.html"><code>srand</code></a> + <a href="https://en.cppreference.com/w/cpp/numeric/random/rand.html"><code>rand</code></a>. That was a disaster — it was slow.</p>
+<p>Then I experimented with other distribution classes. Some gave completely incorrect results, not converging to 50/50. Others worked and were even slightly faster than <code>std::uniform_int_distribution</code>, for example <a href="https://en.cppreference.com/w/cpp/numeric/random/bernoulli_distribution.html"><code>std::bernoulli_distribution</code></a>. Plus, that distribution naturally produces <code>bool</code>. But the speed gain was minimal.</p>
+<p>That made me wonder: do I even need a distribution? What if I just throw it away? Essentially, all I need is a zero or a one. The generator itself — <code>std::mt19937</code> and its friends — can generate random numbers directly via <code>operator()</code>. The catch is that we’ll get some random number (its type depends on the generator class), and we need to convert it into the range \[0; 1\].</p>
+<p>I naively reasoned that if I just take the zero-th bit of that number, it should be sufficiently random. It turned out not all generators handle this well, but generators like <code>std::minstd_rand</code> and <code>std::mt19937</code> continued producing distributions tending toward 50/50, so I confidently threw away <code>std::uniform_int_distribution</code> and changed the coin flip code to this:</p>
+<pre><code class="language-diff">-<span class="code-keyword">int</span> res = <span class="code-call">uni</span>(gen);
++<span class="code-keyword">int</span> res = <span class="code-call">gen</span>() & <span class="code-literal">1</span>;</code></pre>
+<p>Results:</p>
+<pre><code class="language-">Time:  <span class="code-literal">10</span>min <span class="code-literal">50</span>s <span class="code-literal">93</span>ms <span class="code-literal">886</span>us <span class="code-literal">900</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">738</span> <span class="code-literal">368</span>, <span class="code-literal">50</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">738</span> <span class="code-literal">368</span>, <span class="code-literal">50</span>%</code></pre>
+<p>Whoa! We just doubled the program speed out of nowhere. That was quite unexpected — I didn’t think I’d get such a huge boost so quickly and easily.</p>
+<p>Some might say I sacrificed <i>correct randomness</i> for optimization. Honestly, I don’t care about academic “correctness” of randomness as long as the program produces a reasonable picture: as the number of coin flips grows, the ratio of heads to tails approaches 50/50. After all, when Kerrich flipped his coin, his distribution wasn’t perfect either — the coin wasn’t perfect, his hand wasn’t perfect — and presumably, a person’s individual tossing style could theoretically influence the outcome.</p>
+<p>We record a <b>×1.9</b> speedup from removing the uniform distribution.</p>
+<h3>Grouping bits</h3>
+<p>I already mentioned that <code>gen()</code> generates a random integer result, which we then reduce to a single bit. But why waste all those bits when we could use them all? <code>std::mt19937</code> produces a 32-bit number per call, and using all of it would be equivalent to 32 coin flips at once.</p>
+<p>The only problem with this idea — our <code>Experiment</code> class flips one coin at a time, and the outer function <code>spin</code> calls <code>Experiment::tossCoin</code> N times. If we want to stay in this paradigm, we need to get creative and call the generator once every 32 iterations, taking cached results for the others. My implementation was awkward:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> Experiment
+{
+    <span class="code-call">Experiment</span>()
+    {
+        <span class="code-call">regenBits</span>();
+    }
+
+    <span class="code-keyword">using</span> Generator = std::mt19937;
+    <span class="code-keyword">using</span> BitsType = Generator::result_type;
+
+    BigInt heads = <span class="code-literal">0</span>;
+    BigInt tails = <span class="code-literal">0</span>;
+
+    Generator gen {std::random_device{}()};
+    BitsType bits{};
+    <span class="code-keyword">int</span> bitsCounter = <span class="code-literal">0</span>;
+
+    <span class="code-keyword">void</span> <span class="code-call">tossCoin</span>() {
+        <span class="code-keyword">if</span> (<span class="code-call">yieldBit</span>()) {
+            ++heads;
+        } <span class="code-keyword">else</span> {
+            ++tails;
+        }
+    }
+
+    <span class="code-keyword">bool</span> <span class="code-call">yieldBit</span>() {
+        <span class="code-keyword">if</span> (bitsCounter &gt;= std::numeric_limits&lt;BitsType&gt;::digits) {
+            <span class="code-call">regenBits</span>();
+        }
+
+        <span class="code-keyword">return</span> (bits &gt;&gt; bitsCounter++) & <span class="code-literal">1</span>;
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">regenBits</span>() {
+        bitsCounter = <span class="code-literal">0</span>;
+        bits = <span class="code-call">gen</span>();
+    }
+};</code></pre>
+<p>But I didn’t overcomplicate things — I just measured it as is:</p>
+<pre><code class="language-">Time:  <span class="code-literal">7</span>min <span class="code-literal">8</span>s <span class="code-literal">600</span>ms <span class="code-literal">933</span>us
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">585</span> <span class="code-literal">551</span>, <span class="code-literal">49.9998</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">891</span> <span class="code-literal">185</span>, <span class="code-literal">50.0002</span>%</code></pre>
+<p>Another three minutes shaved off, giving us a speedup of <b>×1.5</b>. That’s a very good result. What’s especially satisfying is that this code still has room for optimization in how we “spin” the coin-flipping function.</p>
+<h3>Restructuring the spin</h3>
+<p>It makes sense to move <code>spin</code> inside the <code>Experiment</code> class, giving it more freedom and flexibility. This should eliminate the awkward caching and the outdated need to flip a coin exactly once per call — since we can now flip 32 coins “pseudo-parallel.”</p>
+<p>We also need an efficient way to “split” the number into bits and count zeros and ones. In practice, we can reduce this to counting either ones or zeros, and get the other half by subtracting from 32. For now, we’ll manually count using bit operations:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;std::unsigned_integral T&gt;
+<span class="code-keyword">unsigned</span> <span class="code-call">countOnes</span>(T val) {
+    <span class="code-keyword">unsigned</span> n = <span class="code-literal">0</span>;
+    <span class="code-keyword">for</span> (<span class="code-keyword">int</span> i = <span class="code-literal">0</span>; i &lt; std::numeric_limits&lt;T&gt;::digits; ++i) {
+        n += val & <span class="code-literal">1</span>;
+        val &gt;&gt;= <span class="code-literal">1</span>;
+    }
+    <span class="code-keyword">return</span> n;
+}</code></pre>
+<p>Someone might notice that this algorithm could be optimized by breaking out of the loop as soon as <code>val</code> reaches zero. For example, like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">while</span> (val) {
+	n += val & <span class="code-literal">1</span>;
+	val &gt;&gt;= <span class="code-literal">1</span>;
+}</code></pre>
+<p>And that makes sense algorithmically and logically — but on my machine, it runs <i>twice as slow</i>. I’d bet that the <s>gigachad</s> <code>for</code> loop benefits from SIMD and loop unrolling, while the <code>while</code> loop in machine code just keeps checking <code>val</code> against zero, and branch mispredictions keep tripping up the CPU again and again.</p>
+<p>In its new form, with additional powers, the <code>Experiment</code> class now looks like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> Experiment
+{
+    <span class="code-keyword">using</span> Generator = std::mt19937;
+    <span class="code-keyword">using</span> BitsType = Generator::result_type;
+
+    BigInt n = <span class="code-literal">0</span>;
+    BigInt heads = <span class="code-literal">0</span>;
+    BigInt tails = <span class="code-literal">0</span>;
+
+    Generator gen {std::random_device{}()};
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t BITS_COUNT = std::numeric_limits&lt;BitsType&gt;::digits;
+
+    <span class="code-call">Experiment</span>(BigInt n_)
+        : <span class="code-call">n</span>(n_) {
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">spin</span>() {
+        <span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; n; i += BITS_COUNT) {
+            BitsType bits = <span class="code-call">gen</span>();
+            heads += <span class="code-call">countOnes</span>(bits);
+        }
+
+        tails = n - heads;
+    }
+};</code></pre>
+<p>Here’s how it’s called in the benchmark:</p>
+<pre><code class="language-cpp">Experiment <span class="code-call">experiment</span>(n);
+<span class="code-call">measure</span>(std::<span class="code-call">bind</span>(&Experiment::spin, &experiment));</code></pre>
+<p>Note the <code>BITS_COUNT</code>, which implicitly requires that the number of coin flips be a multiple of 32 bits.</p>
+<p>Measuring the time:</p>
+<pre><code class="language-">Time:  <span class="code-literal">19</span>s <span class="code-literal">826</span>ms <span class="code-literal">601</span>us
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">613</span> <span class="code-literal">380</span>, <span class="code-literal">49.9998</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">863</span> <span class="code-literal">356</span>, <span class="code-literal">50.0002</span>%</code></pre>
+<p>At first I thought I was imagining it, but no — instead of minutes of waiting, the same number of coin flips now took just twenty seconds! That’s an enormous speedup of <b>×21.6</b> — something phenomenal.</p>
+<p>Yes, part of the boost came from the inefficiency of the previous implementation, but I was still very happy with such results.</p>
+<h3>Counting bits properly</h3>
+<p>In fact, it was obvious to me from the start that counting one-bits in a number could be done more efficiently — for example, by using intrinsics or platform-dependent solutions. But as a true C++ enthusiast, I chose to enjoy the benefits of C++20 and its <a href="https://en.cppreference.com/w/cpp/numeric/popcount.html"><code>std::popcount</code></a> function, which returns the number of one-bits in any unsigned integer.</p>
+<pre><code class="language-diff">-heads += <span class="code-call">countOnes</span>(bits);
++heads += std::<span class="code-call">popcount</span>(bits);</code></pre>
+<pre><code class="language-">Time:  <span class="code-literal">5</span>s <span class="code-literal">460</span>ms <span class="code-literal">958</span>us <span class="code-literal">600</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">743</span> <span class="code-literal">765</span>, <span class="code-literal">50</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">732</span> <span class="code-literal">971</span>, <span class="code-literal">50</span>%</code></pre>
+<p><b>×3.63</b>. And that’s no surprise: the call to <code>std::popcount()</code> unfolds into a single machine instruction — <code>POPCNT</code> — and no solution can really compete with that level of efficiency.</p>
+<h3>Expanding the generator</h3>
+<p>I started to take a closer look at the whole lineup of generators provided by the STL. Here they are:</p>
+<pre><code class="language-cpp">std::minstd_rand0
+std::minstd_rand
+std::mt19937
+std::mt19937_64
+std::ranlux24_base
+std::ranlux48_base
+std::ranlux24
+std::ranlux48
+std::knuth_b</code></pre>
+<p>It turned out that some generators produce 64-bit numbers, which is a potential ticket to a new twofold optimization! Without much thought, we make a one-line replacement:</p>
+<pre><code class="language-diff">-<span class="code-keyword">using</span> Generator = std::mt19937;
++<span class="code-keyword">using</span> Generator = std::mt19937_64;</code></pre>
+<p>and we get an improved result:</p>
+<pre><code class="language-">Time:  <span class="code-literal">2</span>s <span class="code-literal">554</span>ms <span class="code-literal">51</span>us <span class="code-literal">200</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">573</span> <span class="code-literal">276</span>, <span class="code-literal">49.9998</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">903</span> <span class="code-literal">460</span>, <span class="code-literal">50.0002</span>%</code></pre>
+<p>Now we simultaneously flip 64 coins instead of 32, and naturally get a corresponding boost: <b>×2.14</b>. Also note that the number of flips must now be a multiple of 64.</p>
+<p>For the sake of clarity, let’s explicitly state this invariant so we’re sure to catch it if it’s ever violated:</p>
+<pre><code class="language-cpp"><span class="code-call">Experiment</span>(BigInt n_)
+    : <span class="code-call">n</span>(n_) {
+    <span class="code-keyword">if</span> (n % (<span class="code-keyword">sizeof</span>(BigInt) * CHAR_BIT) != <span class="code-literal">0</span>) {
+        std::cerr &lt;&lt; <span class="code-literal">"Error: n must be a multiple of 64, got "</span> &lt;&lt; n &lt;&lt; std::endl;
+        std::<span class="code-call">abort</span>();
+    }
+}</code></pre>
+<h3>Automatic Multithreading</h3>
+<p>In C++17, the language gained an update to the <code>&lt;algorithm&gt;</code> header: functions like <code>std::for_each</code>, <code>std::sort</code>, <code>std::find</code>, etc., gained the ability to run in parallel mode. You just need to pass <code>std::execution::par_unseq</code> as the first argument to the algorithm (other policies make little sense for our task):</p>
+<pre><code class="language-cpp">std::<span class="code-call">sort</span>(std::execution::par_unseq, v.<span class="code-call">begin</span>(), v.<span class="code-call">end</span>());</code></pre>
+<p>And the vector will magically sort itself using all your cores. Well, not exactly — the STL decides on its own how to parallelize, how many threads to use, and whether to parallelize at all — you’re only giving it a recommendation via the execution policy.</p>
+<p>But if you’re excited and think you can now just turn all your loops and standard algorithm calls into parallel ones, keep in mind: synchronization and data race prevention are still your responsibility. You must be acutely aware of this. A simple example:</p>
+<pre><code class="language-cpp">std::vector&lt;<span class="code-keyword">int</span>&gt; <span class="code-call">v</span>(<span class="code-literal">1000</span>, <span class="code-literal">1</span>);
+<span class="code-keyword">int</span> sum = <span class="code-literal">0</span>;
+
+std::<span class="code-call">for_each</span>(std::execution::par_unseq, v.<span class="code-call">begin</span>(), v.<span class="code-call">end</span>(),
+    [&](<span class="code-keyword">int</span> x) {
+        sum += x; <span class="code-comment">// data race!</span>
+    }
+);</code></pre>
+<p>Imagine that the STL spun up 1,000 threads (we don’t actually know how many) that all started incrementing <code>sum</code> at the same time. This variable is not atomic, so you’ve got trouble — the result is unlikely to equal <code>1,000</code>.</p>
+<p>In general, I decided that such parallel algorithms are the nicest and most casual entry point for introducing multithreading into my code, so the first thing I did was start experimenting with these algorithms.</p>
+<p>At first, I tried to dive headfirst into this parallel world by writing a naive <code>std::for_each</code> <i>while ignoring data races</i>. Why? Just to quickly feel the execution speed of the algorithm without synchronization primitives or atomics, so I could know what speed I could expect in the limit (spoiler: it’s not as simple as I thought, and it doesn’t work that way). Code:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">spin</span>() {
+    BigInt steps = <span class="code-keyword">static_cast</span>&lt;size_t&gt;(n / BITS_COUNT);
+    std::vector&lt;BigInt&gt; <span class="code-call">indices</span>(steps);
+    std::<span class="code-call">iota</span>(indices.<span class="code-call">begin</span>(), indices.<span class="code-call">end</span>(), <span class="code-literal">0</span>);
+
+    std::<span class="code-call">for_each</span>(std::execution::par_unseq,
+        indices.<span class="code-call">begin</span>(), indices.<span class="code-call">end</span>(),
+        [<span class="code-keyword">this</span>](size_t idx) {
+            BitsType bits = <span class="code-call">gen</span>();        <span class="code-comment">// BUG: data race on random generator</span>
+            heads += std::<span class="code-call">popcount</span>(bits); <span class="code-comment">// BUG: non-atomic access from several threads</span>
+        }
+    );
+
+    tails = n - heads;
+}</code></pre>
+<p>The results of its execution:</p>
+<pre><code class="language-">Time:  <span class="code-literal">11</span>s <span class="code-literal">199</span>ms <span class="code-literal">665</span>us <span class="code-literal">700</span>ns
+Heads: <span class="code-literal">6</span> <span class="code-literal">069</span> <span class="code-literal">669</span> <span class="code-literal">426</span>, <span class="code-literal">8.83253</span>%
+Tails: <span class="code-literal">62</span> <span class="code-literal">649</span> <span class="code-literal">807</span> <span class="code-literal">310</span>, <span class="code-literal">91.1675</span>%</code></pre>
+<p>We immediately notice an obvious inaccuracy in the count — a total divergence from 50/50. I chalk this up to thread-unsafe modification of <code>heads</code>. What disappointed me even more: I got 11 seconds, which is four times worse than single-threaded execution. But how could that be?</p>
+<p>Purely out of curiosity, I continued exploring parallel algorithms and decided I could rewrite my <code>std::for_each</code> using <code>std::transform + std::reduce</code> to eliminate the race condition for <code>heads</code>, and remove the race for the generator by giving each thread its own copy:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">spin</span>() {
+    BigInt steps = <span class="code-keyword">static_cast</span>&lt;size_t&gt;(n / BITS_COUNT);
+    std::vector&lt;BigInt&gt; <span class="code-call">res</span>(steps);
+
+    std::<span class="code-call">transform</span>(std::execution::par_unseq,
+        res.<span class="code-call">begin</span>(), res.<span class="code-call">end</span>(),
+        res.<span class="code-call">begin</span>(),
+        [<span class="code-keyword">this</span>](BitsType) {
+            <span class="code-keyword">thread_local</span> Generator gen{std::random_device{}()};
+            BitsType bits = <span class="code-call">gen</span>();
+            <span class="code-keyword">return</span> std::<span class="code-call">popcount</span>(bits);
+        }
+    );
+
+    heads = std::<span class="code-call">reduce</span>(std::execution::par_unseq, res.<span class="code-call">begin</span>(), res.<span class="code-call">end</span>());
+    tails = n - heads;
+}</code></pre>
+<p>Notice how cleverly we’ve injected <code>thread_local</code> here — in this case, it’s almost the only way to achieve the desired result, since we don’t control the threads directly.</p>
+<p>Execution results:</p>
+<pre><code class="language-">Time:  <span class="code-literal">2</span>s <span class="code-literal">250</span>ms <span class="code-literal">10</span>us <span class="code-literal">700</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">867</span> <span class="code-literal">682</span>, <span class="code-literal">50.0002</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">609</span> <span class="code-literal">054</span>, <span class="code-literal">49.9998</span>%</code></pre>
+<p>That is — execution time didn’t improve compared to our single-threaded version. But it also didn’t get worse. And it <i>should</i> have improved.</p>
+<p>What else could be improved in the paradigm of parallel STL algorithms was unclear to me. Moreover, STL algorithms do things internally that we can’t really control, so I decided to switch to manual thread management in order to enable precise optimizations.</p>
+<h3>Manual Multithreading</h3>
+<p>Disappointed with parallel STL algorithms, we move to the task of splitting the coin tosses across manually created threads. Fortunately, our task is isolated and simple, and doesn’t require shared resources — except for the generator, of course. But we’ve already cloned the generator for different threads in the previous chapter and saw that randomness still works fine. Some might say this is outright wrong, that there should ideally be one generator for the whole task; I would again answer that as long as randomness behaves correctly, I consider it working.</p>
+<p>Briefly, the algorithm is:</p>
+<ul>
+	<li>Decide on the number of threads. Usually, <a href="https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency"><code>std::thread::hardware_concurrency()</code></a> is chosen, which gives optimal logical core utilization.</li>
+	<li>Divide the total number of coin tosses among the threads.</li>
+	<li>Launch all threads simultaneously. Each thread counts its share of tosses locally and returns the result.</li>
+	<li>Combine all thread results into the final <code>heads</code> count.</li>
+</ul>
+<p>Here’s the implementation:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">spin</span>() {
+    <span class="code-keyword">const</span> BigInt steps = n / BITS_COUNT;
+    <span class="code-keyword">const</span> size_t threadsCount = std::<span class="code-call">max</span>(std::thread::<span class="code-call">hardware_concurrency</span>(), <span class="code-literal">1</span>u);
+    <span class="code-keyword">const</span> BigInt chunkSize = steps / threadsCount;
+
+    <span class="code-keyword">const</span> <span class="code-keyword">auto</span> thread = [<span class="code-keyword">this</span>, chunkSize]() -&gt; BigInt {
+        Generator gen {std::random_device{}()};
+        BigInt localHeads = <span class="code-literal">0</span>;
+        <span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; chunkSize; ++i) {
+            localHeads += std::<span class="code-call">popcount</span>(<span class="code-call">gen</span>());
+        }
+        <span class="code-keyword">return</span> localHeads;
+    };
+
+    std::vector&lt;std::future&lt;BigInt&gt;&gt; <span class="code-call">threadHeads</span>(threadsCount - <span class="code-literal">1</span>);
+    <span class="code-keyword">for</span> (<span class="code-keyword">auto</span>& f : threadHeads) {
+        f = std::<span class="code-call">async</span>(thread);
+    }
+
+    heads += <span class="code-call">thread</span>();
+    <span class="code-keyword">for</span> (<span class="code-keyword">auto</span>&& fut : threadHeads) {
+        heads += fut.<span class="code-call">get</span>();
+    }
+
+    tails = n - heads;
+}</code></pre>
+<p>Some interesting points:</p>
+<ul>
+	<li>I launched <i>N−1</i> threads and separately loaded the main application thread. Well — why let it sit idle?</li>
+	<li>I used <a href="https://en.cppreference.com/w/cpp/thread/async.html"><code>std::async</code></a> instead of <a href="https://en.cppreference.com/w/cpp/thread/thread.html"><code>std::thread</code></a>, because <code>std::async</code> can return a result, and calling <code>std::async()</code> without specifying <a href="https://en.cppreference.com/w/cpp/thread/launch.html"><code>std::launch::async</code> or <code>std::launch::deferred</code></a> works in automatic mode — it creates threads while their number is reasonable, and stops creating new ones, executing in the main thread if too many threads are requested.</li>
+</ul>
+<p>Execution time:</p>
+<pre><code class="language-">Time:  <span class="code-literal">126</span>ms <span class="code-literal">479</span>us <span class="code-literal">900</span>ns
+Heads: <span class="code-literal">12</span> <span class="code-literal">884</span> <span class="code-literal">816</span> <span class="code-literal">423</span>, <span class="code-literal">49.9997</span>%
+Tails: <span class="code-literal">12</span> <span class="code-literal">884</span> <span class="code-literal">987</span> <span class="code-literal">353</span>, <span class="code-literal">50.0003</span>%</code></pre>
+<p>Here it is — the payoff from multithreading. We register yet another huge speedup of <b>x20.2</b>!</p>
+<p>It’s worth noting that the improvement heavily depends on the machine. I have 16 logical cores. Also, the local random generator plays a major role. At first glance, having 16 copies of <code>std::mt19937_64</code> might seem wasteful — especially since each such generator weighs about 4.9KB of memory! Yes, objects of this class are that large. But if the generator was shared, we wouldn’t squeeze as much out of multithreading — even if we used a shared generator without locks (or pretended it was thread-safe), threads would constantly invalidate each other’s cache lines where the generator resides. I believe that’s why the implementation with <code>std::for_each</code> from the previous chapter took 11 seconds, while <code>std::transform + std::reduce</code> gave 2 seconds. The latter algorithm had no shared data, so threads didn’t “spill” each other’s cache.</p>
+<p>I should also add that besides <code>std::async</code>, I experimented with <code>std::thread</code> combined with <a href="https://en.cppreference.com/w/cpp/thread/promise.html"><code>std::promise</code></a> + <a href="https://en.cppreference.com/w/cpp/thread/future.html"><code>std::future</code></a> and with <a href="https://en.cppreference.com/w/cpp/thread/packaged_task.html"><code>std::packaged_task</code></a>. But the performance was about the same, and the boilerplate was heavier, so we stick to <code>std::async</code> as the most interface-friendly solution for our task.</p>
+<h3>Custom Generator</h3>
+<p>Back when I was learning to write shaders, I remembered how often I had to whip up a pseudo-random generator using primitive math operations — multiplication, shifting, addition. And it worked fine, because randomness <i>felt</i> random enough — and what else did you need?</p>
+<p>I wondered how realistic it would be to replace the heavy but high-quality <code>std::mt19937_64</code> with a hand-written version. After some time, I ended up with this candidate replacement:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> LCG64 {
+    <span class="code-keyword">using</span> result_type = BigInt;
+    uint64_t state;
+
+    <span class="code-call">LCG64</span>(uint64_t seed = <span class="code-literal">1</span>) : <span class="code-call">state</span>(seed) {}
+
+    uint64_t <span class="code-keyword">operator</span>()() {
+        state = state * <span class="code-literal">6364136223846793005</span> + <span class="code-literal">1</span>;
+        <span class="code-keyword">return</span> state;
+    }
+};</code></pre>
+<p>Don’t let its simplicity fool you! I tried generating a number of values with it and displaying them in binary form. For display purposes, a neat trick is to use <a href="https://en.cppreference.com/w/cpp/utility/bitset.html"><code>std::bitset</code></a>:</p>
+<pre><code class="language-cpp">LCG64 gen{std::random_device{}()};
+uint64_t bits = <span class="code-call">gen</span>();
+std::cout &lt;&lt; std::bitset&lt;<span class="code-literal">64</span>&gt;(bits) &lt;&lt; std::endl;</code></pre>
+<p>Here’s the output of a number of 64-bit numbers produced by the generator:</p>
+<pre><code class="language-"><span class="code-literal">0101100010010111001110101000000011111000110110011000010111110100
+0100001110101001110010100110001100001110101101001001011111100101
+1101001000111110110110110010101010010001011000100100111001000010
+0000101001110111000110111010100001110111100001000111111110011011
+1111111000100110100000000010011100000110110011110101001101000000
+1011110101100110111111101011110110011110000101110000100111100110
+1110010000001000101010001000100101000010110100111101011101101111
+0011001110001110001011000000110000101110101101111110111110000100
+1000100000110000011111111010111100001101111110111001011000110101
+0100100000010001000010010000110001101101100101101011001001010010
+1001010010100101110001111001110100100111101011100000011001101011
+1101110011111010111011000100111111001111000011010011010111010000
+0001001010101111010001011111100100000101000101001010010110010001
+1011100010110000100011100011000101001111111010100111011000100101</span></code></pre>
+<p>I don’t know about you, but to me the distribution of zeros and ones looks completely random, without patterns, and seems close to 50/50. In any case, this is easy to verify. We just need to change one line in our code:</p>
+<pre><code class="language-diff">-<span class="code-keyword">using</span> Generator = std::mt19937_64;
++<span class="code-keyword">using</span> Generator = LCG64;</code></pre>
+<p>and we run the benchmark:</p>
+<pre><code class="language-"><span class="code-literal">68 719 476 736</span> rounds
+Time:  <span class="code-literal">93</span>ms <span class="code-literal">529</span>us <span class="code-literal">800</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">798</span> <span class="code-literal">049</span>, <span class="code-literal">50.0001</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">678</span> <span class="code-literal">687</span>, <span class="code-literal">49.9999</span>%</code></pre>
+<p>And nothing broke. Judging by the result — <code>50.0001% / 49.9999%</code> — our homemade generator works as intended. Moreover, it runs faster than the previous one, giving us another <b>x1.4</b> boost. I had expected a slightly bigger gain, but apparently, <code>std::mt19937_64</code> is already quite efficient at its job.</p>
+<h3>Even more hardcore</h3>
+<p>I was fairly certain that using <code>std::thread::hardware_concurrency()</code> threads for the task was the most comfortable mode, and anything beyond that would just degrade performance. I found out I was wrong purely by accident, deciding out of boredom and desperation to double the number of threads. Then quadruple it… then octuple it… my eyebrows rose in proportion, and I finally settled at <code>std::thread::hardware_concurrency() * 64</code> — here was the sweet spot with results:</p>
+<pre><code class="language-">Time:  <span class="code-literal">75</span>ms <span class="code-literal">91</span>us <span class="code-literal">300</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">767</span> <span class="code-literal">603</span>, <span class="code-literal">50</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">709</span> <span class="code-literal">133</span>, <span class="code-literal">50</span>%</code></pre>
+<p>And that’s another nice <b>x1.25</b> speed boost.</p>
+<p>How can this even work? On a machine with 8 physical cores and 16 logical cores, the best performance comes with 1024 threads! Strange. What about constant context switches, cache contention, and so on? I can suggest a few possible factors:</p>
+<ul>
+	<li><b>OS thread scheduling quirks.</b> Here we’re on Windows. I have no exact idea what those might be, but it’s plausible the OS uses some clever algorithm to optimize handling of many threads.</li>
+	<li><b>Hardware architecture.</b> There could be hardware-specific behaviors that somehow improve throughput in such high thread counts.</li>
+	<li><b><code>std::async</code> behavior.</b> Strictly speaking, <code>std::async</code> might not actually spawn a new thread if not explicitly requested (and here we don’t request it). It might queue asynchronous execution in the main thread instead. Our threads are very fast and short-lived, so perhaps <code>std::async</code> queues them in a particularly efficient way — who knows exactly what it does internally.</li>
+</ul>
+<p>These are just my guesses about where the truth might lie. Crowd-sourced insights would be welcome.</p>
+<h3>SIMD</h3>
+<p>It might seem that SIMD won’t help in our task — SIMD instructions are inefficient in a “horizontal” scenario, i.e., when working within a single SIMD object. SIMD is designed for extremely efficient <i>vector-to-vector</i> operations. Moreover, we’re basically bottlenecked on literally a single machine instruction — <code>POPCNT</code> — which is very hard to beat. The hot path of our algorithm is right here:</p>
+<pre><code class="language-diff">    <span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; chunkSize; ++i) {
+        BitsType bits = <span class="code-call">gen</span>();
+-&gt;      localHeads += std::<span class="code-call">popcount</span>(bits);  <span class="code-comment">// hot</span>
+    }</code></pre>
+<p>But I still decided to try my luck. This time I turned to the tempter — ChatGPT — because I had no desire to dive into the brutal SIMD syntax myself, and I didn’t know what variety of instructions might theoretically suit the task.</p>
+<p>My request was concise (because that’s how you have to deal with “iron beasts”): I have a handful of <code>uint64_t</code> numbers, and I want to perform a massive SIMD attack on them to count all their one bits — returning the result as the total sum of set bits across all numbers.</p>
+<p>First, I was pleased to learn that AVX-512 literally has a SIMD-popcount — the instruction <code>_mm512_popcnt_epi64</code>. They even suggested a wrapper function I could conveniently use:</p>
+<pre><code class="language-cpp">uint64_t <span class="code-call">avx512_popcount_sum</span>(<span class="code-keyword">const</span> uint64_t* data, size_t n) {
+    __m512i acc = <span class="code-call">_mm512_setzero_si512</span>();
+    size_t i = <span class="code-literal">0</span>;
+    <span class="code-keyword">for</span> (; i + <span class="code-literal">8</span> &lt;= n; i += <span class="code-literal">8</span>) {
+        __m512i v = <span class="code-call">_mm512_loadu_si512</span>(&data[i]);
+        __m512i pc = <span class="code-call">_mm512_popcnt_epi64</span>(v);
+        acc = <span class="code-call">_mm512_add_epi64</span>(acc, pc);
+    }
+    <span class="code-comment">// horizontal reduce</span>
+    uint64_t result = <span class="code-call">_mm512_reduce_add_epi64</span>(acc);
+    <span class="code-comment">// tail</span>
+    <span class="code-keyword">for</span> (; i &lt; n; i++)
+        result += std::<span class="code-call">popcount</span>(data[i]);
+    <span class="code-keyword">return</span> result;
+}</code></pre>
+<p>The code wasn’t even particularly scary or long, as often happens with SIMD.</p>
+<p>I was <i>very</i> eager to enable AVX-512 in my Visual Studio project, so I mindlessly rebuilt the old version of the program (still without SIMD instructions and without the suggested function) and ran it. Right from the start, I got a crash with the message “illegal instruction.” This meant two things:</p>
+<ul>
+	<li>The compiler somehow managed to generate AVX-512 instructions in places where I didn’t even know they were possible — kudos to it. I hadn’t even copied ChatGPT’s code yet! Compiler, well done. It crashed here:</li>
+</ul>
+<pre><code class="language-cpp"><span class="code-keyword">const double</span> headsPercent = <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(experiment.heads) / n * <span class="code-literal">100.0</span>;
+<span class="code-keyword">const</span> <span class="code-keyword">double</span> tailsPercent = <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(experiment.tails) / n * <span class="code-literal">100.0</span>;
+
+<span class="code-comment">// And where exactly did he plan to use AVX-512 here? I'm not digging into the assembly, sorry</span></code></pre>
+<ul>
+	<li>Turns out my pretty decent machine can’t do AVX-512. And actually, it seems not everyone can — the feature is a bit too premium.</li>
+</ul>
+<p>Of course, I was a bit disappointed by this turn of events, because this elite SIMD could actually perform eight <code>POPCNT</code> <i>in parallel</i>. Sure, it probably wouldn’t have been a clean <b>x8</b> speedup, but there would have been <i>something</i>.</p>
+<p>So in the end I was left alone with AVX2 — at least that one’s available, I know it, I’ve used it. The problem is, it doesn’t even have anything like <code><i>mm512_popcnt_epi64</code>. What it does have is someone’s _algorithm</i> showing how, with nothing more than <s>some duct tape</s> the instructions we <i>do</i> have, you can shuffle the bits to death until, miraculously, you get the number of set bits from all four 64-bit integers fed in. Which means not only are we limited to, at best, a 4× boost, but we can’t even really count on that, since the solution is guaranteed to be suboptimal from a SIMD standpoint. Add in the overhead of moving numbers into and out of SIMD registers, and you’re looking at something close to “break-even.” Still, if you don’t test, you don’t know. So I decided to give it a try.</p>
+<p>First of all, here’s what ChatGPT brought me for dinner:</p>
+<pre><code class="language-cpp">uint64_t <span class="code-call">avx2Popcount</span>(<span class="code-keyword">const</span> uint64_t* data, size_t n) {
+    <span class="code-keyword">static</span> <span class="code-keyword">const</span> __m256i lut = <span class="code-call">_mm256_setr_epi8</span>(
+        <span class="code-literal">0</span>,<span class="code-literal">1</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">3</span>,<span class="code-literal">4</span>,
+        <span class="code-literal">0</span>,<span class="code-literal">1</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">1</span>,<span class="code-literal">2</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">2</span>,<span class="code-literal">3</span>,<span class="code-literal">3</span>,<span class="code-literal">4</span>
+    );
+
+    __m256i total = <span class="code-call">_mm256_setzero_si256</span>();
+
+    size_t i = <span class="code-literal">0</span>;
+    <span class="code-keyword">for</span> (; i + <span class="code-literal">4</span> &lt;= n; i += <span class="code-literal">4</span>) {
+        __m256i v = <span class="code-call">_mm256_loadu_si256</span>(<span class="code-keyword">reinterpret_cast</span>&lt;<span class="code-keyword">const</span> __m256i*&gt;(&data[i]));
+
+        __m256i lo = <span class="code-call">_mm256_and_si256</span>(v, <span class="code-call">_mm256_set1_epi8</span>(<span class="code-literal">0</span>x0F));
+        __m256i hi = <span class="code-call">_mm256_and_si256</span>(<span class="code-call">_mm256_srli_epi16</span>(v, <span class="code-literal">4</span>), <span class="code-call">_mm256_set1_epi8</span>(<span class="code-literal">0</span>x0F));
+
+        __m256i cnt = <span class="code-call">_mm256_add_epi8</span>(
+            <span class="code-call">_mm256_shuffle_epi8</span>(lut, lo),
+            <span class="code-call">_mm256_shuffle_epi8</span>(lut, hi)
+        );
+
+        total = <span class="code-call">_mm256_add_epi64</span>(total, <span class="code-call">_mm256_sad_epu8</span>(cnt, <span class="code-call">_mm256_setzero_si256</span>()));
+    }
+
+    <span class="code-comment">// Reduce total (4×64 → 1×64)</span>
+    __m128i low128  = <span class="code-call">_mm256_castsi256_si128</span>(total);
+    __m128i high128 = <span class="code-call">_mm256_extracti128_si256</span>(total, <span class="code-literal">1</span>);
+    __m128i sum128  = <span class="code-call">_mm_add_epi64</span>(low128, high128);
+    uint64_t result = <span class="code-call">_mm_cvtsi128_si64</span>(sum128) + <span class="code-keyword">static_cast</span>&lt;uint64_t&gt;(<span class="code-call">_mm_extract_epi64</span>(sum128, <span class="code-literal">1</span>));
+
+    <span class="code-comment">// Tail</span>
+    <span class="code-keyword">for</span> (; i &lt; n; i++)
+        result += std::<span class="code-call">popcount</span>(data[i]);
+
+    <span class="code-keyword">return</span> result;
+}</code></pre>
+<p>Disgusting.</p>
+<p>But we still have to prepare our code just to get the privilege of using this divine function. We need a way to generate a certain number of <code>uint64_t</code> values to feed into it. The question is — how many? Truth is, nobody can give you a definitive answer here, you’ll have to tune and tweak this number experimentally. So let’s declare a global constant for that:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static constexpr</span> size_t SIMD_BATCH = <span class="code-literal">4</span>;</code></pre>
+<p>Let’s keep it at 4 for now. That’s basically just one round of <code>__m256</code>, and it’s probably not enough, but at least it’s a start. We’ll have plenty of time to tweak that constant once everything else is in place.</p>
+<p>Let’s recall how each thread is currently generating and processing numbers:</p>
+<pre><code class="language-cpp">Generator gen {std::random_device{}()};
+BigInt localHeads = <span class="code-literal">0</span>;
+<span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; chunkSize; ++i) {
+    localHeads += std::<span class="code-call">popcount</span>(<span class="code-call">gen</span>());
+}</code></pre>
+<p>So right now we generate the next number and immediately count its bits. Now we need to generate <code>SIMD_BATCH</code> numbers at once and then pass them into <code>avx2Popcount</code>. That means we’ll have to allocate a bit of memory for an array of numbers and do a little loop black magic:</p>
+<pre><code class="language-cpp">Generator gen{ std::random_device{}() };
+BigInt localHeads = <span class="code-literal">0</span>;
+BitsType bits[SIMD_BATCH];
+
+<span class="code-keyword">for</span> (BigInt i = <span class="code-literal">0</span>; i &lt; chunkSize / SIMD_BATCH; ++i) {
+    <span class="code-keyword">for</span> (<span class="code-keyword">int</span> j = <span class="code-literal">0</span>; j &lt; SIMD_BATCH; ++j) {
+        bits[j] = <span class="code-call">gen</span>();
+    }
+    localHeads += <span class="code-call">avx2Popcount</span>(&bits[<span class="code-literal">0</span>]);
+}</code></pre>
+<p>We also have to keep in mind that now the number of coin tosses must be divisible not just by 64, like before, but by <code>SIMD_BATCH * 64</code>, since that’s exactly how many bits (coin tosses) we generate per SIMD round. A non-divisible count is something we <i>definitely don’t want</i>, because handling leftover tails that don’t fit into SIMD means extra costs we don’t need. It’s much simpler to just make the iteration count fit the requirement. So let’s do that:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static constexpr</span> size_t SIMD_BATCH_BITS = SIMD_BATCH * <span class="code-keyword">sizeof</span>(BigInt) * CHAR_BIT;
+
+...
+
+<span class="code-call">Experiment</span>(BigInt n_)
+    : <span class="code-call">n</span>(n_) {
+    <span class="code-keyword">if</span> (n % SIMD_BATCH_BITS != <span class="code-literal">0</span>) {
+        std::cerr &lt;&lt; <span class="code-literal">"Error: n must be a multiple of "</span> &lt;&lt; SIMD_BATCH_BITS &lt;&lt; <span class="code-literal">", got "</span> &lt;&lt; n &lt;&lt; std::endl;
+        std::<span class="code-call">abort</span>();
+    }
+}</code></pre>
+<p>And let’s not forget that <code>SIMD_BATCH</code> itself has to be a multiple of four, since we’re working with <code>__m256</code>. So somewhere we’ll drop in a nice little <code>static_assert</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static_assert</span>(SIMD_BATCH % <span class="code-literal">4</span> == <span class="code-literal">0</span>, <span class="code-literal">"shouldda be multiple of four!"</span>);</code></pre>
+<p>Now we can tune <code>SIMD_BATCH</code> without fear of ending up with gibberish — if something’s off, the compiler will yell at us and we’ll fix it. I settled on the sweet spot of 32 for my setup, and with that I got the following result:</p>
+<pre><code class="language-">Time:  <span class="code-literal">60</span>ms <span class="code-literal">906</span>us <span class="code-literal">200</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">807</span> <span class="code-literal">145</span>, <span class="code-literal">50.0001</span>%
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">669</span> <span class="code-literal">591</span>, <span class="code-literal">49.9999</span>%</code></pre>
+<p><b>x1.23</b>. Sure, it’s not four times faster, but at least I didn’t end up back at square one after rewriting the code.</p>
+<h3>Optimization Results</h3>
+<p>That wraps up this optimization saga. Now we can evaluate what we’ve done and lock in the results. Here’s a summary table of all the optimizations:</p>
+<p>| Milestone            | Time                          | Speedup |</p>
+<p>| -------------------- | ----------------------------- | ------- |</p>
+<p>| Measurement Start    | <code>20min 41s 897ms 383us 600ns</code> | -       |</p>
+<p>| Without distribution | <code>10min 50s 93ms 886us 900ns</code>  | x1.9    |</p>
+<p>| Lazy generator       | <code>7min 8s 600ms 933us</code>         | x1.5    |</p>
+<p>| Restructuring        | <code>19s 826ms 601us</code>             | x21.6   |</p>
+<p>| std::popcount()      | <code>5s 460ms 958us 600ns</code>        | x3.6    |</p>
+<p>| 64-bit generator     | <code>2s 554ms 51us 200ns</code>         | x2.1    |</p>
+<p>| Multithreading       | <code>126ms 479us 900ns</code>           | x20.2   |</p>
+<p>| Custom Generator     | <code>93ms 529us 800ns</code>            | x1.4    |</p>
+<p>| More threads         | <code>75ms 91us 300ns</code>             | x1.25   |</p>
+<p>| SIMD                 | <code>60ms 906us 200ns</code>            | x1.23   |</p>
+<p>Final Speedup: <b>x20,235!</b></p>
+<p>Honestly, there should’ve been a nice illustrative chart instead of a table, but the speedup was so massive that the chart, as soon as it started, just plummeted to the X-axis due to an absurdly large Y-range. Still, I tried to improvise and present to you my little hack — a chart with nested ranges:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/h1/c6/w9/h1c6w95ftdzxfmt8y-glunootnw.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>In short, I don’t know any better way to show the scale of a twenty-thousand-fold speedup — the result is just too good :) Read the chart like this — as soon as it drops to the X-axis, move to the next chart, which zooms in on the Y-axis. If the labels are hard to read, the main chart covers a range of \[0; 1400\] seconds, the second-level chart covers \[0; 20\] seconds, and the third — \[0; 0.14\] seconds.</p>
+<p>It’s also worth calculating the speed of our automated coin tosser. 68,719,476,736 tosses in about 61 milliseconds — which equals:</p>
+<pre><code class="language-"><span class="code-literal">68 719 476 736</span> / <span class="code-literal">61</span>ms
+<span class="code-literal">1</span> <span class="code-literal">128</span> <span class="code-literal">283</span> <span class="code-literal">766</span> / ms
+<span class="code-literal">1</span> <span class="code-literal">128</span> <span class="code-literal">283</span> / us
+<span class="code-literal">1</span> <span class="code-literal">128</span> / ns</code></pre>
+<p>Well, 1k/ns isn’t exactly 300k/ns, but still — not bad.</p>
+<h3>What else could speed this up?</h3>
+<p>Oh boy, I tried a bunch of other things:</p>
+<ul>
+	<li>Aligning thread data with <code>alignas(std::hardware_destructive_interference_size)</code> so it’s cache-line aligned and we minimize the risk of threads interfering with each other</li>
+	<li>Various forms of manual loop unrolling</li>
+	<li>Doing away with the generator and calculating random numbers directly inside the buffer <code>BitsType bits[SIMD_BATCH]</code>: each next element was derived from the previous one and then looped back. Supposedly this localized data.</li>
+</ul>
+<p>But none of this changed execution speed. At this point, I think my optimization powers are exhausted. Still, I have plans for the future:</p>
+<ul>
+	<li>AVX-512 will definitely improve the program’s performance. When I get my hands on a machine that supports this instruction set, I’ll share the results — though I’m afraid it won’t be anytime soon. Maybe by 2030.</li>
+	<li>I want to rewrite the program in Rust. I’m curious if it’ll be faster than my C++ version. Rust also has <code>u128</code>, but it probably won’t help much, since like <code>__int128</code> in Clang/GCC (missing in MSVC) it’s just a software simulation — native size is still 64 bits, and you can’t escape it.</li>
+	<li>I want to rewrite the program in Zig. If we’re comparing system languages, let’s compare them properly.</li>
+	<li>Once I learn to write compute shaders, I’ll burn the GPU instead of the CPU, and I hope for groundbreaking results there too.</li>
+</ul>
+<p>If any of this happens, I’ll write a separate article about it.</p>
+<h2>Big and Small Numbers</h2>
+<p>If you thought the article was logically wrapping up here, you’re sorely mistaken.</p>
+<p>Now, armed with the fastest coin toss generator I could possibly make — a thousand tosses per nanosecond — we can make one last leap and turn our attention to the distribution of toss results.</p>
+<p>We know the time to reach a perfect distribution tends to infinity. So our only real goal is to capture how close we can get to an ideal distribution in a reasonable time.</p>
+<p>For this task, we need to represent very small floating-point numbers with high precision — the more decimal places we can accurately calculate, the better. And here lies a problem with <code>double</code>.</p>
+<p>What’s wrong with it? It’s a floating-point number, and even if it were 128-bit or 256-bit, we can’t guarantee which numbers it will represent exactly and which it won’t. You can check this easily — I once wrote an <a href="https://askepit.github.io/tools/ieee754_calculator/">IEEE-754 calculator</a> that shows even something like <code>0.1</code> can’t be represented exactly as a floating-point number. A <code>float</code> will store something like <code>0.10000000149011611938</code>, a 64-bit <code>double</code> — <code>0.10000000000000000555</code>, and so on.</p>
+<p>To compute precisely, we need <a href="https://en.wikipedia.org/wiki/Fixed-point_arithmetic">fixed-point numbers</a>, often called decimals. The idea is simple: under the hood, they store an integer — the number of fractional units. A typical example is money: under the hood we store everything in kopeks, and outwardly we treat them as rubles and their fractions. Money always has two decimal places. That’s fixed-point for you. C++ STL doesn’t have this by default.</p>
+<p>We’re going to implement a decimal type for our very narrow task:</p>
+<ul>
+	<li>Our decimal will represent numbers close to <code>0.5</code>, like <code>0.5000053</code> or <code>0.49999645</code></li>
+	<li>We want to store as many decimal places as possible</li>
+	<li>We <i>won’t</i> use digits before the decimal point at all — no need to represent <code>1.0</code> or <code>2.45</code></li>
+	<li>Negative numbers are not needed</li>
+</ul>
+<blockquote><p><b>Note</b>: earlier we used percentages to represent distributions. Now we’re ditching that and using <code>0.5</code> instead of <code>50%</code>. This saves unnecessary conversions and unifies the idea of a small number.</p></blockquote>
+<p>For our decimal type, it makes sense to use a <code>uint64_t</code> under the hood. Since all numbers will be less than one, we can dedicate <i>all</i> digits to the fractional part. To fully exploit <code>uint64_t</code>, we can refer to the constant <a href="https://en.cppreference.com/w/cpp/types/numeric_limits/digits10.html"><code>std::numeric_limits&lt;uint64_t&gt;::digits10</code></a>, which gives the maximum number of decimal digits we can store without overflow. For <code>uint64_t</code> this is 19. Indeed, the maximum number for <code>uint64_t</code> is 18,446,744,073,709,551,615 — 20 digits, but not every number with 20 digits fits in 64 bits. So 19 is safe, and even <code>9,999,999,999,999,999,999</code> fits without breaking anything. That means we can have 19 decimal places of precision. I think that’s enough. If not, we can always simulate 128 bits.</p>
+<p>Let’s implement the skeleton of the <code>Decimal</code> class:</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> Decimal
+{
+<span class="code-keyword">public</span>:
+    <span class="code-call">Decimal</span>(size_t digitsAfterComma, uint64_t underlying_ = <span class="code-literal">0</span>)
+       : <span class="code-call">underlying</span>(underlying_)
+    {
+        <span class="code-keyword">if</span> (digitsAfterComma &gt; std::numeric_limits&lt;uint64_t&gt;::digits10) {
+            std::cerr &lt;&lt; <span class="code-literal">"Error: you've exceeded limit of digits after fixed point"</span> &lt;&lt; std::endl;
+            std::<span class="code-call">abort</span>();
+        }
+        scale = <span class="code-keyword">static_cast</span>&lt;size_t&gt;(std::<span class="code-call">pow</span>(<span class="code-literal">10</span>, digitsAfterComma));
+    }
+
+    std::string <span class="code-call">toString</span>() <span class="code-keyword">const</span> {
+        std::string <span class="code-call">res</span>(<span class="code-literal">"0."</span>);
+        res += std::<span class="code-call">to_string</span>(underlying);
+        <span class="code-keyword">while</span> (res[res.<span class="code-call">size</span>() - <span class="code-literal">1</span>] == <span class="code-literal">'0'</span>) {
+            res.<span class="code-call">resize</span>(res.<span class="code-call">size</span>() - <span class="code-literal">1</span>);
+        }
+
+        <span class="code-keyword">return</span> res;
+    }
+
+<span class="code-keyword">private</span>:
+    uint64_t underlying{};
+    size_t scale{};
+};</code></pre>
+<p>The public interface is almost nonexistent for now, but we’ll keep adding to it as we progress and figure out exactly what we need. Notice that we’ve made it possible to create numbers of any precision and capped <code>digitsAfterComma</code> at a maximum of 19 digits. We’ll need numbers of varying precision later, but more on that later.</p>
+<h2>Division Challenges</h2>
+<p>Let’s recall how we calculated the ratio of heads to tails:</p>
+<pre><code class="language-cpp"><span class="code-keyword">const double</span> headsPercent = <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(experiment.heads) / n * <span class="code-literal">100.0</span>;
+<span class="code-keyword">const</span> <span class="code-keyword">double</span> tailsPercent = <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">double</span>&gt;(experiment.tails) / n * <span class="code-literal">100.0</span>;</code></pre>
+<p>Let’s take our case with 68,719,476,736 tosses, which we’ve so painstakingly optimized. Imagine we got 34,359,743,765 heads and 34,359,732,971 tails. I punched the numbers into the Windows calculator — the ratio comes out as:</p>
+<p>0.5000000785366864875 / 0.4999999214633135125.</p>
+<blockquote><p>By the way, these are numbers from the chapter “Counting Bits Properly,” and <code>double</code> there already choked and just showed <code>50%/50%</code>. Or maybe the <code>double</code> stream formatting decided to be lazy. Either way, we want more precision.</p></blockquote>
+<p>So, to calculate the desired <code>Decimal</code>, we need to divide 34,359,743,765 by 68,719,476,736. Hmm. But how should we divide?</p>
+<p>Cast to <code>double</code> and then somehow convert to <code>Decimal</code>? Pointless — we’d lose all precision and defeat the whole purpose of <code>Decimal</code>. Make a <code>Decimal</code> directly from these large numbers? They won’t fit, because in our <code>Decimal</code> all digits are devoted to the fractional part.</p>
+<p>At some point, I realized mathematically it doesn’t matter whether you divide <code>34359743765 / 68719476736</code> or <code>0.34359743765 / 0.68719476736</code> — the result is the same! That means we can simply pull these numbers into our target <code>Decimal</code> as <code>Decimal(19, 34'359'743'765)</code>, and nothing bad happens. All that remains is to divide one <code>Decimal</code> by another.</p>
+<p>How do you properly divide <code>Decimal</code> numbers? Obviously, you can’t just divide the underlying variables — in our case that would give <code>34359743765 / 68719476736 = 0</code>. You could cheat by casting both underlying values to <code>double</code> and dividing, but again, that kills the whole point of <code>Decimal</code>.</p>
+<p>The correct way is a bit craftier: it’s integer division, but first you multiply the numerator by the <code>scale</code>, then perform integer division, and then divide the result by the <code>scale</code> again. That is:</p>
+<pre><code class="language-"><span class="code-literal">343597437650000000000000000000</span> / <span class="code-literal">68719476736</span> = <span class="code-literal">5000000785366864874</span>
+
+<span class="code-literal">5000000785366864874</span> / <span class="code-literal">10000000000000000000</span> = <span class="code-literal">0.5000000785366864874</span></code></pre>
+<p>Hmm. Yeah, the <code>scale</code> for numbers with 19 digits after the decimal point is indeed (10^{19}), which, as we recall, is already pushing the limits of what <code>uint64_t</code> can hold. And multiplying it by another huge number is a no-go — instant overflow and no way to compute anything. Frustrating — we need to do an impossible multiplication just to divide it right back. Even worse, in reality, the result will still end up close to 0.5 anyway.</p>
+<p>I paced around, scratched my head over this for a while. Sat down with pen and paper. And you know what? On paper, it worked perfectly, because I could do long division of any numbers by hand, unlike this dumb machine… Wait, OH SHI~ Long division! We’re going to simulate long division.</p>
+<p>Long division is an interesting thing — it either stops at some point and gives a finite number, or it goes on forever, spitting out gems like <code>0.16666666…</code>. Either way, the process can be represented as a digit generator — you can always ask for one more digit; and you either get it or you’re told it’s the end. And that’s just a wonderful concept.</p>
+<p>Without thinking too long, I sketched such a generator. Keep in mind, it’s heavily optimized for our case — the dividend is always smaller than the divisor, and the digits we output are those after <code>0.</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> Divider
+{
+<span class="code-keyword">public</span>:
+    <span class="code-call">Divider</span>(BigInt nom_, BigInt denom_)
+        : <span class="code-call">nom</span>(nom_)
+        , <span class="code-call">denom</span>(denom_)
+    {}
+
+    <span class="code-keyword">int</span> <span class="code-keyword">operator</span>()() {
+        <span class="code-keyword">if</span> (nom == <span class="code-literal">0</span>) {
+            <span class="code-keyword">return</span> -<span class="code-literal">1</span>;
+        }
+
+        nom *= <span class="code-literal">10</span>;
+        <span class="code-keyword">if</span> (nom &lt; denom) {
+            <span class="code-keyword">return</span> <span class="code-literal">0</span>;
+        }
+
+        BigInt acc = denom;
+        <span class="code-keyword">while</span> (acc &lt;= nom) {
+            acc += denom;
+        }
+        acc -= denom;
+
+        <span class="code-keyword">int</span> digit = <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">int</span>&gt;(acc / denom);
+        nom -= acc;
+
+        <span class="code-keyword">return</span> digit;
+    }
+
+<span class="code-keyword">private</span>:
+    BigInt nom{};
+    BigInt denom{};
+};</code></pre>
+<p>I might have missed some edge cases, but overall it works. Here’s an example of how such a division generator operates:</p>
+<pre><code class="language-cpp"><span class="code-comment">// 1 / 12 = 0.083333...</span>
+{
+    Divider <span class="code-call">d</span>(<span class="code-literal">1</span>, <span class="code-literal">12</span>);
+    <span class="code-call">d</span>(); <span class="code-comment">// 0</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// 8</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// 3</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// 3</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// 3</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// 3</span>
+}
+
+<span class="code-comment">// 1 / 2 = 0.5</span>
+{
+    Divider <span class="code-call">d</span>(<span class="code-literal">1</span>, <span class="code-literal">2</span>);
+    <span class="code-call">d</span>(); <span class="code-comment">// 5</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// -1</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// -1</span>
+    <span class="code-call">d</span>(); <span class="code-comment">// -1</span>
+}</code></pre>
+<p>Here’s how I plan to pull it all together and perform the division:</p>
+<ul>
+	<li>We have two large numbers</li>
+	<li>From them, we create a <code>Divider</code></li>
+	<li>We create an empty <code>Decimal</code> with the desired precision</li>
+	<li>We pull digits from the divider until it’s exhausted or the <code>Decimal</code> is full</li>
+	<li>If the divider still has digits left, we ask for one more digit to round properly</li>
+</ul>
+<p>We wrap all of this in a single function:</p>
+<pre><code class="language-cpp">Decimal <span class="code-call">calcPercent</span>(BigInt nom, BigInt denom, size_t digitsAfterComma) {
+    Decimal <span class="code-call">res</span>(digitsAfterComma);
+    Divider <span class="code-call">divider</span>(nom, denom);
+
+    size_t scale = res.<span class="code-call">getScale</span>() / <span class="code-literal">10</span>;
+
+    <span class="code-keyword">while</span> (scale != <span class="code-literal">0</span>) {
+        <span class="code-keyword">int</span> digit = <span class="code-call">divider</span>();
+        <span class="code-keyword">if</span> (digit &lt; <span class="code-literal">0</span>) {
+            <span class="code-keyword">break</span>;
+        }
+        res.<span class="code-call">addFracts</span>(digit * scale);
+        scale /= <span class="code-literal">10</span>;
+    }
+
+    <span class="code-comment">// rounding</span>
+    <span class="code-keyword">int</span> digit = <span class="code-call">divider</span>();
+    <span class="code-keyword">if</span> (digit &gt;= <span class="code-literal">5</span>) {
+        res.<span class="code-call">addFracts</span>(<span class="code-literal">1</span>);
+    }
+
+    <span class="code-keyword">return</span> res;
+}</code></pre>
+<p>We see that the <code>Decimal</code> class needs a bit of an interface upgrade: it needs an <code>addFracts()</code> method. Playing prophet here, I’ll also add that we’ll need an <code>isHalf()</code> method — it’ll come in handy later, you’ll see:</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> Decimal
+{
+    ...
+    <span class="code-keyword">void</span> <span class="code-call">addFracts</span>(size_t fracts) {
+       underlying += fracts;
+    }
+
+    <span class="code-keyword">bool</span> <span class="code-call">isHalf</span>() <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> underlying == <span class="code-literal">5</span> * (scale/<span class="code-literal">10</span>);
+    }
+    ...
+};</code></pre>
+<p>Now we’re ready. Didn’t think dividing numbers could be this complicated. But hey, it was fun.</p>
+<p>We replace the double-division with our new, precise method:</p>
+<pre><code class="language-cpp"><span class="code-keyword">const</span> Decimal headsPercent = <span class="code-call">calcPercent</span>(experiment.heads, n, <span class="code-literal">19</span>);
+<span class="code-keyword">const</span> Decimal tailsPercent = <span class="code-call">calcPercent</span>(experiment.tails, n, <span class="code-literal">19</span>);</code></pre>
+<p>and run our usual optimization test:</p>
+<pre><code class="language-"><span class="code-literal">68 719 476 736</span> rounds
+Time:  <span class="code-literal">67</span>ms <span class="code-literal">411</span>us <span class="code-literal">500</span>ns
+Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">684</span> <span class="code-literal">850</span>, <span class="code-literal">0.4999992212106008083</span>
+Tails: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">791</span> <span class="code-literal">886</span>, <span class="code-literal">0.5000007787893991917</span></code></pre>
+<p>Now we’re talking: this isn’t some measly <code>50.0001%</code>, this is precision at your fingertips. Time to move to the next stage.</p>
+<h2>Mining Coins</h2>
+<p>Now, using <code>Decimal</code>, I want to get the most precise approach to 50/50 possible within a reasonable time. The idea is:</p>
+<ul>
+	<li>Start with a <code>Decimal</code> of low precision. For example, with 1 digit after the decimal point.</li>
+	<li>Run our experiment, looping endlessly — waiting until we reach a result of <code>0.5 / 0.5</code>. Given the (in)accuracy of our <code>Decimal</code>, of course.</li>
+	<li>Record the result: the time, the number of tosses it took to achieve precision of 1 digit after the decimal point.</li>
+	<li>Move to 2 digits of precision and loop the experiment forever.</li>
+</ul>
+<p>This becomes an endlessly running precision miner. It’ll tell us how long and how many coin tosses it takes to achieve increasingly precise distributions. When/if we mine precision to 19 digits, we’ll consider the experiment fully complete for technical reasons.</p>
+<p>First, for convenience, we need to modify the <code>Experiment</code> class so its <code>spin</code> method can be called incrementally any number of times, and its state will accumulate: time measurements and the number of coin tosses already made must be saved — there’s no point starting from scratch every time. Previous results and measurements are valid and save resources. Let’s make the necessary adjustments to the class:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> Experiment
+{
+    ...
+
+    BigInt heads = <span class="code-literal">0</span>;
+    BigInt tossed = <span class="code-literal">0</span>;
+    nanoseconds timePassed{};
+
+    <span class="code-keyword">void</span> <span class="code-call">spin</span>(BigInt n) {
+        ... <span class="code-comment">// all the work and `heads` calculation</span>
+
+        <span class="code-comment">// measurements</span>
+        tossed += n;
+        <span class="code-keyword">auto</span> dt = Clock::<span class="code-call">now</span>() - start;
+        timePassed += dt;
+    }
+
+    BigInt <span class="code-call">getTails</span>() <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> tossed - heads;
+    }
+};</code></pre>
+<p>Here’s the rough version of the miner:</p>
+<pre><code class="language-cpp"><span class="code-keyword">constexpr</span> size_t MAX_PRECISION = std::numeric_limits&lt;uint64_t&gt;::digits10;
+<span class="code-keyword">constexpr</span> BigInt SPIN_STEP = <span class="code-literal">1</span>ull &lt;&lt; <span class="code-literal">21</span>;
+
+Experiment ex;
+
+<span class="code-keyword">const</span> <span class="code-keyword">auto</span> reportSuccess = [&ex](size_t precision) -&gt; <span class="code-keyword">bool</span> {
+    Decimal heads = <span class="code-call">calcPercent</span>(ex.heads, ex.tossed, precision);
+    Decimal tails = <span class="code-call">calcPercent</span>(ex.<span class="code-call">getTails</span>(), ex.tossed, precision);
+
+    <span class="code-keyword">if</span> (heads.<span class="code-call">isHalf</span>() || tails.<span class="code-call">isHalf</span>()) {
+        std::cout &lt;&lt; <span class="code-literal">"Tossed: "</span> &lt;&lt; <span class="code-call">prettifyBigInt</span>(ex.tossed) &lt;&lt; std::endl;
+        std::cout &lt;&lt; <span class="code-literal">"Heads:  "</span> &lt;&lt; <span class="code-call">prettifyBigInt</span>(ex.heads) &lt;&lt; <span class="code-literal">", "</span> &lt;&lt; heads.<span class="code-call">toString</span>() &lt;&lt; std::endl;
+        std::cout &lt;&lt; <span class="code-literal">"Tails:  "</span> &lt;&lt; <span class="code-call">prettifyBigInt</span>(ex.<span class="code-call">getTails</span>()) &lt;&lt; <span class="code-literal">", "</span> &lt;&lt; tails.<span class="code-call">toString</span>() &lt;&lt; std::endl;
+        std::cout &lt;&lt; <span class="code-literal">"Time:   "</span> &lt;&lt; <span class="code-call">prettyDuration</span>(ex.timePassed) &lt;&lt; std::endl &lt;&lt; std::endl;
+        <span class="code-keyword">return</span> <span class="code-keyword">true</span>;
+    }
+
+    <span class="code-keyword">return</span> <span class="code-keyword">false</span>;
+};
+
+<span class="code-keyword">for</span> (size_t precision = <span class="code-literal">1</span>; precision &lt;= MAX_PRECISION;	++precision) {
+    std::cout &lt;&lt; <span class="code-literal">"precision: "</span> &lt;&lt; precision &lt;&lt; <span class="code-literal">'\n'</span>;
+
+    <span class="code-keyword">while</span> (<span class="code-keyword">true</span>) {
+        ex.<span class="code-call">spin</span>(SPIN_STEP);
+        <span class="code-keyword">if</span> (<span class="code-call">reportSuccess</span>(precision)) {
+            <span class="code-keyword">break</span>;
+        }
+    }
+}</code></pre>
+<p>First run:</p>
+<pre><code class="language-">precision: <span class="code-literal">1</span>
+Tossed: <span class="code-literal">2</span> <span class="code-literal">097</span> <span class="code-literal">152</span>
+Heads:  <span class="code-literal">1</span> <span class="code-literal">048</span> <span class="code-literal">560</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">1</span> <span class="code-literal">048</span> <span class="code-literal">592</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">3</span>ms <span class="code-literal">275</span>us <span class="code-literal">200</span>ns
+
+precision: <span class="code-literal">2</span>
+Tossed: <span class="code-literal">4</span> <span class="code-literal">194</span> <span class="code-literal">304</span>
+Heads:  <span class="code-literal">2</span> <span class="code-literal">097</span> <span class="code-literal">912</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">2</span> <span class="code-literal">096</span> <span class="code-literal">392</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">4</span>ms <span class="code-literal">796</span>us <span class="code-literal">600</span>ns
+
+precision: <span class="code-literal">3</span>
+Tossed: <span class="code-literal">6</span> <span class="code-literal">291</span> <span class="code-literal">456</span>
+Heads:  <span class="code-literal">3</span> <span class="code-literal">147</span> <span class="code-literal">050</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">3</span> <span class="code-literal">144</span> <span class="code-literal">406</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">6</span>ms <span class="code-literal">403</span>us <span class="code-literal">800</span>ns
+
+precision: <span class="code-literal">4</span>
+Tossed: <span class="code-literal">16</span> <span class="code-literal">777</span> <span class="code-literal">216</span>
+Heads:  <span class="code-literal">8</span> <span class="code-literal">388</span> <span class="code-literal">366</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">8</span> <span class="code-literal">388</span> <span class="code-literal">850</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">13</span>ms <span class="code-literal">117</span>us <span class="code-literal">700</span>ns
+
+precision: <span class="code-literal">5</span>
+Tossed: <span class="code-literal">20</span> <span class="code-literal">971</span> <span class="code-literal">520</span>
+Heads:  <span class="code-literal">10</span> <span class="code-literal">485</span> <span class="code-literal">662</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">10</span> <span class="code-literal">485</span> <span class="code-literal">858</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">16</span>ms <span class="code-literal">578</span>us <span class="code-literal">700</span>ns
+
+precision: <span class="code-literal">6</span>
+Tossed: <span class="code-literal">1</span> <span class="code-literal">333</span> <span class="code-literal">788</span> <span class="code-literal">672</span>
+Heads:  <span class="code-literal">666</span> <span class="code-literal">894</span> <span class="code-literal">992</span>, <span class="code-literal">0.5</span>
+Tails:  <span class="code-literal">666</span> <span class="code-literal">893</span> <span class="code-literal">680</span>, <span class="code-literal">0.5</span>
+Time:   <span class="code-literal">711</span>ms <span class="code-literal">941</span>us <span class="code-literal">100</span>ns
+
+...</code></pre>
+<p>We cautiously assume it works. But there are problems.</p>
+<p>First, it feels underwhelming that whenever we break a record and our <code>Decimal</code>, hitting its precision limit, proudly says: <i>"I am exactly 0.5!"</i>, we print that to the screen — which is always just 0.5. So it’s unclear why we even bother showing it. At the same time, it’d be nice to see the <i>actual</i> number we got.</p>
+<p>Here’s my trick: I’ll compute the division for the <code>Decimal</code> at the miner’s current precision, but in parallel I’ll compute the same division again at maximum possible precision. The decision of whether we’ve achieved the desired precision will be made based on the “rough” <code>Decimal</code>, while the displayed value will be the “fine-grained” <code>Decimal</code>. Sounds confusing, but the code will make it clearer:</p>
+<pre><code class="language-cpp">Decimal headsRough = <span class="code-call">calcPercent</span>(ex.heads, ex.tossed, precision);
+Decimal tailsRough = <span class="code-call">calcPercent</span>(ex.<span class="code-call">getTails</span>(), ex.tossed, precision);
+
+Decimal headsDetailed = <span class="code-call">calcPercent</span>(ex.heads, ex.tossed, MAX_PRECISION);
+Decimal tailsDetailed = <span class="code-call">calcPercent</span>(ex.<span class="code-call">getTails</span>(), ex.tossed, MAX_PRECISION);
+
+<span class="code-keyword">if</span> (headsRough.<span class="code-call">isHalf</span>() || tailsRough.<span class="code-call">isHalf</span>()) {
+    <span class="code-comment">// display `headsDetailed` and `tailsDetailed`</span>
+}</code></pre>
+<p>The second problem isn’t as obvious — I <i>felt</i> it more than I saw it. Look at the number of iterations needed for each new record — it’s different every time. I began to suspect that at least at low precisions, one round could easily “grab” several records at once, jumping, for example, from <code>0.51</code> to <code>0.5006</code>.</p>
+<p>The fix for this, even if it’s a hypothetical issue, is simple — before starting each experiment, check whether the experiment has already beaten the precision level we’re about to target:</p>
+<pre><code class="language-diff"><span class="code-keyword">for</span> (size_t precision = <span class="code-literal">1</span>; precision &lt;= MAX_PRECISION;	++precision) {
+    std::cout &lt;&lt; <span class="code-literal">"precision: "</span> &lt;&lt; precision &lt;&lt; <span class="code-literal">'\n'</span>;
+
++   <span class="code-keyword">if</span> (<span class="code-call">reportSuccess</span>(precision)) {
++       <span class="code-keyword">continue</span>;
++   }
+
+    <span class="code-keyword">while</span> (<span class="code-keyword">true</span>) {
+        ex.<span class="code-call">spin</span>(SPIN_STEP);
+        <span class="code-keyword">if</span> (<span class="code-call">reportSuccess</span>(precision)) {
+            <span class="code-keyword">break</span>;
+        }
+    }
+}</code></pre>
+<p>In fact, this problem might or might not show up depending on the chosen spin step, and here we’re approaching the last problem. That problem — choosing <code>SPIN_STEP</code> — is <i>really</i> hard. I set it to <code>1ull &lt;&lt; 21</code> (that’s $2^{21}$), but that was the result of a tiresome search. $2^{20}$ gave a snail’s pace, and I didn’t have the patience to even reach <code>precision: 1</code>. $2^{22}$ was too fast and immediately hit huge values that took forever to compute.</p>
+<p>This, by the way, shows that tuning the miner for optimal speed isn’t easy — it will strongly depend on the step you choose. I reasoned the step should be adaptive — small enough at the start, then increasing. I introduced a minimum step and a maximum step:</p>
+<pre><code class="language-cpp"><span class="code-keyword">constexpr</span> BigInt MIN_SPIN_STEP = SIMD_BATCH_BITS;
+<span class="code-keyword">constexpr</span> BigInt MAX_SPIN_STEP = <span class="code-literal">4</span><span class="code-literal">'294'</span><span class="code-literal">967</span><span class="code-literal">'296;
+size_t step = MIN_SPIN_STEP;</span></code></pre>
+<p>Then I started calculating the current step dynamically on the fly, based on how many times the experiment had already tossed the coin:</p>
+<pre><code class="language-cpp">step = experiment.tossed &lt; step ? step : std::<span class="code-call">min</span>(step * <span class="code-literal">2</span>, MAX_SPIN_STEP);
+experiment.<span class="code-call">spin</span>(step);</code></pre>
+<p>That is, we periodically double the step until we hit the maximum. The maximum here is purely nominal — just in case — and I picked a tested, fairly large value: 4,294,967,296.</p>
+<p>The miner now works as intended. At least, as I want it to. Here are the first six captures:</p>
+<pre><code class="language-">precision: <span class="code-literal">1</span>
+Tossed: <span class="code-literal">33</span> <span class="code-literal">552</span> <span class="code-literal">384</span>
+ Heads: <span class="code-literal">15</span> <span class="code-literal">724</span> <span class="code-literal">557</span>, <span class="code-literal">0.4686569216661325765</span>
+ Tails: <span class="code-literal">17</span> <span class="code-literal">827</span> <span class="code-literal">827</span>, <span class="code-literal">0.5313430783338674235</span>
+  Time: <span class="code-literal">18</span>ms <span class="code-literal">222</span>us <span class="code-literal">700</span>ns
+
+precision: <span class="code-literal">2</span>
+Tossed: <span class="code-literal">268</span> <span class="code-literal">433</span> <span class="code-literal">408</span>
+ Heads: <span class="code-literal">133</span> <span class="code-literal">163</span> <span class="code-literal">234</span>, <span class="code-literal">0.4960754884876326571</span>
+ Tails: <span class="code-literal">135</span> <span class="code-literal">270</span> <span class="code-literal">174</span>, <span class="code-literal">0.5039245115123673429</span>
+  Time: <span class="code-literal">21</span>ms <span class="code-literal">636</span>us <span class="code-literal">200</span>ns
+
+precision: <span class="code-literal">3</span>
+Tossed: <span class="code-literal">2</span> <span class="code-literal">147</span> <span class="code-literal">481</span> <span class="code-literal">600</span>
+ Heads: <span class="code-literal">1</span> <span class="code-literal">072</span> <span class="code-literal">710</span> <span class="code-literal">984</span>, <span class="code-literal">0.4995204540984192833</span>
+ Tails: <span class="code-literal">1</span> <span class="code-literal">074</span> <span class="code-literal">770</span> <span class="code-literal">616</span>, <span class="code-literal">0.5004795459015807167</span>
+  Time: <span class="code-literal">25</span>ms <span class="code-literal">722</span>us <span class="code-literal">500</span>ns
+
+precision: <span class="code-literal">4</span>
+Tossed: <span class="code-literal">21</span> <span class="code-literal">474</span> <span class="code-literal">834</span> <span class="code-literal">432</span>
+ Heads: <span class="code-literal">10</span> <span class="code-literal">736</span> <span class="code-literal">419</span> <span class="code-literal">663</span>, <span class="code-literal">0.4999535478141562046</span>
+ Tails: <span class="code-literal">10</span> <span class="code-literal">738</span> <span class="code-literal">414</span> <span class="code-literal">769</span>, <span class="code-literal">0.5000464521858437954</span>
+  Time: <span class="code-literal">46</span>ms <span class="code-literal">516</span>us <span class="code-literal">900</span>ns
+
+precision: <span class="code-literal">5</span>
+Tossed: <span class="code-literal">227</span> <span class="code-literal">633</span> <span class="code-literal">264</span> <span class="code-literal">640</span>
+ Heads: <span class="code-literal">113</span> <span class="code-literal">815</span> <span class="code-literal">517</span> <span class="code-literal">221</span>, <span class="code-literal">0.4999951013354671009</span>
+ Tails: <span class="code-literal">113</span> <span class="code-literal">817</span> <span class="code-literal">747</span> <span class="code-literal">419</span>, <span class="code-literal">0.5000048986645328991</span>
+  Time: <span class="code-literal">253</span>ms <span class="code-literal">918</span>us <span class="code-literal">100</span>ns
+
+precision: <span class="code-literal">6</span>
+Tossed: <span class="code-literal">1</span> <span class="code-literal">026</span> <span class="code-literal">497</span> <span class="code-literal">181</span> <span class="code-literal">696</span>
+ Heads: <span class="code-literal">513</span> <span class="code-literal">248</span> <span class="code-literal">105</span> <span class="code-literal">522</span>, <span class="code-literal">0.4999995272018192996</span>
+ Tails: <span class="code-literal">513</span> <span class="code-literal">249</span> <span class="code-literal">076</span> <span class="code-literal">174</span>, <span class="code-literal">0.5000004727981807004</span>
+  Time: <span class="code-literal">1</span>s <span class="code-literal">38</span>ms <span class="code-literal">463</span>us <span class="code-literal">500</span>ns
+
+...</code></pre>
+<p>Works great — and most importantly, now the progress in precision is clearly visible through the growing strings of zeros and nines. Quite satisfying to watch.</p>
+<h2>Persistence</h2>
+<p>Once I had the miner tuned well enough to work reliably, I realized that after about 10–12 digits after the decimal point (which takes just a few minutes), the program hits extremely serious timing limits. Presumably, reaching further precision could take hours or even days — in fact, I don’t know yet, because I haven’t tested it.</p>
+<p>I decided I want to run it for several days to see what happens. But I don’t want to lose the data mined with such stubborn effort. If anything goes wrong — the program crashes or there’s a power outage — I want the results to be preserved.</p>
+<p>So we need to save the data to a file. But we still want to print to the console, because that’s convenient. We want identical records in both places, meaning we either duplicate every output or create a system to automatically write to two streams at once. Obviously, the second option is preferable, so I set about writing a <code>StreamOverdub</code> class.</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> StreambufOverdub : <span class="code-keyword">public</span> std::streambuf {
+<span class="code-keyword">public</span>:
+    <span class="code-call">StreambufOverdub</span>(std::streambuf* sb1, std::streambuf* sb2)
+        : <span class="code-call">sb1</span>(sb1), <span class="code-call">sb2</span>(sb2) {
+    }
+
+<span class="code-keyword">protected</span>:
+    <span class="code-keyword">int</span> <span class="code-call">overflow</span>(<span class="code-keyword">int</span> c) override {
+        <span class="code-keyword">if</span> (c == EOF) <span class="code-keyword">return</span> !EOF;
+        <span class="code-keyword">const</span> <span class="code-keyword">int</span> r1 = sb1-&gt;<span class="code-call">sputc</span>(<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">char</span>&gt;(c));
+        <span class="code-keyword">const</span> <span class="code-keyword">int</span> r2 = sb2-&gt;<span class="code-call">sputc</span>(<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">char</span>&gt;(c));
+        <span class="code-keyword">return</span> (r1 == EOF || r2 == EOF) ? EOF : c;
+    }
+
+    <span class="code-keyword">int</span> <span class="code-call">sync</span>() override {
+        <span class="code-keyword">int</span> <span class="code-keyword">const</span> r1 = sb1-&gt;<span class="code-call">pubsync</span>();
+        <span class="code-keyword">int</span> <span class="code-keyword">const</span> r2 = sb2-&gt;<span class="code-call">pubsync</span>();
+        <span class="code-keyword">return</span> (r1 == <span class="code-literal">0</span> && r2 == <span class="code-literal">0</span>) ? <span class="code-literal">0</span> : -<span class="code-literal">1</span>;
+    }
+
+<span class="code-keyword">private</span>:
+    std::streambuf* sb1;
+    std::streambuf* sb2;
+};
+
+<span class="code-keyword">class</span> StreamOverdub : <span class="code-keyword">public</span> std::ostream {
+<span class="code-keyword">public</span>:
+    <span class="code-call">StreamOverdub</span>(std::ostream& o1, std::ostream& o2)
+        : std::<span class="code-call">ostream</span>(&tbuf)
+        , <span class="code-call">tbuf</span>(o1.<span class="code-call">rdbuf</span>(), o2.<span class="code-call">rdbuf</span>()) {
+    }
+
+<span class="code-keyword">private</span>:
+    StreambufOverdub tbuf;
+};</code></pre>
+<p>As you can see, the whole trick is wrapping two <code>std::streambuf</code> objects in a proxy. Now, if you create a <code>StreamOverdub</code> like this:</p>
+<pre><code class="language-cpp">std::ofstream <span class="code-call">file</span>(<span class="code-literal">"mined coins.txt"</span>, std::ios::trunc);
+StreamOverdub <span class="code-call">out</span>(file, std::cout);</code></pre>
+<p>then we can simply replace every <code>std::cout</code> with <code>out</code> and get output to both console and file for the cost of a single output operation. Also, after each successful capture, it’s wise to call <code>out.flush()</code> so the file is definitely updated with fresh data.</p>
+<p>Now no catastrophe can destroy our mined results, and we can confidently run the miner through the weekend.</p>
+<h2>What I Mined</h2>
+<p>So, here I present to you the results of two days of mining:</p>
+<pre><code class="language-">precision: <span class="code-literal">1</span>
+Tossed: <span class="code-literal">33</span> <span class="code-literal">552</span> <span class="code-literal">384</span>
+ Heads: <span class="code-literal">15</span> <span class="code-literal">724</span> <span class="code-literal">557</span>, <span class="code-literal">0.4686569216661325765</span>
+ Tails: <span class="code-literal">17</span> <span class="code-literal">827</span> <span class="code-literal">827</span>, <span class="code-literal">0.5313430783338674235</span>
+  Time: <span class="code-literal">18</span>ms <span class="code-literal">222</span>us <span class="code-literal">700</span>ns
+
+precision: <span class="code-literal">2</span>
+Tossed: <span class="code-literal">268</span> <span class="code-literal">433</span> <span class="code-literal">408</span>
+ Heads: <span class="code-literal">133</span> <span class="code-literal">163</span> <span class="code-literal">234</span>, <span class="code-literal">0.4960754884876326571</span>
+ Tails: <span class="code-literal">135</span> <span class="code-literal">270</span> <span class="code-literal">174</span>, <span class="code-literal">0.5039245115123673429</span>
+  Time: <span class="code-literal">21</span>ms <span class="code-literal">636</span>us <span class="code-literal">200</span>ns
+
+precision: <span class="code-literal">3</span>
+Tossed: <span class="code-literal">2</span> <span class="code-literal">147</span> <span class="code-literal">481</span> <span class="code-literal">600</span>
+ Heads: <span class="code-literal">1</span> <span class="code-literal">072</span> <span class="code-literal">710</span> <span class="code-literal">984</span>, <span class="code-literal">0.4995204540984192833</span>
+ Tails: <span class="code-literal">1</span> <span class="code-literal">074</span> <span class="code-literal">770</span> <span class="code-literal">616</span>, <span class="code-literal">0.5004795459015807167</span>
+  Time: <span class="code-literal">25</span>ms <span class="code-literal">722</span>us <span class="code-literal">500</span>ns
+
+precision: <span class="code-literal">4</span>
+Tossed: <span class="code-literal">21</span> <span class="code-literal">474</span> <span class="code-literal">834</span> <span class="code-literal">432</span>
+ Heads: <span class="code-literal">10</span> <span class="code-literal">736</span> <span class="code-literal">419</span> <span class="code-literal">663</span>, <span class="code-literal">0.4999535478141562046</span>
+ Tails: <span class="code-literal">10</span> <span class="code-literal">738</span> <span class="code-literal">414</span> <span class="code-literal">769</span>, <span class="code-literal">0.5000464521858437954</span>
+  Time: <span class="code-literal">46</span>ms <span class="code-literal">516</span>us <span class="code-literal">900</span>ns
+
+precision: <span class="code-literal">5</span>
+Tossed: <span class="code-literal">227</span> <span class="code-literal">633</span> <span class="code-literal">264</span> <span class="code-literal">640</span>
+ Heads: <span class="code-literal">113</span> <span class="code-literal">815</span> <span class="code-literal">517</span> <span class="code-literal">221</span>, <span class="code-literal">0.4999951013354671009</span>
+ Tails: <span class="code-literal">113</span> <span class="code-literal">817</span> <span class="code-literal">747</span> <span class="code-literal">419</span>, <span class="code-literal">0.5000048986645328991</span>
+  Time: <span class="code-literal">253</span>ms <span class="code-literal">918</span>us <span class="code-literal">100</span>ns
+
+precision: <span class="code-literal">6</span>
+Tossed: <span class="code-literal">1</span> <span class="code-literal">026</span> <span class="code-literal">497</span> <span class="code-literal">181</span> <span class="code-literal">696</span>
+ Heads: <span class="code-literal">513</span> <span class="code-literal">248</span> <span class="code-literal">105</span> <span class="code-literal">522</span>, <span class="code-literal">0.4999995272018192996</span>
+ Tails: <span class="code-literal">513</span> <span class="code-literal">249</span> <span class="code-literal">076</span> <span class="code-literal">174</span>, <span class="code-literal">0.5000004727981807004</span>
+  Time: <span class="code-literal">1</span>s <span class="code-literal">38</span>ms <span class="code-literal">463</span>us <span class="code-literal">500</span>ns
+
+precision: <span class="code-literal">7</span>
+Tossed: <span class="code-literal">10</span> <span class="code-literal">647</span> <span class="code-literal">223</span> <span class="code-literal">924</span> <span class="code-literal">736</span>
+ Heads: <span class="code-literal">5</span> <span class="code-literal">323</span> <span class="code-literal">611</span> <span class="code-literal">436</span> <span class="code-literal">183</span>, <span class="code-literal">0.4999999505800757343</span>
+ Tails: <span class="code-literal">5</span> <span class="code-literal">323</span> <span class="code-literal">612</span> <span class="code-literal">488</span> <span class="code-literal">553</span>, <span class="code-literal">0.5000000494199242657</span>
+  Time: <span class="code-literal">10</span>s <span class="code-literal">355</span>ms <span class="code-literal">188</span>us <span class="code-literal">500</span>ns
+
+precision: <span class="code-literal">8</span>
+Tossed: <span class="code-literal">11</span> <span class="code-literal">583</span> <span class="code-literal">526</span> <span class="code-literal">795</span> <span class="code-literal">264</span>
+ Heads: <span class="code-literal">5</span> <span class="code-literal">791</span> <span class="code-literal">763</span> <span class="code-literal">344</span> <span class="code-literal">721</span>, <span class="code-literal">0.4999999954322201748</span>
+ Tails: <span class="code-literal">5</span> <span class="code-literal">791</span> <span class="code-literal">763</span> <span class="code-literal">450</span> <span class="code-literal">543</span>, <span class="code-literal">0.5000000045677798252</span>
+  Time: <span class="code-literal">11</span>s <span class="code-literal">292</span>ms <span class="code-literal">750</span>us <span class="code-literal">400</span>ns
+
+precision: <span class="code-literal">9</span>
+Tossed: <span class="code-literal">11</span> <span class="code-literal">785</span> <span class="code-literal">390</span> <span class="code-literal">258</span> <span class="code-literal">176</span>
+ Heads: <span class="code-literal">5</span> <span class="code-literal">892</span> <span class="code-literal">695</span> <span class="code-literal">123</span> <span class="code-literal">667</span>, <span class="code-literal">0.4999999995400237174</span>
+ Tails: <span class="code-literal">5</span> <span class="code-literal">892</span> <span class="code-literal">695</span> <span class="code-literal">134</span> <span class="code-literal">509</span>, <span class="code-literal">0.5000000004599762826</span>
+  Time: <span class="code-literal">11</span>s <span class="code-literal">483</span>ms <span class="code-literal">665</span>us
+
+precision: <span class="code-literal">10</span>
+Tossed: <span class="code-literal">13</span> <span class="code-literal">284</span> <span class="code-literal">333</span> <span class="code-literal">844</span> <span class="code-literal">480</span>
+ Heads: <span class="code-literal">6</span> <span class="code-literal">642</span> <span class="code-literal">166</span> <span class="code-literal">921</span> <span class="code-literal">632</span>, <span class="code-literal">0.4999999999542318036</span>
+ Tails: <span class="code-literal">6</span> <span class="code-literal">642</span> <span class="code-literal">166</span> <span class="code-literal">922</span> <span class="code-literal">848</span>, <span class="code-literal">0.5000000000457681964</span>
+  Time: <span class="code-literal">12</span>s <span class="code-literal">903</span>ms <span class="code-literal">693</span>us <span class="code-literal">300</span>ns
+
+precision: <span class="code-literal">11</span>
+Tossed: <span class="code-literal">41</span> <span class="code-literal">145</span> <span class="code-literal">786</span> <span class="code-literal">693</span> <span class="code-literal">632</span>
+ Heads: <span class="code-literal">20</span> <span class="code-literal">572</span> <span class="code-literal">893</span> <span class="code-literal">346</span> <span class="code-literal">782</span>, <span class="code-literal">0.4999999999991736699</span>
+ Tails: <span class="code-literal">20</span> <span class="code-literal">572</span> <span class="code-literal">893</span> <span class="code-literal">346</span> <span class="code-literal">850</span>, <span class="code-literal">0.5000000000008263301</span>
+  Time: <span class="code-literal">1</span>min <span class="code-literal">36</span>s <span class="code-literal">550</span>ms <span class="code-literal">404</span>us <span class="code-literal">400</span>ns
+
+precision: <span class="code-literal">12</span>
+Tossed: <span class="code-literal">166</span> <span class="code-literal">129</span> <span class="code-literal">335</span> <span class="code-literal">007</span> <span class="code-literal">232</span>
+ Heads: <span class="code-literal">83</span> <span class="code-literal">064</span> <span class="code-literal">667</span> <span class="code-literal">503</span> <span class="code-literal">543</span>, <span class="code-literal">0.4999999999995605833</span>
+ Tails: <span class="code-literal">83</span> <span class="code-literal">064</span> <span class="code-literal">667</span> <span class="code-literal">503</span> <span class="code-literal">689</span>, <span class="code-literal">0.5000000000004394167</span>
+  Time: <span class="code-literal">3</span>min <span class="code-literal">50</span>s <span class="code-literal">949</span>ms <span class="code-literal">149</span>us <span class="code-literal">600</span>ns
+
+precision: <span class="code-literal">13</span>
+Tossed: <span class="code-literal">6</span> <span class="code-literal">560</span> <span class="code-literal">038</span> <span class="code-literal">558</span> <span class="code-literal">627</span> <span class="code-literal">840</span>
+ Heads: <span class="code-literal">3</span> <span class="code-literal">280</span> <span class="code-literal">019</span> <span class="code-literal">279</span> <span class="code-literal">313</span> <span class="code-literal">828</span>, <span class="code-literal">0.4999999999999859757</span>
+ Tails: <span class="code-literal">3</span> <span class="code-literal">280</span> <span class="code-literal">019</span> <span class="code-literal">279</span> <span class="code-literal">314</span> <span class="code-literal">012</span>, <span class="code-literal">0.5000000000000140243</span>
+  Time: <span class="code-literal">6</span>h <span class="code-literal">22</span>min <span class="code-literal">42</span>s <span class="code-literal">628</span>ms <span class="code-literal">678</span>us <span class="code-literal">500</span>ns
+
+precision: <span class="code-literal">14</span>
+Tossed: <span class="code-literal">6</span> <span class="code-literal">568</span> <span class="code-literal">598</span> <span class="code-literal">428</span> <span class="code-literal">448</span> <span class="code-literal">768</span>
+ Heads: <span class="code-literal">3</span> <span class="code-literal">284</span> <span class="code-literal">299</span> <span class="code-literal">214</span> <span class="code-literal">224</span> <span class="code-literal">400</span>, <span class="code-literal">0.5000000000000024358</span>
+ Tails: <span class="code-literal">3</span> <span class="code-literal">284</span> <span class="code-literal">299</span> <span class="code-literal">214</span> <span class="code-literal">224</span> <span class="code-literal">368</span>, <span class="code-literal">0.4999999999999975642</span>
+  Time: <span class="code-literal">6</span>h <span class="code-literal">22</span>min <span class="code-literal">51</span>s <span class="code-literal">19</span>ms <span class="code-literal">966</span>us <span class="code-literal">300</span>ns</code></pre>
+<p>Beautiful. Notably — achieving 12 digits of precision took just three minutes, but the next results required a six-hour wait. Then suddenly, 13th and 14th digits arrived almost together, just ten seconds apart. Oh wow. The rest of the weekend the machine just burned CPU for nothing :) Or maybe I should’ve waited a bit longer — who knows.</p>
+<p>In fact, this isn’t my only long run — such results repeat again and again. And we still haven’t touched the limits of 64-bit numbers — reaching 19 digits of precision is still a moonshot for us. So let’s leave it there.</p>
+<h2>Conclusions</h2>
+<p>Wrapping up this long journey, we record the following results:</p>
+<ul>
+	<li>In 6 hours 22 minutes, we tossed the coin six and a half quadrillion times (quadrillions come right after trillions) and achieved 14 digits of precision after the decimal point.</li>
+	<li>If we settle for a modest 12 digits of precision, then in just three minutes we can toss the coin 166 trillion times and get our goal.</li>
+</ul>
+<p>I think the scholars of the past could be proud of today’s computational capabilities.</p>
+<p>Modern-day scholars in the comments can tell you why my experiment isn’t rigorous, but I achieved my main goal — I had fun.</p>
+<h2>A constexpr solution to the problem</h2>
+<p>Actually, there’s a compile-time solution to this whole problem. All its code fits in these lines:</p>
+<pre><code class="language-cpp">#<span class="code-keyword">include</span> &lt;iostream&gt;
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    std::cout &lt;&lt; <span class="code-literal">"precision: inf"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="code-literal">"Tossed: inf"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="code-literal">" Heads: inf, 0.5"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="code-literal">" Tails: inf, 0.5"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="code-literal">"  Time: 0"</span> &lt;&lt; std::endl;
+
+    <span class="code-keyword">return</span> <span class="code-literal">0</span>;
+}</code></pre>
+<p>It outputs:</p>
+<pre><code class="language-">precision: inf
+Tossed: inf
+ Heads: inf, <span class="code-literal">0.5</span>
+ Tails: inf, <span class="code-literal">0.5</span>
+  Time: <span class="code-literal">0</span></code></pre>
+<p>I consider this solution optimal.</p>
+<h2>UPD</h2>
+<p>I’m attaching the <a href="https://github.com/AskePit/coin-flip-brutal">GitHub repository</a> for anyone curious to dig in. If you have ideas to speed up the program, I’m looking forward to your Pull Request.</p>
+<hr>
+<small>© Nikolai Shalakin. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

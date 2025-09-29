@@ -261,8 +261,7 @@ cargo check \
 <p>What other interesting <code>cargo</code> utilities do we know that can make our code better and cleaner? <code>cargo clippy</code> is a linter, a tool for static code analysis to identify and warn about suspicious or suboptimal code.</p>
 <p>Remembering the quirks of <code>cargo fmt</code>, let's go to the <a href="https://doc.rust-lang.org/stable/clippy/usage.html"><code>cargo clippy</code> documentation</a> right away to find out what pitfalls await us. We learn that in a typical situation, clippy returns exit code 0 (successful execution) even if it found and displayed warnings. This is not suitable for us – we'll see warnings on the screen, but our train will already leave, and the commit will be made despite the presence of warnings. We need to make clippy take warnings more seriously and return a failure, so the commit is rejected by the hook.</p>
 <p>In the documentation, we find an approach that suits us:</p>
-<blockquote>For <a href="https://doc.rust-lang.org/stable/clippy/continuous_integration/index.html">CI</a>, all warnings can be elevated to errors which will in turn fail the build and cause Clippy to exit with a code other than <code>0</code>.
-</blockquote>
+<blockquote><p>For <a href="https://doc.rust-lang.org/stable/clippy/continuous_integration/index.html">CI</a>, all warnings can be elevated to errors which will in turn fail the build and cause Clippy to exit with a code other than <code>0</code>.</p></blockquote>
 <p><code>cargo clippy -- -Dwarnings</code></p>
 <p>Okay, let's add this to our hook:</p>
 <pre><code class="language-bash">#!/bin/sh

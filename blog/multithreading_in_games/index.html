@@ -89,7 +89,7 @@ MathJax = {
     <span class="code-call">updateSkills</span>(dt);
     ...
 }</code></pre>
-<blockquote>Game developers, don’t kick me too hard for such a naive example—I’m just trying to explain things simply :)</blockquote>
+<blockquote><p>Game developers, don’t kick me too hard for such a naive example—I’m just trying to explain things simply :)</p></blockquote>
 <p>So what happens is: every game tick, which usually lasts a few tens of milliseconds (that’s the dt), all game subsystems are simulated for this tiny interval into the future. The game time progresses by a couple of seconds; the sun shifts by a few tenths of a degree; the player moves a small distance on the level; some monster manages to take a bullet that has been flying towards it for several dozen ticks.</p>
 <p>As you can see, a lot happens all at once. But wait—where is the multithreading in this code?</p>
 
@@ -108,12 +108,10 @@ MathJax = {
 <p>What’s worse—these components are needed by everyone, from everywhere. What’s even worse—they are needed by everyone, from everywhere, simultaneously. To be precise, if gameplay tasks were executed in parallel across different threads, all your global objects would be needed by everyone, from everywhere, really simultaneously.</p>
 <p>At some point, two parallel tasks will need the player’s inventory—now one thread competes with another for exclusive access to the inventory. One thread will get to the inventory first, leaving the other one to just stand by and wait to avoid causing a <a href="https://en.wikipedia.org/wiki/Race_condition">data race</a>. And this happens every time, all the time. Your threads will be idle, waiting for other threads to release unique game resources, and it will all devolve into a single-threaded execution, but in a particularly twisted form. You might even lose speed, as thread creation and context switching are not cheap operations.</p>
 <p>Wikipedia, in its articles on singletons and global variables, directly points out how poorly they pair with multithreading:</p>
-<blockquote><i>...code using global variables will not be <a href="https://en.wikipedia.org/wiki/Thread_safety">thread-safe</a>...</i>
-
-<a href="https://en.wikipedia.org/wiki/Global_variable">Global variable</a> article</blockquote>
-<blockquote><i>...In multithreaded programs, this can cause <a href="https://en.wikipedia.org/wiki/Race_condition">race conditions</a>...</i>
-
-<a href="https://en.wikipedia.org/wiki/Singleton_pattern">Singleton pattern</a> article</blockquote>
+<blockquote><p><i>...code using global variables will not be <a href="https://en.wikipedia.org/wiki/Thread_safety">thread-safe</a>...</i></p>
+<p><a href="https://en.wikipedia.org/wiki/Global_variable">Global variable</a> article</p></blockquote>
+<blockquote><p><i>...In multithreaded programs, this can cause <a href="https://en.wikipedia.org/wiki/Race_condition">race conditions</a>...</i></p>
+<p><a href="https://en.wikipedia.org/wiki/Singleton_pattern">Singleton pattern</a> article</p></blockquote>
 <h3>Dependencies</h3>
 <p>Let’s imagine that game systems don’t have shared data that needs to be contested. Then, theoretically, we could run all systems in parallel across different threads:</p>
 <pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">update</span>(<span class="code-keyword">double</span> dt)
@@ -198,7 +196,7 @@ MathJax = {
 <p>Parallelizing the internal <code>for</code> loop (iterating over entities within a system) is also challenging, as it’s possible only if the system isn’t tied to any unique game resources, which isn’t a very common situation.</p>
 <p>— So why does ECS exist if it doesn’t provide the benefits we’re seeking?</p>
 <p>It does offer benefits—but not where we might expect. Because multithreading isn’t the main killer feature of ECS, but rather a pleasant bonus. The primary advantage of ECS is evident in the diagram I provided earlier—notice how neatly and orderly the components are laid out in memory. They fit neatly into the cache, resulting in a streamlined, fast, cache-friendly approach that delivers significant CPU performance boosts.</p>
-<blockquote><b>Note:</b> Some implementations of ECS architecture might differ, and components in memory might be organized differently. For example, in Archetype-based ECS implementations, you can read more <a href="https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-are-the-different-ways-to-implement-an-ecs">here</a>.</blockquote>
+<blockquote><p><b>Note:</b> Some implementations of ECS architecture might differ, and components in memory might be organized differently. For example, in Archetype-based ECS implementations, you can read more <a href="https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#what-are-the-different-ways-to-implement-an-ecs">here</a>.</p></blockquote>
 <h4>A Brief Off-Topic on ECS in Engines</h4>
 <p>Regarding ECS as the flagship technology in the industry—it’s certainly cutting-edge, but game engines generally offer ECS solutions as an optional feature, for cases where developers hit performance bottlenecks with large numbers of objects. Unity offers <a href="https://unity.com/dots">DOTS</a>, and Unreal has <a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/mass-entity-in-unreal-engine/?application_version=5.0">Mass Entity</a>. The only engine I know that is built strictly and exclusively around the ECS approach is <a href="https://bevyengine.org/">Bevy</a>. There was also <a href="https://github.com/amethyst/amethyst">Amethyst</a>, but it folded a couple of years ago and recommended migrating to Bevy. Both engines are built in Rust. <a href="https://godotengine.org/">Godot</a> has actually distanced itself from ECS and released a <a href="https://godotengine.org/article/why-isnt-godot-ecs-based-game-engine/">article</a> explaining why it doesn’t and won’t use ECS.</p>
 <h3>Heavy Computations</h3>
@@ -267,7 +265,7 @@ MathJax = {
 <p>When we talk about multithreading, we’re in 99% of cases referring to CPU cores. But GPUs also have cores. Moreover, they are hundreds of times more numerous than CPU cores. On GPUs, the number of cores is counted in <i>thousands</i>. Graphics cards are literally synonymous with multithreading and parallelization.</p>
 <p>Why do GPUs have so many cores? I’m not the biggest expert in rendering, so I’ll outline it broadly. GPUs execute shaders. Shader code is code that needs to be executed <i>simultaneously</i> for every pixel to produce the final result. This is if we’re talking about pixel shaders. Shaders of other types perform different calculations, but one thing remains the same—a shader will be executed by the GPU <i>in parallel</i> for each pixel/vertex/triangle.</p>
 <p>This, by the way, defines rendering programmers as a special caste, because writing shader code is quite different from what you see in regular CPU development. It's no small feat to write <i>one</i> piece of code that will be executed for each pixel and result in a coherent yet <i>different</i> result for each pixel.</p>
-<blockquote><b>Note:</b> When I refer to "pixel" in the context of shader code, I’m using an imprecise term, as it’s not exactly the pixel on your monitor. What shaders operate on should be correctly termed as "fragments," and pixel shaders should be referred to as "fragment shaders."</blockquote>
+<blockquote><p><b>Note:</b> When I refer to "pixel" in the context of shader code, I’m using an imprecise term, as it’s not exactly the pixel on your monitor. What shaders operate on should be correctly termed as "fragments," and pixel shaders should be referred to as "fragment shaders."</p></blockquote>
 <p>It’s also worth mentioning compute shaders—shaders designed for arbitrary, non-graphical computations. These shaders are used to offload work that is typically done on the CPU to the GPU, achieving significant gains due to the GPU’s order-of-magnitude greater number of cores. Plus, consider mining as a typical non-graphical process, which GPUs handle much better than CPUs due to their vast number of cores.</p>
 <h3>You Name It</h3>
 <p>Clearly, game engines make extensive use of threads; and there are many systems where multithreading is applied to varying degrees that we can't possibly cover all in a single article.</p>

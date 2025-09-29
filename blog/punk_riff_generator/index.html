@@ -289,8 +289,8 @@ oscillator.<span class="code-call">start</span>(context.currentTime)</code></pre
 
 <p>Different notes fit differently into the “one, two, three, four!” measure. In the first measure, we have a <i>whole note</i> — it lasts for the entire measure, all four beats. In the second measure, we have <i>half notes</i>, two of them — one lasts for “one, two”, and the other lasts for “three, four!”. Subsequent measures feature <i>quarter notes</i>, <i>eighth notes</i>, and <i>sixteenth notes</i>. I assume you get the principle.</p>
 <p>The ♩ we are interested in is the quarter note. It is interesting because in a $4/4$ measure, it is played exactly 4 times, symbolizing each “one”, “two”, “three”, and “four”. The tempo of 110 bpm is related to the number of such notes in a minute. And no one expects you to manually calculate all these durations and count up to 110. Musicians generally know that a song with a more or less typical, moderate tempo is 110-125 bpm; 90 bpm is something slow; 70 bpm is sluggishly slow; 150 bpm is something fast and lively; and 200 bpm is extreme. And there’s always a metronome that can be set to the desired bpm, ticking out quarter notes so you can play in a steady tempo even without a drummer.</p>
-<blockquote><b>Note:</b> Don’t get confused by flags! The notation ♫ is just two grouped notes ♪♪. Similarly, ♬=𝅘𝅥𝅯𝅘𝅥𝅯. Notes with flags can be grouped into very long sequences.</blockquote>
-<blockquote><b>Interesting Fact:</b> In the Chechen Republic, as of 2024, <a href="https://news.ru/society/v-chechne-bolshe-ne-budet-slishkom-bystroj-i-medlennoj-muzyki/">music with a tempo below 80 bpm and above 160 bpm was legally banned</a>.</blockquote>
+<blockquote><p><b>Note:</b> Don’t get confused by flags! The notation ♫ is just two grouped notes ♪♪. Similarly, ♬=𝅘𝅥𝅯𝅘𝅥𝅯. Notes with flags can be grouped into very long sequences.</p></blockquote>
+<blockquote><p><b>Interesting Fact:</b> In the Chechen Republic, as of 2024, <a href="https://news.ru/society/v-chechne-bolshe-ne-budet-slishkom-bystroj-i-medlennoj-muzyki/">music with a tempo below 80 bpm and above 160 bpm was legally banned</a>.</p></blockquote>
 <p>You might have noticed that in the musical notation of Seven Nation Army, some notes have suspicious dots next to them. These dots increase the note duration by 1.5 times. So,</p>
 <p>♩.=♩♪♩.=♩♪♩.=♩♪</p>
 <p>Complicated? Perhaps, but musicians are used to it.</p>
@@ -453,7 +453,7 @@ oscillator.<span class="code-call">stop</span>(endTime + DAMPING_DURATION)</code
 <p>This could serve as an introduction to an unknown game on your favorite 8-bit console. It doesn’t sound like a guitar at all and lacks the power. We need to try processing the oscillator's sound to make it heavier and more distinctive. If it starts to resemble a guitar simulation from <a href="https://ru.wikipedia.org/wiki/Guitar_Pro">Guitar Pro 5</a>, I will be satisfied.</p>
 <h2>Distortion</h2>
 <p>The key factor that makes a guitar sound heavy is the <a href="https://en.wikipedia.org/wiki/Distortion_(music">distortion</a>) effect and its variants. Distortion is what gives the "crunch" sound. Guitarists typically use special pedals to apply this effect to their guitar sound.</p>
-<blockquote>— But you said that power chords are the "crunch"? — Power chords <i>play</i> the "crunch," but distortion is what <i>creates</i> the "crunch." As heard in the previous audio track, power chords alone couldn't turn our melody into hardcore because it lacked the distortion effect.</blockquote>
+<blockquote><p>— But you said that power chords are the "crunch"? — Power chords <i>play</i> the "crunch," but distortion is what <i>creates</i> the "crunch." As heard in the previous audio track, power chords alone couldn't turn our melody into hardcore because it lacked the distortion effect.</p></blockquote>
 <p>Since we don’t have a magical analog guitar pedal to give us distortion, we’ll need to implement it programmatically. Unfortunately, the Web Audio API doesn’t provide a built-in distortion node, so we’ll have to come up with a solution ourselves.</p>
 <p>What is distortion by its nature? The name suggests it's a type of signal "distortion," which makes a clean, smooth sound become loud, overloaded, gritty, and roaring. But what algorithm or function can turn a sine wave into something that growls and buzzes?</p>
 <p>Distortion is commonly implemented using a transforming mathematical function that is (beware, mathematical jargon!):</p>
@@ -632,7 +632,7 @@ button.onclick = async () =&gt; {
 <p>Well, it’s not great, but it’s something. It’s definitely distortion, but it sounds very plasticky and has significant frequency issues. Why is that? The simplest answer is that we created an artificial synthesized sound, and its frequency characteristics, or <a href="https://en.wikipedia.org/wiki/Frequency_response">frequency response</a>, are quite different from those of a guitar string sound processed through a distortion effect. The sound of a string and the sound of our pure sine wave are different. Hence, the result after distortion is also different, and unfortunately, worse.</p>
 <h2>Equalization</h2>
 <p>What can we do about this? The first thing that comes to mind is adjusting the frequencies to make the sound closer to what we would like to hear.</p>
-<blockquote>— But the original sine wave had only one frequency, how did multiple frequencies appear? — Firstly, a power chord itself consists of three notes, so at any given moment, we have at least three different frequencies. Moreover, distortion inherently enriches the sound with additional <a href="https://en.wikipedia.org/wiki/Harmonic_(music">harmonics</a>), so we end up with a whole spectrum of various frequencies.</blockquote>
+<blockquote><p>— But the original sine wave had only one frequency, how did multiple frequencies appear? — Firstly, a power chord itself consists of three notes, so at any given moment, we have at least three different frequencies. Moreover, distortion inherently enriches the sound with additional <a href="https://en.wikipedia.org/wiki/Harmonic_(music">harmonics</a>), so we end up with a whole spectrum of various frequencies.</p></blockquote>
 <p>You’ve probably seen "bouncing waves" in every other music player that pulse and change shape during playback. These are actually all the frequencies of the song being cut and they change over time:</p>
 
 <div class="image">
@@ -660,7 +660,7 @@ button.onclick = async () =&gt; {
     </figure>
 </div>
 
-<blockquote>Source: <a href="https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced">https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced</a></blockquote>
+<blockquote><p>Source: <a href="https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced">https://subscription.packtpub.com/book/business-and-other/9781782168799/1/ch01lvl1sec12/building-an-equalizer-using-biquadfilternode-advanced</a></p></blockquote>
 <p>So, we have a range of possible frequency transformations:</p>
 <ul>
 	<li>Lowpass: Smoothly cuts off all highs starting from a specified frequency and to the right.</li>
