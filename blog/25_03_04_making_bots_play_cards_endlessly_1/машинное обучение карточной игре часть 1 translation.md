@@ -9,6 +9,7 @@ keywords:
   - gamedev
   - cards
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png
+date: 04.03.2025
 ---
 # The Essence of the Problem
 

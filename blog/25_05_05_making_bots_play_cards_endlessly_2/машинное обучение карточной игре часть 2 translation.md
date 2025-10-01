@@ -9,6 +9,7 @@ keywords:
   - gamedev
   - cards
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/685/293/863/6852938638cfdcc0750b81661f913bdb.png
+date: 05.05.2025
 ---
 
 We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is [here](https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/). Highly recommended reading — otherwise, keeping up with the context will be a pain.

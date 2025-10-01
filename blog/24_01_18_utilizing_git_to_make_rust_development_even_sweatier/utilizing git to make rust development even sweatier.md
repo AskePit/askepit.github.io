@@ -13,6 +13,7 @@ keywords:
   - cargo
   - git hooks
 image:
+date: 18.01.2024
 ---
 
 Rust was created to make programmers suffer, right? So why not make git collaborate with Rust and make it all even more hardcore?

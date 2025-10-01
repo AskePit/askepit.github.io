@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>How in Earth do you write these retrospective articles of yours?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="There s this type of article on blogs you read it and think how the hell was this written? The material is big, long, with lots of code, and the code evolves along the way, gets better. The author shows execution results, runs, benchmarks.">
+    <meta name="keywords" content="git, articles">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/how_in_earth_do_you_write_these_retrospective_articles_of_yours/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="How in Earth do you write these retrospective articles of yours?">
+    <meta property="og:description" content="There s this type of article on blogs you read it and think how the hell was this written? The material is big, long, with lots of code, and the code evolves along the way, gets better. The author shows execution results, runs, benchmarks.">
+    <meta property="og:image" content="https://habrastorage.org/webt/nn/7h/oh/nn7hohvu_ajyl0tlmrwqy5orene.png">
+    <meta property="og:url" content="https://askepit.github.io/blog/how_in_earth_do_you_write_these_retrospective_articles_of_yours/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="How in Earth do you write these retrospective articles of yours?">
+    <meta name="twitter:description" content="There s this type of article on blogs you read it and think how the hell was this written? The material is big, long, with lots of code, and the code evolves along the way, gets better. The author shows execution results, runs, benchmarks.">
+    <meta name="twitter:image" content="https://habrastorage.org/webt/nn/7h/oh/nn7hohvu_ajyl0tlmrwqy5orene.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>How in Earth do you write these retrospective articles of yours?</h1>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/nn/7h/oh/nn7hohvu_ajyl0tlmrwqy5orene.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>There’s this type of article on blogs — you read it and think: how the hell was this written? The material is big, long, with lots of code, and the code evolves along the way, gets better. The author shows execution results, runs, benchmarks. The article even has a plot, its own kind of drama — at least as much as a technical article can have: bugs, dead ends, despair, flailing around, and sudden revelations.</p>
+<p>More than once I’ve stared at one of those in awe, asking myself: <i>but how?..</i>. Because if you think about it — for the author to dump all those paleontological layers of their code on you, every version from the clumsy first steps to the grizzled, abstraction-laden final form — how exactly do they organize their work so that the article ends up in that shape?</p>
+<p>Did they write the article in parallel with the code, recording everything that happened “live”? Some sort of programming with pencil and tape recorder? Or is it an honest retrospective: first you build what you wanted, and then, while the memories are still fresh, you dredge up the details? Or maybe a hybrid approach — milestone logged here, screenshot grabbed there, margin note scribbled somewhere else.</p>
+<p>I never actually asked the authors of those articles how they pulled it off. Maybe I should have — it didn’t even cross my mind until I sat down to write this small piece. A piece about how I started facing the same problem myself, once I suddenly began writing retrospective articles on blogs.</p>
+<h2>My experience</h2>
+<p>My <a href="https://habr.com/ru/articles/794572/">first</a> big article in this genre — where you tell the story of success or failure after some time has passed — happened by accident. It was about a project we’d done a year earlier, writing a game, so it was a true retrospective. There wasn’t much code-driven storytelling in it, but even then I felt the burning need to dive into the past not only through memory but through the actual code. To remember exactly how something was bugging out, to grab a screenshot “from the past”, or to check what the code or the game looked like back then.</p>
+<p>Obviously, where there’s a team and code, there’s version control. So of course I just hopped around old commits in git to fish out what I needed.</p>
+<p>But it wasn’t always smooth sailing. The problems all boiled down to the same thing: commits made in real battlefield conditions of a real project aren’t always the best commits for a future retrospective. The typical issues:</p>
+<ul>
+	<li>Commit names don’t always help you navigate history. You’re looking for the moment when the game still didn’t have a working main menu, but the commit log doesn’t let you pin down exactly where that was</li>
+	<li>If a commit was too big, or worse — if it was a squash-commit from a large branch — it might turn out that the specific game state you’re after simply doesn’t exist in history, because it was “in between”</li>
+	<li>Badly rewritten history (rebase, cherry-pick, reset) can distort the real chronology, making things harder to track down</li>
+	<li>Dead-end experiments and failed variations of the program might never have made it into git at all</li>
+</ul>
+<p>So yeah, with that article I hit some bumps, wasted a lot of unnecessary time, and realized that next time, if I knew or even suspected the code smelled like an article, I’d treat git with care — planting all the right markers, flags, and beacons in the repo.</p>
+<p>And that’s exactly what happened, pretty soon, with the <a href="https://habr.com/ru/articles/831852/">Punk riff generator</a> article. That was one of those cases where a dumb idea pops into your head and you immediately tell yourself: <i>this will be fun, and I’ll write an article about it too</i>. So it became a good testing ground for my blogo-gitology practices.</p>
+<p>I kept a <a href="https://github.com/AskePit/punk-riff-generator">GitHub repo</a> and carefully logged everything. The rule was literally just one: treat commits responsibly. Each commit should be atomic, a complete piece of work; small or tiny in size; well-named. Well, programmers already know that’s how it should be anyway.</p>
+<p>Here’s what the project history looked like by the end:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/ia/pd/p4/iapdp481fnizaeh4-9ltadvsdj4.png" alt="git-history of project Punk riff generator">
+        <figcaption>git-history of project Punk riff generator</figcaption>
+    </figure>
+</div>
+
+<p>Later it really was easy to write the article with such a cheat sheet in hand. I won’t say that the article itself came easily — but at least I had zero problems with retrospective code rollbacks.</p>
+<p>Notice the abundance of tags — they were super handy for marking important stages and milestones. For example, tags can play the role of what eventually becomes <i>chapters</i> in your article.</p>
+<p>Another, more recent example — the <a href="https://habr.com/ru/articles/950046/">epic article</a> (49 minutes of reading!) about coin flipping. The code evolved in multiple directions, with frequent digressions, shifting goals along the way, dead-end solutions, and bugs. Everything had to be thoroughly logged so I could write the article in a sane and comfortable manner.</p>
+<p>The history of the <a href="https://github.com/AskePit/coin-flip-brutal">repository</a> by the time the work was done looked kind of terrifying at first glance:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/nj/im/ru/njimrufubyfl23eaqdvxj9pyfvc.png" alt="git-history of project Coin flip brutal">
+        <figcaption>git-history of project Coin flip brutal</figcaption>
+    </figure>
+</div>
+
+<p>Yeah, it looks messy. But if the author can navigate their own system, it’s no problem to use this cheat sheet effectively. The biggest payoff I got from a well-structured project history was when I needed to run benchmarks retroactively on a whole bunch of program versions. Without a solid git history, I’d probably have just given up.</p>
+<h2>Good git</h2>
+<p>Tips for keeping a repo in fighting shape for a potential article:</p>
+<ul>
+	<li>Well-crafted commits are the foundation. Before committing, think about how informative, useful, and transparent it will be for <i>future you</i>, digging through history in search of the right information</li>
+	<li>Tags can help mark key points or add any meta-information you might need</li>
+	<li>If you’ve got a dead-end scenario but want to preserve it in history, or say you stumbled upon a particularly juicy bug — make a branch. That way the code sits isolated from the main narrative flow. Plus, you get a tag automatically</li>
+</ul>
+<h2>Bad git</h2>
+<p>I’ve painted a rosy picture, but there’s a big problem. It shows up when you want to rewrite history. And you <i>will</i> want to rewrite history. The reasons are plenty:</p>
+<ul>
+	<li>Ten commits later you realize you could have written something clearer and more illustrative</li>
+	<li>You suddenly see how idiotic the name of a function you wrote at the very start is, and now the whole history is littered with it</li>
+	<li>You want to shuffle the chronology of events a little</li>
+</ul>
+<p>And all of that is technically possible! Tools like <code>git rebase -i</code>, <code>git cherry-pick</code>, and <code>git filter-branch</code> will happily help. The catch is that when you rewrite history, tags and branches stay stuck to their old spots. That bug branch sprouted from commit <code>aaaa</code> will still be based on <code>aaaa</code>, even if your <i>real</i> <code>aaaa</code> has long since turned into <code>bbbb</code> after a rebase. And if at some point you’ve rewritten the history from head to toe, all your branches (and tags) have to be stitched back manually through painful <code>git reset --hard</code> and <code>git reflog</code> gymnastics. The process is so tedious that I wouldn’t recommend it to anyone.</p>
+<p>Which brings me to the only possible conclusion: git is probably not the best tool, not the best version control system for this kind of task — where rewriting commit history is basically a standard workflow. The problem is, I’m not deeply familiar with alternative VCSs. I’d be glad if someone could suggest something worthwhile.</p>
+<p>Or maybe you write your retrospective articles in a completely different way? Maybe there’s a much simpler path. I’d be glad here too if someone could share their experience.</p>
+<h2>Bonus cheat sheet</h2>
+<details>
+<p>&lt;summary&gt;Cheat sheet for highly specific git commands&lt;/summary&gt;</p>
+<ul>
+	<li>Rename function <code>doWork</code> to <code>spin</code> across the <i>entire</i> history:</li>
+</ul>
+<pre><code class="language-bash">git filter-branch --tree-filter <span class="code-literal">'find . -type f -name "*.cpp" | xargs sed -i "s/doWork/spin/g"'</span> -- --all</code></pre>
+<ul>
+	<li>Same thing, but only for a commit range:</li>
+</ul>
+<pre><code class="language-bash">git filter-branch --tree-filter <span class="code-literal">'find . -type f -name "*.cpp" | xargs sed -i "s/doWork/spin/g"'</span> -- --all deadbe..abcdef</code></pre>
+<ul>
+	<li>Delete all local tags:</li>
+</ul>
+<pre><code class="language-bash">git tag -d $(git tag -l)</code></pre>
+<ul>
+	<li>Delete all remote tags:</li>
+</ul>
+<pre><code class="language-bash">git ls-remote --tags origin | awk <span class="code-literal">'{print $2}'</span> | sed <span class="code-literal">'s#refs/tags/##'</span> | <span class="code-keyword">while</span> read -r tag; <span class="code-keyword">do</span>
+  git push origin --<span class="code-keyword">delete</span> <span class="code-literal">"$tag"</span>
+done</code></pre>
+<ul>
+	<li><p>Swap commits <code>aaa1</code> and <code>aaa2</code>:</p>
+<ul>
+	<li>Run <code>git rebase -i aaaa1~</code></li>
+	<li>In the commit list, swap the lines for <code>aaa1</code> and <code>aaa2</code></li>
+	<li>Resolve conflicts</li>
+</ul></li>
+	<li><p>Split an old commit into several:</p>
+<ul>
+	<li>Run <code>git rebase -i aaaa~</code></li>
+	<li>In the commit list, mark commit <code>aaaa</code> as <code>e</code> (edit) and continue</li>
+	<li><code>git reset HEAD~</code></li>
+	<li>Then create as many new commits from the unstaged changes as you like</li>
+</ul></li>
+	<li>From a bunch of changes in one file, stage only the ones you want:</li>
+</ul>
+<pre><code class="language-bash"># launches interactive staging mode
+git add -p</code></pre>
+</details>
+<hr>
+<small>© Nikolai Shalakin. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

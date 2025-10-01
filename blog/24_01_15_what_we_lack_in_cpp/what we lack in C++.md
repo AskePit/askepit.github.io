@@ -10,6 +10,7 @@ keywords:
   - c++ standard
   - programming
 image: 
+date: 15.01.2024
 ---
 
 C++ has been evolving rapidly for the past decade and more. Nevertheless, in our codebases, there are still numerous helper files and classes that aim to fill the gaps in the language's standard library. How did we end up with these helper files, and when will this ever end?

@@ -15,6 +15,7 @@ keywords:
   - voronoi
   - perlin noise
 image: https://habrastorage.org/r/w780/getpro/habr/upload_files/e7b/a2a/6b8/e7ba2a6b84de61ade5eca648c0bbbff7.jpg
+date: 19.02.2024
 ---
 
 This is a story about how to never quite finish a project, yet gain a ton of experience and have no regrets.

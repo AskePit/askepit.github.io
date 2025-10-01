@@ -18,6 +18,7 @@ keywords:
   - sine wave
   - math
 image: https://habrastorage.org/r/w780/getpro/habr/upload_files/177/c5c/0d6/177c5c0d68321b8140662b5d718754e5.jpg
+date: 02.08.2024
 ---
 
 Once upon a time, maybe five years ago, I decided I wanted to play a sound in the browser. I don’t even remember the exact task or what I was trying to achieve—most likely just messing around with different samples, maybe programming a track. So I Googled how to do it, landed on a StackOverflow question/answer somewhat [like this](https://stackoverflow.com/questions/30482887/playing-a-simple-sound-with-web-audio-api). And there it was—my simple “playing a sound” query was met with a barrage of contexts, buffers, decoding… I felt so suffocated that I immediately waved it all off and decided I wasn’t that interested in the first place—certainly not at that cost. And I forgot about the whole thing for many years.

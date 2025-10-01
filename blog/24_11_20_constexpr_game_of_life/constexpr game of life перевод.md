@@ -12,6 +12,7 @@ keywords:
   - game of life
   - abnormal programming
 image: https://habrastorage.org/webt/p1/t-/7c/p1t-7csilx5ekan-m7ryligjg3o.png
+date: 20.11.2024
 ---
 
 # How It All Began

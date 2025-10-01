@@ -9,6 +9,7 @@ keywords:
   - javascript
   - plugins
 image: https://habrastorage.org/r/w1560/getpro/habr/upload_files/2af/b22/0a6/2afb220a6ff39c34634dc0f864e28642.png
+date: 27.11.2024
 ---
 
 # Introduction
