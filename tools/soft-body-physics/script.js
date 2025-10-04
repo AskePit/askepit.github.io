@@ -854,6 +854,7 @@ const selectObject = (e) => {
     }
 }
 canvas.addEventListener('mousedown', selectObject)
+canvas.addEventListener('pointerdown', selectObject)
 
 const unselectObject = (e) => {
     isDragging = false
@@ -867,7 +868,9 @@ const unselectObject = (e) => {
     }
 }
 canvas.addEventListener('mouseup', unselectObject)
+canvas.addEventListener('pointerup', unselectObject)
 canvas.addEventListener('mouseleave', unselectObject)
+canvas.addEventListener('pointerleave', unselectObject)
 
 const moveSelectedObject = (e) => {
     if (!isDragging) {
@@ -885,6 +888,7 @@ const moveSelectedObject = (e) => {
     }
 }
 canvas.addEventListener('mousemove', moveSelectedObject)
+canvas.addEventListener('pointermove', moveSelectedObject)
 
 const framelessCategoryPanel = document.getElementById('categoryFramelessPanel')
 const framedCategoryPanel = document.getElementById('categoryFramedPanel')
@@ -907,6 +911,7 @@ function hideAllPanels() {
     }
 }
 canvas.addEventListener('mousedown', hideAllPanels)
+canvas.addEventListener('pointerdown', hideAllPanels)
 
 function spawnFramelessBox() {
     spawnSquare(new Vec2(canvas.width / 2 - 200, 150))
