@@ -853,8 +853,6 @@ const selectObject = (e) => {
         selectedNode.blockForces()
     }
 }
-canvas.addEventListener('mousedown', selectObject)
-canvas.addEventListener('pointerdown', selectObject)
 
 const unselectObject = (e) => {
     isDragging = false
@@ -867,10 +865,7 @@ const unselectObject = (e) => {
         selectedFrame = null
     }
 }
-canvas.addEventListener('mouseup', unselectObject)
-canvas.addEventListener('pointerup', unselectObject)
-canvas.addEventListener('mouseleave', unselectObject)
-canvas.addEventListener('pointerleave', unselectObject)
+
 
 const moveSelectedObject = (e) => {
     if (!isDragging) {
@@ -887,8 +882,6 @@ const moveSelectedObject = (e) => {
         selectedFrame.moveAbs(new Vec2(point.x, point.y))
     }
 }
-canvas.addEventListener('mousemove', moveSelectedObject)
-canvas.addEventListener('pointermove', moveSelectedObject)
 
 const framelessCategoryPanel = document.getElementById('categoryFramelessPanel')
 const framedCategoryPanel = document.getElementById('categoryFramedPanel')
@@ -910,8 +903,6 @@ function hideAllPanels() {
         panel.style.visibility = 'hidden'
     }
 }
-canvas.addEventListener('mousedown', hideAllPanels)
-canvas.addEventListener('pointerdown', hideAllPanels)
 
 function spawnFramelessBox() {
     spawnSquare(new Vec2(canvas.width / 2 - 200, 150))
@@ -949,5 +940,34 @@ function spawnFramedCircle1() {
 function spawnFramedCircle2() {
     framedCategoryPanel.style.visibility = 'hidden'
 }
+
+// mouse object move
+canvas.addEventListener('mousedown', selectObject)
+canvas.addEventListener('mousemove', moveSelectedObject)
+canvas.addEventListener('mouseup', unselectObject)
+canvas.addEventListener('mouseleave', unselectObject)
+
+// pointer object move
+canvas.addEventListener('pointerdown', e => {
+    canvas.setPointerCapture(e.pointerId)
+    selectObject(e)
+})
+canvas.addEventListener('pointermove', e => {
+    e.preventDefault() // only if you want to prevent page scroll
+    moveSelectedObject(e)
+}, { passive: false })
+canvas.addEventListener('pointerup', e => {
+    canvas.releasePointerCapture(e.pointerId)
+    unselectObject(e)
+})
+canvas.addEventListener('pointerleave', unselectObject)
+canvas.addEventListener('pointercancel', e => {
+    console.log('canc')
+    canvas.releasePointerCapture(e.pointerId)
+})
+
+// mouse gui invalidation
+canvas.addEventListener('mousedown', hideAllPanels)
+canvas.addEventListener('pointerdown', hideAllPanels)
 
 spawnFramelessBlock()

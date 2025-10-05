@@ -11,6 +11,7 @@ canvas {
     background: #fff;
     top: 0;
     left: 0;
+    touch-action: none;
 }
 
 .categories {
