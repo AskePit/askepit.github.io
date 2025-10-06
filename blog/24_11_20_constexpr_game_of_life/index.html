@@ -628,8 +628,8 @@ CONST	SEGMENT
 CONST	ENDS
 ;	COMDAT ??_C@_0M@DINKGNNG@Nov?520?52024@
 CONST	SEGMENT
-??_C@_0M@DINKGNNG@Nov?520?52024@ DB '</span>Nov <span class="code-literal">20</span> <span class="code-literal">2024</span><span class="code-literal">', 00H	; `string'</span>
-CONST	ENDS</code></pre>
+??_C@_0M@DINKGNNG@Nov?520?52024@ DB '</span>Nov <span class="code-literal">20</span> <span class="code-literal">2024'</span>, <span class="code-literal">00</span>H	; `string<span class="code-literal">'
+CONST	ENDS</span></code></pre>
 <p>That's how I inadvertently revealed the time this article was written.</p>
 <p>Alright—how do we use a <code>const char*</code> as a seed? By hashing it into a number, of course. We'll write a custom hash. Here’s a function that returns a <code>consteval</code> seed:</p>
 <pre><code class="language-cpp"><span class="code-keyword">consteval</span> uint32_t <span class="code-call">seed</span>()

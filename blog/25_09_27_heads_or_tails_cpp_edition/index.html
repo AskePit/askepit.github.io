@@ -194,13 +194,13 @@ MathJax = {
 <p>Now, about the problem of printing time. The STL doesn’t provide a unified solution for <i>smart</i> <code>duration</code> output. If your <code>duration&lt;&gt;</code> is <code>seconds</code>, it’ll just print the integer number of seconds, and the fractional part will be lost — meaning 1.5 seconds will turn into <code>1s</code>. If your <code>duration&lt;&gt;</code> is <code>milliseconds</code>, it’ll show <code>ms</code>, and so on. See for yourself what the standard library can do:</p>
 <pre><code class="language-cpp"><span class="code-keyword">using namespace</span> std::chrono_literals;
 
-<span class="code-keyword">auto</span> d = <span class="code-literal">987</span><span class="code-literal">'654'</span><span class="code-literal">321</span><span class="code-literal">'978ns;
+<span class="code-keyword">auto</span> d = <span class="code-literal">987'654'321'978</span>ns;
 
 std::cout &lt;&lt; d &lt;&lt; std::endl;
 std::cout &lt;&lt; duration_cast&lt;microseconds&gt;(d) &lt;&lt; std::endl;
 std::cout &lt;&lt; duration_cast&lt;milliseconds&gt;(d) &lt;&lt; std::endl;
 std::cout &lt;&lt; duration_cast&lt;seconds&gt;(d) &lt;&lt; std::endl;
-std::cout &lt;&lt; duration_cast&lt;minutes&gt;(d) &lt;&lt; std::endl;</span></code></pre>
+std::cout &lt;&lt; duration_cast&lt;minutes&gt;(d) &lt;&lt; std::endl;</code></pre>
 <p>Output to the screen:</p>
 <pre><code class="language-"><span class="code-literal">200000000000</span>ns
 <span class="code-literal">200000000</span>us
@@ -236,8 +236,8 @@ std::cout &lt;&lt; duration_cast&lt;minutes&gt;(d) &lt;&lt; std::endl;</span></c
 <p>Testing:</p>
 <pre><code class="language-cpp"><span class="code-keyword">using namespace</span> std::chrono_literals;
 
-<span class="code-keyword">auto</span> d = <span class="code-literal">987</span><span class="code-literal">'654'</span><span class="code-literal">321</span><span class="code-literal">'978ns;
-prettyPrintDuration(d);</span></code></pre>
+<span class="code-keyword">auto</span> d = <span class="code-literal">987'654'321'978</span>ns;
+<span class="code-call">prettyPrintDuration</span>(d);</code></pre>
 <p>We get:</p>
 <pre><code class="language-"><span class="code-literal">16</span>min <span class="code-literal">27</span>s <span class="code-literal">654</span>ms <span class="code-literal">321</span>us <span class="code-literal">978</span>ns</code></pre>
 <p>Some might say it’s too long. I’d say I’ll look at this time as deeply as I need to. For our current task, it’s more than sufficient.</p>
@@ -557,15 +557,15 @@ Tails: <span class="code-literal">2147493015</span>, <span class="code-literal">
 
 <span class="code-keyword">int</span> <span class="code-call">main</span>()
 {
-    <span class="code-keyword">constexpr</span> BigInt N = <span class="code-literal">68</span><span class="code-literal">'719'</span><span class="code-literal">476</span><span class="code-literal">'736ll;
+    <span class="code-keyword">constexpr</span> BigInt N = <span class="code-literal">68'719'476'736</span>ll;
 
     Experiment experiment;
-    measure([&experiment, N]() {
-        spin(N,
-            std::bind(&Experiment::tossCoin, &experiment)
+    <span class="code-call">measure</span>([&experiment, N]() {
+        <span class="code-call">spin</span>(N,
+            std::<span class="code-call">bind</span>(&Experiment::tossCoin, &experiment)
         );
     });
-}</span></code></pre>
+}</code></pre>
 <p>Execution time of this code:</p>
 <pre><code class="language-">Time:  <span class="code-literal">20</span>min <span class="code-literal">41</span>s <span class="code-literal">897</span>ms <span class="code-literal">383</span>us <span class="code-literal">600</span>ns
 Heads: <span class="code-literal">34</span> <span class="code-literal">359</span> <span class="code-literal">699</span> <span class="code-literal">204</span>, <span class="code-literal">49.9999</span>%
@@ -1355,8 +1355,8 @@ Decimal tailsDetailed = <span class="code-call">calcPercent</span>(ex.<span clas
 <p>In fact, this problem might or might not show up depending on the chosen spin step, and here we’re approaching the last problem. That problem — choosing <code>SPIN_STEP</code> — is <i>really</i> hard. I set it to <code>1ull &lt;&lt; 21</code> (that’s $2^{21}$), but that was the result of a tiresome search. $2^{20}$ gave a snail’s pace, and I didn’t have the patience to even reach <code>precision: 1</code>. $2^{22}$ was too fast and immediately hit huge values that took forever to compute.</p>
 <p>This, by the way, shows that tuning the miner for optimal speed isn’t easy — it will strongly depend on the step you choose. I reasoned the step should be adaptive — small enough at the start, then increasing. I introduced a minimum step and a maximum step:</p>
 <pre><code class="language-cpp"><span class="code-keyword">constexpr</span> BigInt MIN_SPIN_STEP = SIMD_BATCH_BITS;
-<span class="code-keyword">constexpr</span> BigInt MAX_SPIN_STEP = <span class="code-literal">4</span><span class="code-literal">'294'</span><span class="code-literal">967</span><span class="code-literal">'296;
-size_t step = MIN_SPIN_STEP;</span></code></pre>
+<span class="code-keyword">constexpr</span> BigInt MAX_SPIN_STEP = <span class="code-literal">4'294'967'296</span>;
+size_t step = MIN_SPIN_STEP;</code></pre>
 <p>Then I started calculating the current step dynamically on the fly, based on how many times the experiment had already tossed the coin:</p>
 <pre><code class="language-cpp">step = experiment.tossed &lt; step ? step : std::<span class="code-call">min</span>(step * <span class="code-literal">2</span>, MAX_SPIN_STEP);
 experiment.<span class="code-call">spin</span>(step);</code></pre>
