@@ -31,7 +31,7 @@ prologue = '''
     </style>
     <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
     <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
-    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../styles_dark.css" id="theme" title="Light" type="text/css"/>
     <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
     <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
 </head>

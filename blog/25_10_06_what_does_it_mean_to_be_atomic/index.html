@@ -26,7 +26,7 @@
     </style>
     <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
     <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
-    <link rel="stylesheet" href="../styles_light.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../styles_dark.css" id="theme" title="Light" type="text/css"/>
     <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
     <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
 </head>
@@ -845,6 +845,8 @@ cmpxchg <span class="code-literal">0</span> -&gt; <span class="code-literal">0</
 <p>byte to memory was stored, yet our load returned <code>0x11111133</code>. This is because store buffer contents can be forwarded to overlapping loads.</p>
 <p>It is possible that the byte store got put in the store buffer. Our load happened after the first cmpxchg with the byte forwarded.</p>
 <p>This behaviour is fine as long as your algorithm is able to cope with this kind of store buffer forwarding effects.</p>
+<hr>
+<small>© Electronic Arts Inc. Originally published in <a href="https://github.com/electronicarts/EASTL/blob/master/include/EASTL/atomic.h">atomic.h</a> header, used under <a href="https://github.com/electronicarts/EASTL/tree/master#BSD-3-Clause-1-ov-file">BSD-3-Clause license</a></small>
 <script type="text/javascript" src="../theme-script.js"></script>
 <script type="text/javascript" src="../typography-change-script.js"></script>
 </body>

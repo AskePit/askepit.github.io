@@ -1165,3 +1165,6 @@ If the value in memory is `0x22222233` then the first cmpxchg succeeded, then th
 byte to memory was stored, yet our load returned `0x11111133`. This is because store buffer contents can be forwarded to overlapping loads.
 It is possible that the byte store got put in the store buffer. Our load happened after the first cmpxchg with the byte forwarded.
 This behaviour is fine as long as your algorithm is able to cope with this kind of store buffer forwarding effects.
+
+---
+<small>© Electronic Arts Inc. Originally published in <a href="https://github.com/electronicarts/EASTL/blob/master/include/EASTL/atomic.h">atomic.h</a> header, used under <a href="https://github.com/electronicarts/EASTL/tree/master#BSD-3-Clause-1-ov-file">BSD-3-Clause license</a></small>

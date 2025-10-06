@@ -1,6 +1,6 @@
 let typoSwitcher = document.querySelector("input[name=typo]");
 
-let typoVariantsNames = ['neutral', 'book']
+let typoVariantsNames = ['book', 'neutral']
 let typo = -1
 
 function switchTypo() {
