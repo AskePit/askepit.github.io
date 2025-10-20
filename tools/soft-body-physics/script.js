@@ -522,6 +522,8 @@ const springsBatch = []
 const framesBatch = []
 const actors = []
 
+const environmentBorders = [0.1, 0.5, 0.4] // width ratios
+
 class Actor {
     nodes = []
     springs = []
@@ -781,6 +783,27 @@ function update(dt) {
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+    renderEnvironment()
+    renderActors()
+}
+
+function renderEnvironment() {
+    ctx.strokeStyle = '#000'
+    ctx.lineWidth = 2
+    ctx.setLineDash([8, 10])
+
+    let x = 0
+    for (let i = 0; i < environmentBorders.length; ++i) {
+        x += environmentBorders[i] * canvas.width
+        ctx.beginPath()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, canvas.height)
+        ctx.stroke()
+    }
+    ctx.setLineDash([])
+}
+
+function renderActors() {
     for (const frame of framesBatch) {
         frame.render()
     }
@@ -970,4 +993,8 @@ canvas.addEventListener('pointercancel', e => {
 canvas.addEventListener('mousedown', hideAllPanels)
 canvas.addEventListener('pointerdown', hideAllPanels)
 
-spawnFramelessBlock()
+function init() {
+    spawnFramelessBlock()
+}
+
+init()
