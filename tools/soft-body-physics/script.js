@@ -522,7 +522,207 @@ const springsBatch = []
 const framesBatch = []
 const actors = []
 
-const environmentBorders = [0.1, 0.5, 0.4] // width ratios
+const NO_DRAG = -1
+const EVIRONMENT_DRAG = 0
+const NODE_DRAG = 1
+
+class Interactor
+{
+    whoDrags = NO_DRAG
+
+    onFreeMove(dragId, cb) {
+        canvas.addEventListener('pointermove', e => {
+            if (this.whoDrags == NO_DRAG) {
+                e.preventDefault() // only if you want to prevent page scroll
+                cb(e)
+            }
+        }, { passive: false })
+    }
+
+    onStartDrag(dragId, cb) {
+        canvas.addEventListener('pointerdown', e => {
+            if (this.whoDrags == NO_DRAG) {
+                canvas.setPointerCapture(e.pointerId)
+                this.whoDrags = cb(e) ? dragId : NO_DRAG
+            }
+        })
+    }
+
+    onDrag(dragId, cb) {
+        canvas.addEventListener('pointermove', e => {
+            if (this.whoDrags == dragId) {
+                e.preventDefault() // only if you want to prevent page scroll
+                cb(e)
+            }
+        }, { passive: false })
+    }
+
+    onStopDrag(dragId, cb) {
+        canvas.addEventListener('pointerup', e => {
+            if (this.whoDrags == dragId) {
+                canvas.releasePointerCapture(e.pointerId)
+                cb(e)
+                this.whoDrags = NO_DRAG
+            }
+        })
+        canvas.addEventListener('pointerleave', e => {
+            if (this.whoDrags == dragId) {
+                cb(e)
+                this.whoDrags = NO_DRAG
+            }
+        })
+        canvas.addEventListener('pointercancel', e => {
+            canvas.releasePointerCapture(e.pointerId)
+        })
+    }
+
+    onCancellingPress(dragId, cb) {
+        canvas.addEventListener('pointerdown', cb)
+    }
+}
+const interactor = new Interactor()
+
+class Environment {
+    environmentBorders = [1/3.0, 2/3.0] // screen ratios
+    hoveredBorder = -1
+
+    constructor() {
+        interactor.onFreeMove(EVIRONMENT_DRAG, e => this.checkHover(e))
+        interactor.onStartDrag(EVIRONMENT_DRAG, e => this.canStartDrag())
+        interactor.onDrag(EVIRONMENT_DRAG, e => this.dragBorder(e))
+        interactor.onStopDrag(EVIRONMENT_DRAG, e => this.stopDrag())
+    }
+
+    render() {
+        const borders = this.#getXBordersPx()
+        for (let i = 0; i < borders.length; ++i) {
+            const x = borders[i]
+
+            if (i == this.hoveredBorder) {
+                ctx.setLineDash([])
+            } else {
+                ctx.setLineDash([8, 10])
+            }
+
+            ctx.strokeStyle = '#000'
+            ctx.lineWidth = 2
+            
+
+            ctx.beginPath()
+            ctx.moveTo(x, 0)
+            ctx.lineTo(x, canvas.height)
+            ctx.stroke()
+
+            if (i == this.hoveredBorder) {
+                ctx.strokeStyle = '#000'
+                ctx.lineWidth = 2
+                ctx.setLineDash([])
+
+                const LENGTH = 20
+                const PADDING = 8
+
+                ctx.beginPath()
+                ctx.moveTo(x - PADDING, canvas.height / 2 - LENGTH)
+                ctx.lineTo(x - PADDING, canvas.height / 2 + LENGTH)
+                ctx.stroke()
+
+                ctx.beginPath()
+                ctx.moveTo(x + PADDING, canvas.height / 2 - LENGTH)
+                ctx.lineTo(x + PADDING, canvas.height / 2 + LENGTH)
+                ctx.stroke()
+
+                const ARROW_LENGTH = 15
+
+                ctx.beginPath()
+                ctx.moveTo(x - PADDING, canvas.height / 2)
+                ctx.lineTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
+                ctx.stroke()
+
+                ctx.beginPath()
+                ctx.moveTo(x + PADDING, canvas.height / 2)
+                ctx.lineTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
+                ctx.stroke()
+
+                const ARROW_HEAD_WIDTH = 5
+                const ARROW_HEAD_DEPTH = 5
+
+                ctx.beginPath()
+                ctx.moveTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
+                ctx.lineTo(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH)
+                ctx.stroke()
+
+                ctx.beginPath()
+                ctx.moveTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
+                ctx.lineTo(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH)
+                ctx.stroke()
+
+                ctx.beginPath()
+                ctx.moveTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
+                ctx.lineTo(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH)
+                ctx.stroke()
+
+                ctx.beginPath()
+                ctx.moveTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
+                ctx.lineTo(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH)
+                ctx.stroke()
+            }
+        }
+        ctx.setLineDash([])
+    }
+
+    checkHover(e) {
+        const SENSITIVITY = 8
+
+        const point = getCanvasPoint(e.pageX, e.pageY)
+        const borders = this.#getXBordersPx()
+
+        for (let i = 0; i < borders.length; ++i) {
+            const x = borders[i]
+            if (Math.abs(point.x - x) < SENSITIVITY) {
+                this.hoveredBorder = i
+                return
+            }
+        }
+
+        this.hoveredBorder = -1
+    }
+
+    canStartDrag() {
+        return this.hoveredBorder != -1
+    }
+
+    dragBorder(e) {
+        if (this.hoveredBorder < 0) {
+            return
+        }
+
+        const point = getCanvasPoint(e.pageX, e.pageY)
+        const ratio = point.x / canvas.width
+
+        this.environmentBorders[this.hoveredBorder] = ratio
+    }
+
+    stopDrag() {
+        this.hoveredBorder = -1
+    }
+
+    #getXBordersPx() { // -> array<int>
+        return this.environmentBorders.map(el => el * canvas.width)
+    }
+
+    #getXRegionsPx() { // -> array<(int, int)>
+        const borders = [0] + this.#getXBordersPx()
+        let res = []
+        for (let i = 0; i < borders.length; ++i) {
+            const b = borders[i]
+            const nextB = i < borders.length - 1 ? borders[i + 1] : canvas.width
+            res.push({b, nextB})
+        }
+        return res
+    }
+}
+
+const environment = new Environment()
 
 class Actor {
     nodes = []
@@ -783,24 +983,8 @@ function update(dt) {
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    renderEnvironment()
+    environment.render()
     renderActors()
-}
-
-function renderEnvironment() {
-    ctx.strokeStyle = '#000'
-    ctx.lineWidth = 2
-    ctx.setLineDash([8, 10])
-
-    let x = 0
-    for (let i = 0; i < environmentBorders.length; ++i) {
-        x += environmentBorders[i] * canvas.width
-        ctx.beginPath()
-        ctx.moveTo(x, 0)
-        ctx.lineTo(x, canvas.height)
-        ctx.stroke()
-    }
-    ctx.setLineDash([])
 }
 
 function renderActors() {
@@ -821,7 +1005,6 @@ requestAnimationFrame(loop)
 
 let selectedNode = null
 let selectedFrame = null
-let isDragging = false
 
 function getCanvasPoint(pageX, pageY) {
     const rect = canvas.getBoundingClientRect()
@@ -860,26 +1043,27 @@ function findClosestNode(x, y, maxDistance = 30) {
     return closest
 }
 
+// returns: real dragging started
 const selectObject = (e) => {
     const point = getCanvasPoint(e.pageX, e.pageY)
     selectedFrame = findClosestFrame(point.x, point.y)
     if (selectedFrame) {
         selectedNode = null
-        isDragging = true
-        return
+        return true
     }
 
     selectedNode = findClosestNode(point.x, point.y)
 
     if (selectedNode) {
-        isDragging = true
         selectedNode.blockForces()
+        return true
     }
+
+    return false
 }
 
+// returns: dragging stopped
 const unselectObject = (e) => {
-    isDragging = false
-
     if (selectedNode) {
         selectedNode.unblockForces()
         selectedNode = null
@@ -887,14 +1071,12 @@ const unselectObject = (e) => {
     if (selectedFrame) {
         selectedFrame = null
     }
+
+    return true
 }
 
 
 const moveSelectedObject = (e) => {
-    if (!isDragging) {
-        return
-    }
-
     const point = getCanvasPoint(e.pageX, e.pageY)
 
     if (selectedNode) {
@@ -964,34 +1146,10 @@ function spawnFramedCircle2() {
     framedCategoryPanel.style.visibility = 'hidden'
 }
 
-// mouse object move
-canvas.addEventListener('mousedown', selectObject)
-canvas.addEventListener('mousemove', moveSelectedObject)
-canvas.addEventListener('mouseup', unselectObject)
-canvas.addEventListener('mouseleave', unselectObject)
-
-// pointer object move
-canvas.addEventListener('pointerdown', e => {
-    canvas.setPointerCapture(e.pointerId)
-    selectObject(e)
-})
-canvas.addEventListener('pointermove', e => {
-    e.preventDefault() // only if you want to prevent page scroll
-    moveSelectedObject(e)
-}, { passive: false })
-canvas.addEventListener('pointerup', e => {
-    canvas.releasePointerCapture(e.pointerId)
-    unselectObject(e)
-})
-canvas.addEventListener('pointerleave', unselectObject)
-canvas.addEventListener('pointercancel', e => {
-    console.log('canc')
-    canvas.releasePointerCapture(e.pointerId)
-})
-
-// mouse gui invalidation
-canvas.addEventListener('mousedown', hideAllPanels)
-canvas.addEventListener('pointerdown', hideAllPanels)
+interactor.onStartDrag(NODE_DRAG, selectObject)
+interactor.onDrag(NODE_DRAG, moveSelectedObject)
+interactor.onStopDrag(NODE_DRAG, unselectObject)
+interactor.onCancellingPress(NODE_DRAG, hideAllPanels)
 
 function init() {
     spawnFramelessBlock()
