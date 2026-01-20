@@ -522,17 +522,19 @@ const springsBatch = []
 const framesBatch = []
 const actors = []
 
-const NO_DRAG = -1
-const EVIRONMENT_DRAG = 0
-const NODE_DRAG = 1
+const DragSource = Object.freeze({
+    NO_DRAG: "NO_DRAG",
+    EVIRONMENT_DRAG: "EVIRONMENT_DRAG",
+    NODE_DRAG: "NODE_DRAG"
+})
 
 class Interactor
 {
-    whoDrags = NO_DRAG
+    whoDrags = DragSource.NO_DRAG
 
     onFreeMove(dragId, cb) {
         canvas.addEventListener('pointermove', e => {
-            if (this.whoDrags == NO_DRAG) {
+            if (this.whoDrags == DragSource.NO_DRAG) {
                 e.preventDefault() // only if you want to prevent page scroll
                 cb(e)
             }
@@ -541,9 +543,9 @@ class Interactor
 
     onStartDrag(dragId, cb) {
         canvas.addEventListener('pointerdown', e => {
-            if (this.whoDrags == NO_DRAG) {
+            if (this.whoDrags == DragSource.NO_DRAG) {
                 canvas.setPointerCapture(e.pointerId)
-                this.whoDrags = cb(e) ? dragId : NO_DRAG
+                this.whoDrags = cb(e) ? dragId : DragSource.NO_DRAG
             }
         })
     }
@@ -562,13 +564,13 @@ class Interactor
             if (this.whoDrags == dragId) {
                 canvas.releasePointerCapture(e.pointerId)
                 cb(e)
-                this.whoDrags = NO_DRAG
+                this.whoDrags = DragSource.NO_DRAG
             }
         })
         canvas.addEventListener('pointerleave', e => {
             if (this.whoDrags == dragId) {
                 cb(e)
-                this.whoDrags = NO_DRAG
+                this.whoDrags = DragSource.NO_DRAG
             }
         })
         canvas.addEventListener('pointercancel', e => {
@@ -587,10 +589,10 @@ class Environment {
     hoveredBorder = -1
 
     constructor() {
-        interactor.onFreeMove(EVIRONMENT_DRAG, e => this.checkHover(e))
-        interactor.onStartDrag(EVIRONMENT_DRAG, e => this.canStartDrag())
-        interactor.onDrag(EVIRONMENT_DRAG, e => this.dragBorder(e))
-        interactor.onStopDrag(EVIRONMENT_DRAG, e => this.stopDrag())
+        interactor.onFreeMove(DragSource.EVIRONMENT_DRAG, e => this.checkHover(e))
+        interactor.onStartDrag(DragSource.EVIRONMENT_DRAG, e => this.canStartDrag())
+        interactor.onDrag(DragSource.EVIRONMENT_DRAG, e => this.dragBorder(e))
+        interactor.onStopDrag(DragSource.EVIRONMENT_DRAG, e => this.stopDrag())
     }
 
     render() {
@@ -601,11 +603,11 @@ class Environment {
             if (i == this.hoveredBorder) {
                 ctx.setLineDash([])
             } else {
-                ctx.setLineDash([8, 10])
+                ctx.setLineDash([10, 8])
             }
 
             ctx.strokeStyle = '#000'
-            ctx.lineWidth = 2
+            ctx.lineWidth = 1
             
 
             ctx.beginPath()
@@ -1146,10 +1148,10 @@ function spawnFramedCircle2() {
     framedCategoryPanel.style.visibility = 'hidden'
 }
 
-interactor.onStartDrag(NODE_DRAG, selectObject)
-interactor.onDrag(NODE_DRAG, moveSelectedObject)
-interactor.onStopDrag(NODE_DRAG, unselectObject)
-interactor.onCancellingPress(NODE_DRAG, hideAllPanels)
+interactor.onStartDrag(DragSource.NODE_DRAG, selectObject)
+interactor.onDrag(DragSource.NODE_DRAG, moveSelectedObject)
+interactor.onStopDrag(DragSource.NODE_DRAG, unselectObject)
+interactor.onCancellingPress(DragSource.NODE_DRAG, hideAllPanels)
 
 function init() {
     spawnFramelessBlock()
