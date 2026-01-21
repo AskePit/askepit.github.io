@@ -120,6 +120,10 @@ class Vec2 {
         const res = this.clone()
         return res.mul(scalar)
     }
+
+    negated() {
+        return new Vec2(-this.x, -this.y)
+    }
 }
 
 class Node {
@@ -143,8 +147,14 @@ class Node {
         this.force = force
     }
 
+    // force: Vec2
     addForce(force) {
         this.force.addVec(force)
+    }
+
+    // scale: float
+    addCounterForce(scale) {
+        this.force.addVec(this.force.negated().mul(scale))
     }
 
     blockForces() {
@@ -161,20 +171,31 @@ class Node {
     }
 
     clampPositionByCanvas() {
+        let doBounce = false
+        
         if (this.position.x <= 0) {
             this.position.x = 0
-            this.zeroVelocity()
+            doBounce = true
         } else if (this.position.x >= canvas.width) {
             this.position.x = canvas.width
-            this.zeroVelocity()
+            doBounce = true
         }
 
         if (this.position.y <= 0) {
             this.position.y = 0
-            this.zeroVelocity()
+            doBounce = true
         } else if (this.position.y >= canvas.height) {
             this.position.y = canvas.height
-            this.zeroVelocity()
+            doBounce = true
+        }
+
+        if (doBounce) {
+            const COUNTER = 0.5
+            const counterForce = this.force.negated().mul(COUNTER)
+            const counterVelocity = this.velocity.negated().mul(COUNTER)
+
+            this.force = counterForce
+            this.velocity = counterVelocity
         }
     }
 
@@ -191,9 +212,9 @@ class Node {
         this.zeroForce()
 
         if (!acceleration.isZero()) {
+            this.clampPositionByCanvas()
             this.velocity.addVec( acceleration.mul(dt) )
             this.position.addVec( this.velocity.multiplied(dt) )
-            this.clampPositionByCanvas()
         }
     }
 
@@ -584,7 +605,48 @@ class Interactor
 }
 const interactor = new Interactor()
 
+const EnvironmentType = Object.freeze({
+    VACUM: "VACUM",
+    GRAVITY: "GRAVITY",
+    WATER: "WATER"
+})
+
 class Environment {
+    type = EnvironmentType.VACUM
+    waterLevel = 0.5 // screen height ratio
+
+    constructor(type, waterLevel = 0.5) {
+        this.type = type
+        this.waterLevel = waterLevel
+    }
+
+    // node: Node
+    applyForceToNode(node) {
+        const GRAVITY = 9.8
+
+        switch (this.type) {
+            case EnvironmentType.VACUM:
+                return
+            case EnvironmentType.GRAVITY:
+                node.addForce(new Vec2(0, GRAVITY))
+                return
+            case EnvironmentType.WATER:
+                node.addForce(new Vec2(0, GRAVITY))
+                const isInWater = node.position.y / canvas.height > this.waterLevel
+                if (isInWater) {
+                    node.addCounterForce(0.95)
+                }
+                return
+        }
+    }
+}
+
+class EnvironmentsManager {
+    environments = [
+        new Environment(EnvironmentType.VACUM),
+        new Environment(EnvironmentType.WATER, 0.5),
+        new Environment(EnvironmentType.GRAVITY),
+    ]
     environmentBorders = [1/3.0, 2/3.0] // screen ratios
     hoveredBorder = -1
 
@@ -593,6 +655,25 @@ class Environment {
         interactor.onStartDrag(DragSource.EVIRONMENT_DRAG, e => this.canStartDrag())
         interactor.onDrag(DragSource.EVIRONMENT_DRAG, e => this.dragBorder(e))
         interactor.onStopDrag(DragSource.EVIRONMENT_DRAG, e => this.stopDrag())
+    }
+
+    // point: Vec2
+    // returns: Environment
+    getEnvironmentAt(point) {
+        const bordersPx = this.#getXBordersPx()
+        for (let i = 0; i < bordersPx.length; ++i) {
+            const x = bordersPx[i]
+            if (point.x < x) {
+                return this.environments[i]
+            }
+        }
+        return this.environments[this.environments.length - 1]
+    }
+
+    // node: Node
+    applyForceToNode(node) {
+        const env = this.getEnvironmentAt(node.position)
+        env.applyForceToNode(node)
     }
 
     render() {
@@ -670,6 +751,31 @@ class Environment {
             }
         }
         ctx.setLineDash([])
+
+        ctx.font = "24px monospace";
+        ctx.textBaseline = "top";
+        ctx.textAlign = "center";
+
+        this.environments.forEach((env, index) => {
+            ctx.fillStyle = "black";
+            const borders = this.#getXBordersPx()
+            const leftX = index > 0 ? borders[index - 1] : 0
+            const rightX = index < borders.length ? borders[index] : canvas.width
+
+            ctx.fillText(env.type.toLowerCase().replace(/^[a-z]/, c => c.toUpperCase()), (rightX - leftX) / 2 + leftX, 20)
+            
+            if (env.type == EnvironmentType.WATER) {
+                const waterY = env.waterLevel * canvas.height
+                ctx.fillStyle = 'rgba(0, 0, 250, 0.05)'
+                ctx.fillRect(leftX, waterY, rightX - leftX, canvas.height - waterY)
+
+                ctx.lineWidth = 1
+                ctx.beginPath()
+                ctx.moveTo(leftX, waterY)
+                ctx.lineTo(rightX, waterY)
+                ctx.stroke()
+            }
+        })
     }
 
     checkHover(e) {
@@ -724,7 +830,7 @@ class Environment {
     }
 }
 
-const environment = new Environment()
+const environmentsManager = new EnvironmentsManager()
 
 class Actor {
     nodes = []
@@ -978,6 +1084,10 @@ function update(dt) {
     }
 
     for (const node of nodesBatch) {
+        environmentsManager.applyForceToNode(node)
+    }
+
+    for (const node of nodesBatch) {
         node.update(dt)
     }
 }
@@ -985,7 +1095,7 @@ function update(dt) {
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    environment.render()
+    environmentsManager.render()
     renderActors()
 }
 
@@ -1127,7 +1237,7 @@ function spawnFramelessCircle1() {
 }
 
 function spawnFramelessCircle2() {
-    spawnCircle2(new Vec2(canvas.width / 2, 600), 100)
+    spawnCircle2(new Vec2(canvas.width / 2, 200), 100)
     framelessCategoryPanel.style.visibility = 'hidden'
 }
 
@@ -1148,13 +1258,20 @@ function spawnFramedCircle2() {
     framedCategoryPanel.style.visibility = 'hidden'
 }
 
+interactor.onFreeMove(DragSource.NO_DRAG, printCursorInfo)
+function printCursorInfo(e) {
+    // const point = getCanvasPoint(e.pageX, e.pageY)
+    // const env = environmentsManager.getEnvironmentAt(point)
+}
+
 interactor.onStartDrag(DragSource.NODE_DRAG, selectObject)
 interactor.onDrag(DragSource.NODE_DRAG, moveSelectedObject)
 interactor.onStopDrag(DragSource.NODE_DRAG, unselectObject)
 interactor.onCancellingPress(DragSource.NODE_DRAG, hideAllPanels)
 
 function init() {
-    spawnFramelessBlock()
+    //spawnFramelessBlock()
+    spawnFramelessBox()
 }
 
 init()
