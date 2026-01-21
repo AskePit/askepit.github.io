@@ -732,15 +732,15 @@ class WaterBubble {
     radius // float
     sine // SineAnimation
     originalX
-    shrinkSpeed
+    scaleSpeed
 
     #isDead
 
-    constructor(position, radius, sineAmplitude, sinePeriod, speed, shrinkSpeed) {
+    constructor(position, radius, sineAmplitude, sinePeriod, speed, scaleSpeed) {
         this.position = position
         this.originalX = position.x
         this.radius = radius
-        this.shrinkSpeed = shrinkSpeed
+        this.scaleSpeed = scaleSpeed
         this.sine = new SineAnimation(sineAmplitude, sinePeriod, speed, position.y)
     }
 
@@ -749,7 +749,7 @@ class WaterBubble {
         const sineShift = this.sine.getPosition()
         this.position.x = this.originalX + sineShift.x
         this.position.y = sineShift.y
-        this.radius -= this.shrinkSpeed * dt
+        this.radius += this.scaleSpeed * dt
 
         this.#isDead = this.radius < 0 || this.position.y < waterLevel
     }
@@ -776,7 +776,7 @@ class WaterBubblesSimulator {
     }
 
     _internalClock() {
-        const base = 500;
+        const base = 350;
         const jitter = 200; // +/- 200 ms
         const delay = base + (Math.random() * 2 - 1) * jitter;
 
@@ -813,11 +813,11 @@ class WaterBubblesSimulator {
     spawnBubble() {
         const waterBounds = this._getWaterBounds()
         const position = new Vec2(rand(waterBounds[0], waterBounds[1]), rand(canvas.height - 100, canvas.height))
-        const radius = rand(3, 8)
-        const amplitude = rand(10, 15)
-        const period = rand(0.01, 0.05)
-        const speed = rand(200, 250)
-        const bubble = new WaterBubble(position, radius, amplitude, period, speed, 2)
+        const radius = rand(1, 4)
+        const amplitude = rand(12, 15)
+        const period = rand(0.01, 0.025)
+        const speed = rand(150, 180)
+        const bubble = new WaterBubble(position, radius, amplitude, period, speed, 1)
         this.bubbles.push(bubble)
     }
 
@@ -933,7 +933,6 @@ class EnvironmentsManager {
                 const waterY = env.waterLevel * canvas.height
                 drawer.fillRect(new Vec2(leftX, waterY), new Vec2(rightX - leftX, canvas.height - waterY), 'rgba(0, 0, 250, 0.05)')
                 drawer.drawLine(new Vec2(leftX, waterY), new Vec2(rightX, waterY), 1, 'black')
-                drawer.drawCircle(new Vec2(leftX + 30 + 0.5, waterY + 20 + 0.5), 10, 0.8, 'black', true, 'white')
             }
         })
 
@@ -1437,9 +1436,5 @@ interactor.onCancellingPress(DragSource.NODE_DRAG, hideAllPanels)
 function init() {
     spawnFramelessBox()
 }
-
-canvas.addEventListener('pointerdown', e => {
-    environmentsManager.waterBubblesSimulator.spawnBubble()
-})
 
 init()
