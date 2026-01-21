@@ -699,6 +699,148 @@ class Environment {
     }
 }
 
+// sinusoid is vertical! goes form bottom to up
+class SineAnimation {
+    // constant parameters
+    amplitude // float
+    period // float
+    speed // float. px per sec
+    
+    // runtime
+    progress // float
+    
+    constructor(amplitude, period, speed, initialY) {
+        this.amplitude = amplitude
+        this.period = period
+        this.speed = speed
+        this.progress = initialY
+    }
+
+    update(dt) {
+        this.progress -= this.speed * dt
+    }
+
+    // returns Vec2 where x is horizontal amplitude deviation, y is poisition relative to a start position
+    getPosition() {
+        const amplitudeDeviation = this.amplitude * Math.sin(this.progress * this.period)
+        return new Vec2(amplitudeDeviation, this.progress)
+    }
+}
+
+class WaterBubble {
+    position // Vec2
+    radius // float
+    sine // SineAnimation
+    originalX
+    shrinkSpeed
+
+    #isDead
+
+    constructor(position, radius, sineAmplitude, sinePeriod, speed, shrinkSpeed) {
+        this.position = position
+        this.originalX = position.x
+        this.radius = radius
+        this.shrinkSpeed = shrinkSpeed
+        this.sine = new SineAnimation(sineAmplitude, sinePeriod, speed, position.y)
+    }
+
+    update(dt, waterLevel) {
+        this.sine.update(dt)
+        const sineShift = this.sine.getPosition()
+        this.position.x = this.originalX + sineShift.x
+        this.position.y = sineShift.y
+        this.radius -= this.shrinkSpeed * dt
+
+        this.#isDead = this.radius < 0 || this.position.y < waterLevel
+    }
+
+    isDead() {
+        return this.#isDead
+    }
+
+    render() {
+        drawer.drawCircle(this.position, this.radius, 1, 'black', true, 'white')
+    }
+}
+
+function rand(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+class WaterBubblesSimulator {
+    bubbles = [] // array<WaterBubble>
+
+    constructor(environment) {
+        this.environment = environment
+        this._internalClock()
+    }
+
+    _internalClock() {
+        const base = 500;
+        const jitter = 200; // +/- 200 ms
+        const delay = base + (Math.random() * 2 - 1) * jitter;
+
+        this.spawnBubble()
+
+        setTimeout(() => this._internalClock(), delay);
+    }
+
+    // returns (int, int)
+    _getWaterBounds() {
+        const borders = this.environment.getXRegionsPx()
+
+        for (let i = 0; i< this.environment.environments.length; ++i) {
+            const env = this.environment.environments[i]
+            if (env.type === EnvironmentType.WATER) {
+                return borders[i]
+            }
+        }
+
+        return null
+    }
+
+    // returns float
+    _getWaterLevel() {
+        this.environment.environments.forEach((env, index) => {
+            if (env.type == EnvironmentType.WATER) {
+                return env.waterLevel
+            }
+        })
+
+        return 0
+    }
+
+    spawnBubble() {
+        const waterBounds = this._getWaterBounds()
+        const position = new Vec2(rand(waterBounds[0], waterBounds[1]), rand(canvas.height - 100, canvas.height))
+        const radius = rand(3, 8)
+        const amplitude = rand(10, 15)
+        const period = rand(0.01, 0.05)
+        const speed = rand(200, 250)
+        const bubble = new WaterBubble(position, radius, amplitude, period, speed, 2)
+        this.bubbles.push(bubble)
+    }
+
+    update(dt, waterLevel) {
+        const deadBubbles = new Set()
+
+        for (const bubble of this.bubbles) {
+            bubble.update(dt, waterLevel)
+            if (bubble.isDead()) {
+                deadBubbles.add(bubble)
+            }
+        }
+
+        this.bubbles = this.bubbles.filter(obj => !deadBubbles.has(obj))
+    }
+
+    render() {
+        for (const bubble of this.bubbles) {
+            bubble.render()
+        }
+    }
+}
+
 class EnvironmentsManager {
     environments = [
         new Environment(EnvironmentType.VACUM),
@@ -707,18 +849,21 @@ class EnvironmentsManager {
     ]
     environmentBorders = [1/3.0, 2/3.0] // screen ratios
     hoveredBorder = -1
+    waterBubblesSimulator // WaterBubblesSimulator
 
     constructor() {
         interactor.onFreeMove(DragSource.EVIRONMENT_DRAG, e => this.checkHover(e))
         interactor.onStartDrag(DragSource.EVIRONMENT_DRAG, e => this.canStartDrag())
         interactor.onDrag(DragSource.EVIRONMENT_DRAG, e => this.dragBorder(e))
         interactor.onStopDrag(DragSource.EVIRONMENT_DRAG, e => this.stopDrag())
+
+        this.waterBubblesSimulator = new WaterBubblesSimulator(this)
     }
 
     // point: Vec2
     // returns: Environment
     getEnvironmentAt(point) {
-        const bordersPx = this.#getXBordersPx()
+        const bordersPx = this.getXBordersPx()
         for (let i = 0; i < bordersPx.length; ++i) {
             const x = bordersPx[i]
             if (point.x < x) {
@@ -734,8 +879,17 @@ class EnvironmentsManager {
         env.applyForceToNode(node)
     }
 
+    update(dt) {
+        this.environments.forEach((env, index) => {
+            if (env.type == EnvironmentType.WATER) {
+                const waterY = env.waterLevel * canvas.height
+                this.waterBubblesSimulator.update(dt, waterY)
+            }
+        })
+    }
+
     render() {
-        const borders = this.#getXBordersPx()
+        const borders = this.getXBordersPx()
         for (let i = 0; i < borders.length; ++i) {
             const x = borders[i]
 
@@ -769,7 +923,7 @@ class EnvironmentsManager {
         }
 
         this.environments.forEach((env, index) => {
-            const borders = this.#getXBordersPx()
+            const borders = this.getXBordersPx()
             const leftX = index > 0 ? borders[index - 1] : 0
             const rightX = index < borders.length ? borders[index] : canvas.width
 
@@ -782,13 +936,15 @@ class EnvironmentsManager {
                 drawer.drawCircle(new Vec2(leftX + 30 + 0.5, waterY + 20 + 0.5), 10, 0.8, 'black', true, 'white')
             }
         })
+
+        this.waterBubblesSimulator.render()
     }
 
     checkHover(e) {
         const SENSITIVITY = 8
 
         const point = getCanvasPoint(e.pageX, e.pageY)
-        const borders = this.#getXBordersPx()
+        const borders = this.getXBordersPx()
 
         for (let i = 0; i < borders.length; ++i) {
             const x = borders[i]
@@ -820,17 +976,18 @@ class EnvironmentsManager {
         this.hoveredBorder = -1
     }
 
-    #getXBordersPx() { // -> array<int>
+    getXBordersPx() { // -> array<int>
         return this.environmentBorders.map(el => el * canvas.width)
     }
 
-    #getXRegionsPx() { // -> array<(int, int)>
-        const borders = [0] + this.#getXBordersPx()
+    getXRegionsPx() { // -> array<(int, int)>
+        const borders = [0, ...this.getXBordersPx()] 
         let res = []
         for (let i = 0; i < borders.length; ++i) {
             const b = borders[i]
             const nextB = i < borders.length - 1 ? borders[i + 1] : canvas.width
-            res.push({b, nextB})
+            console.log(b, nextB)
+            res.push([b, nextB])
         }
         return res
     }
@@ -1096,6 +1253,8 @@ function update(dt) {
     for (const node of nodesBatch) {
         node.update(dt)
     }
+
+    environmentsManager.update(dt)
 }
 
 function render() {
@@ -1278,5 +1437,9 @@ interactor.onCancellingPress(DragSource.NODE_DRAG, hideAllPanels)
 function init() {
     spawnFramelessBox()
 }
+
+canvas.addEventListener('pointerdown', e => {
+    environmentsManager.waterBubblesSimulator.spawnBubble()
+})
 
 init()
