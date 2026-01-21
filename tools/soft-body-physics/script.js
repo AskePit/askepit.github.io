@@ -1,5 +1,4 @@
 const canvas = document.getElementById('gameCanvas')
-const ctx = canvas.getContext('2d')
 
 function resize() {
     canvas.width = window.innerWidth
@@ -126,6 +125,91 @@ class Vec2 {
     }
 }
 
+class Drawer {
+    constructor(canvas) {
+        this.canvas = canvas
+        this.ctx = canvas.getContext('2d')
+    }
+
+    clear() {
+        this.ctx.clearRect(0, 0, canvas.width, canvas.height)
+    }
+
+    // from: Vec2
+    // to: Vec2
+    drawLine(from, to, lineWidth, color, isDashed = false, dashPattern = [10, 8]) {
+        const {ctx} = this
+        ctx.strokeStyle = color
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.moveTo(from.x, from.y)
+        ctx.lineTo(to.x, to.y)
+        if (isDashed) {
+            ctx.setLineDash(dashPattern)
+        }
+        ctx.stroke()
+        ctx.setLineDash([])
+    }
+
+    // points: array<Vec2>
+    drawMultiline(points, lineWidth, color) {
+        const {ctx} = this
+        ctx.strokeStyle = color
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.moveTo(points[0].x, points[0].y)
+        for (let i = 1; i < points.length; ++i) {
+            ctx.lineTo(points[i].x, points[i].y)
+        }
+        ctx.stroke()
+    }
+
+    // position: Vec2
+    fillCircle(position, radius, fillColor) {
+        const {ctx} = this
+        ctx.beginPath()
+        ctx.arc(position.x, position.y, radius, 0, Math.PI * 2)
+        ctx.fillStyle = fillColor
+        ctx.fill()
+    }
+
+    // position: Vec2
+    drawCircle(position, radius, lineWidth, lineColor, doFill = false, fillColor = null) {
+        const {ctx} = this
+        ctx.beginPath()
+        ctx.arc(position.x, position.y, radius, 0, Math.PI * 2)
+        if (doFill) {
+            ctx.fillStyle = fillColor
+            ctx.fill()
+        }
+        ctx.strokeStyle = lineColor
+        ctx.lineWidth = lineWidth
+        ctx.stroke()
+    }
+
+    // position: Vec2
+    drawText(text, position, color) {
+        const {ctx} = this
+        ctx.font = "24px monospace";
+        ctx.textBaseline = "top";
+        ctx.textAlign = "center";
+        ctx.fillStyle = color;
+        ctx.fillText(text, position.x, position.y)
+    }
+
+    // leftTop: Vec2
+    // size: Vec2
+    fillRect(leftTop, size, fillColor) {
+        const {ctx} = this
+        ctx.beginPath()
+        ctx.fillStyle = fillColor
+        ctx.fillRect(leftTop.x, leftTop.y, size.x, size.y)
+        ctx.fill()
+    }
+}
+
+const drawer = new Drawer(canvas)
+
 class Node {
     mass // kg
     position = new Vec2()
@@ -220,22 +304,11 @@ class Node {
 
     render() {
         if (this === selectedNode) {
-            ctx.beginPath()
-            ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2)
-            ctx.strokeStyle = '#ffff00'
-            ctx.lineWidth = 2
-            ctx.stroke()
+            drawer.drawCircle(this.position, this.radius + 5, 2, '#ffff00')
         }
 
-        ctx.beginPath()
-        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
-        ctx.fillStyle = '#a3d5ff'
-        ctx.fill()
-
-        ctx.beginPath()
-        ctx.arc(this.position.x, this.position.y, this.radius/2, 0, Math.PI * 2)
-        ctx.fillStyle = '#6879d0'
-        ctx.fill()
+        drawer.fillCircle(this.position, this.radius, '#a3d5ff')
+        drawer.fillCircle(this.position, this.radius/2, '#6879d0')
     }
 }
 
@@ -339,12 +412,7 @@ class Spring {
 
         if (len < 1) {
             // Too short, just draw a line
-            ctx.strokeStyle = color
-            ctx.lineWidth = lineThickness
-            ctx.beginPath()
-            ctx.moveTo(x1, y1)
-            ctx.lineTo(x2, y2)
-            ctx.stroke()
+            drawer.drawLine(this.node1.position, this.node2.position, lineThickness, color)
             return
         }
 
@@ -365,13 +433,8 @@ class Spring {
         // Zigzag step size (distance between zigzag points)
         const zigzagCount = Math.max(2, Math.round(Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2) / zigzagStep))
 
-        ctx.strokeStyle = color
-        ctx.lineWidth = lineThickness
-        ctx.beginPath()
-
         // Draw tail from node1 to start of zigzag
-        ctx.moveTo(x1, y1)
-        ctx.lineTo(sx, sy)
+        const multiline = [this.node1.position]
 
         // Draw zigzag
         for (let i = 0; i <= zigzagCount; i++) {
@@ -382,16 +445,17 @@ class Spring {
             if (i > 0 && i < zigzagCount) {
                 offset = (i % 2 === 0 ? -1 : 1) * zigzagAmp
             }
-            ctx.lineTo(
+
+            multiline.push(new Vec2(
                 zx + px * offset,
                 zy + py * offset
-            )
+            ))
         }
 
         // Draw tail from end of zigzag to node2
-        ctx.lineTo(x2, y2)
+        multiline.push(this.node2.position)
 
-        ctx.stroke()
+        drawer.drawMultiline(multiline, lineThickness, color)
     }
 }
 
@@ -480,13 +544,7 @@ class Frame {
             const p1 = this.freezedNodes[i-1].position
             const p2 = this.freezedNodes[i].position
 
-            ctx.strokeStyle = this === selectedFrame ? '#0f0' : '#000'
-            ctx.lineWidth = 2
-            ctx.beginPath()
-
-            ctx.moveTo(p1.x, p1.y)
-            ctx.lineTo(p2.x, p2.y)
-            ctx.stroke()
+            drawer.drawLine(p1, p2, 2, this === selectedFrame ? '#0f0' : '#000')
         }
     }
 
@@ -681,99 +739,47 @@ class EnvironmentsManager {
         for (let i = 0; i < borders.length; ++i) {
             const x = borders[i]
 
-            if (i == this.hoveredBorder) {
-                ctx.setLineDash([])
-            } else {
-                ctx.setLineDash([10, 8])
-            }
+            const color = 'black'
+            const dashPattern = i == this.hoveredBorder ? [] : [10, 8]
 
-            ctx.strokeStyle = '#000'
-            ctx.lineWidth = 1
-            
-
-            ctx.beginPath()
-            ctx.moveTo(x, 0)
-            ctx.lineTo(x, canvas.height)
-            ctx.stroke()
+            drawer.drawLine(new Vec2(x, 0), new Vec2(x, canvas.height), 1, color, true, dashPattern)
 
             if (i == this.hoveredBorder) {
-                ctx.strokeStyle = '#000'
-                ctx.lineWidth = 2
-                ctx.setLineDash([])
+                const lineWidth = 2
 
                 const LENGTH = 20
                 const PADDING = 8
 
-                ctx.beginPath()
-                ctx.moveTo(x - PADDING, canvas.height / 2 - LENGTH)
-                ctx.lineTo(x - PADDING, canvas.height / 2 + LENGTH)
-                ctx.stroke()
-
-                ctx.beginPath()
-                ctx.moveTo(x + PADDING, canvas.height / 2 - LENGTH)
-                ctx.lineTo(x + PADDING, canvas.height / 2 + LENGTH)
-                ctx.stroke()
+                drawer.drawLine(new Vec2(x - PADDING, canvas.height / 2 - LENGTH), new Vec2(x - PADDING, canvas.height / 2 + LENGTH), lineWidth, color)
+                drawer.drawLine(new Vec2(x + PADDING, canvas.height / 2 - LENGTH), new Vec2(x + PADDING, canvas.height / 2 + LENGTH), lineWidth, color)
 
                 const ARROW_LENGTH = 15
 
-                ctx.beginPath()
-                ctx.moveTo(x - PADDING, canvas.height / 2)
-                ctx.lineTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
-                ctx.stroke()
-
-                ctx.beginPath()
-                ctx.moveTo(x + PADDING, canvas.height / 2)
-                ctx.lineTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
-                ctx.stroke()
+                drawer.drawLine(new Vec2(x - PADDING, canvas.height / 2), new Vec2(x - PADDING - ARROW_LENGTH, canvas.height / 2), lineWidth, color)
+                drawer.drawLine(new Vec2(x + PADDING, canvas.height / 2), new Vec2(x + PADDING + ARROW_LENGTH, canvas.height / 2), lineWidth, color)
 
                 const ARROW_HEAD_WIDTH = 5
                 const ARROW_HEAD_DEPTH = 5
 
-                ctx.beginPath()
-                ctx.moveTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
-                ctx.lineTo(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH)
-                ctx.stroke()
-
-                ctx.beginPath()
-                ctx.moveTo(x - PADDING - ARROW_LENGTH, canvas.height / 2)
-                ctx.lineTo(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH)
-                ctx.stroke()
-
-                ctx.beginPath()
-                ctx.moveTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
-                ctx.lineTo(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH)
-                ctx.stroke()
-
-                ctx.beginPath()
-                ctx.moveTo(x + PADDING + ARROW_LENGTH, canvas.height / 2)
-                ctx.lineTo(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH)
-                ctx.stroke()
+                drawer.drawLine(new Vec2(x - PADDING - ARROW_LENGTH, canvas.height / 2), new Vec2(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH), lineWidth, color)
+                drawer.drawLine(new Vec2(x - PADDING - ARROW_LENGTH, canvas.height / 2), new Vec2(x - PADDING - ARROW_LENGTH + ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH), lineWidth, color)
+                drawer.drawLine(new Vec2(x + PADDING + ARROW_LENGTH, canvas.height / 2), new Vec2(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 - ARROW_HEAD_WIDTH), lineWidth, color)
+                drawer.drawLine(new Vec2(x + PADDING + ARROW_LENGTH, canvas.height / 2), new Vec2(x + PADDING + ARROW_LENGTH - ARROW_HEAD_DEPTH, canvas.height / 2 + ARROW_HEAD_WIDTH), lineWidth, color)
             }
         }
-        ctx.setLineDash([])
-
-        ctx.font = "24px monospace";
-        ctx.textBaseline = "top";
-        ctx.textAlign = "center";
 
         this.environments.forEach((env, index) => {
-            ctx.fillStyle = "black";
             const borders = this.#getXBordersPx()
             const leftX = index > 0 ? borders[index - 1] : 0
             const rightX = index < borders.length ? borders[index] : canvas.width
 
-            ctx.fillText(env.type.toLowerCase().replace(/^[a-z]/, c => c.toUpperCase()), (rightX - leftX) / 2 + leftX, 20)
+            drawer.drawText(env.type.toLowerCase().replace(/^[a-z]/, c => c.toUpperCase()), new Vec2((rightX - leftX) / 2 + leftX, 20), 'black')
             
             if (env.type == EnvironmentType.WATER) {
                 const waterY = env.waterLevel * canvas.height
-                ctx.fillStyle = 'rgba(0, 0, 250, 0.05)'
-                ctx.fillRect(leftX, waterY, rightX - leftX, canvas.height - waterY)
-
-                ctx.lineWidth = 1
-                ctx.beginPath()
-                ctx.moveTo(leftX, waterY)
-                ctx.lineTo(rightX, waterY)
-                ctx.stroke()
+                drawer.fillRect(new Vec2(leftX, waterY), new Vec2(rightX - leftX, canvas.height - waterY), 'rgba(0, 0, 250, 0.05)')
+                drawer.drawLine(new Vec2(leftX, waterY), new Vec2(rightX, waterY), 1, 'black')
+                drawer.drawCircle(new Vec2(leftX + 30 + 0.5, waterY + 20 + 0.5), 10, 0.8, 'black', true, 'white')
             }
         })
     }
@@ -1093,7 +1099,7 @@ function update(dt) {
 }
 
 function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    drawer.clear()
 
     environmentsManager.render()
     renderActors()
@@ -1270,7 +1276,6 @@ interactor.onStopDrag(DragSource.NODE_DRAG, unselectObject)
 interactor.onCancellingPress(DragSource.NODE_DRAG, hideAllPanels)
 
 function init() {
-    //spawnFramelessBlock()
     spawnFramelessBox()
 }
 
