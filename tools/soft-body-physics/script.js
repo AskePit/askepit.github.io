@@ -1308,12 +1308,13 @@ function update(dt) {
     for (const node of nodesBatch) {
         environmentsManager.applyForceToNode(node)
     }
+    
+    environmentsManager.update(dt)
 
     for (const node of nodesBatch) {
         node.update(dt)
     }
 
-    environmentsManager.update(dt)
 }
 
 function render() {
