@@ -1,0 +1,82 @@
+body {
+    --uni-header: 'Shippori Mincho';
+    --title-font: var(--uni-header);
+    --header-font: var(--uni-header);
+    --subheader-font: var(--uni-header);
+    --text-font: 'Crimson Pro';
+    --code-font: 'Fira Code';
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: 42px;
+    font-weight: 600;
+    font-variant: small-caps;
+}
+
+h2 {
+    font-family: var(--header-font);
+    font-size: 24px;
+    font-weight: 600;
+
+    margin-top: 50px;
+    margin-bottom: 0px;
+}
+
+h2 code {
+    font-size: 22px;
+}
+
+h3, h4, h5, h6 {
+    font-family: var(--subheader-font);
+    font-size: 20px;
+    font-weight: 600;
+    
+    margin-top: 40px;
+    margin-bottom: 0px;
+}
+
+h3 code {
+    font-size: 19px;
+}
+
+ul, li, p, blockquote, small {
+    font-family: var(--text-font);
+    font-size: 19px;
+    font-weight: 350;
+    line-height: 26px;
+}
+
+blockquote p {
+    font-size: 17px;
+}
+
+small {
+    font-size: 15px;
+}
+
+pre, code {
+    font-family: var(--code-font);
+    font-size: 14px;
+    font-weight: 400;
+}
+
+h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
+    margin-top: 12px;
+}
+
+h2 + h3, h2 + h4, h2 + h5, h2 + h6 {
+    margin-top: 18px;
+}
+
+li + li {
+    margin-top: 2px;
+}
+
+figcaption {
+    font-family: var(--subheader-font);
+    font-size: 14px;
+    font-weight: 300;
+
+    margin-top: 5px;
+}

@@ -1,0 +1,81 @@
+body {
+    --title-font: 'Raleway';
+    --header-font: 'STIX Two Text';
+    --subheader-font: 'STIX Two Text';
+    --text-font: 'Crimson Pro';
+    --code-font: 'Fira Code';
+}
+
+h1 {
+    font-family: var(--title-font);
+    font-size: 40px;
+    font-weight: 300;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-family: var(--header-font);
+    font-size: 30px;
+    font-weight: 600;
+
+    margin-top: 50px;
+    margin-bottom: 0px;
+}
+
+h2 code {
+    font-size: 26px;
+}
+
+h3, h4, h5, h6 {
+    font-family: var(--subheader-font);
+    font-size: 23px;
+    font-weight: 800;
+    
+    margin-top: 40px;
+    margin-bottom: 0px;
+}
+
+h2 code {
+    font-size: 21px;
+}
+
+ul, li, p, blockquote, small {
+    font-family: var(--text-font);
+    font-size: 19px;
+    font-weight: 350;
+    line-height: 26px;
+}
+
+blockquote p {
+    font-size: 17px;
+}
+
+small {
+    font-size: 15px;
+}
+
+pre, code {
+    font-family: var(--code-font);
+    font-size: 14px;
+    font-weight: 400;
+}
+
+h2 + p, h3 + p, h4 + p, h5 + p, h6 + p {
+    margin-top: 12px;
+}
+
+h2 + h3, h2 + h4, h2 + h5, h2 + h6 {
+    margin-top: 18px;
+}
+
+li + li {
+    margin-top: 2px;
+}
+
+figcaption {
+    font-family: var(--subheader-font);
+    font-size: 14px;
+    font-weight: 300;
+
+    margin-top: 5px;
+}

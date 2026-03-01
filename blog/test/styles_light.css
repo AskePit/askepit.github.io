@@ -1,0 +1,48 @@
+body {
+    background-color: white;
+}
+
+* {
+    color: black;
+}
+
+pre, code {
+    background-color: #f3f4fa;
+}
+
+h2 code, h3 code {
+    background-color: #f3f4fa;
+}
+
+a, a code {
+    color: #1db2ec;
+}
+
+.code-keyword {
+    color: #c10de6e1;
+}
+
+.code-comment {
+    color: #787878;
+}
+
+.code-literal {
+    color: #de8705;
+}
+
+.code-call {
+    color: #009ea7;
+    /* font-weight: 550; */
+}
+
+.code-diff-add {
+    background-color: #00e79433;
+}
+
+.code-diff-remove {
+    background-color: #f61b6a33;
+}
+
+.hamburger-checkbox:checked + .hamburger-menu {
+    background-color: #fbfbfb;
+}

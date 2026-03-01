@@ -1,0 +1,107 @@
+body {
+    --column-width: 856px;
+
+    margin: 60px 0px 80px 0px;
+    padding: 0px calc((100vw - var(--column-width))/2);
+}
+
+ul, li, p {
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+ul, ul ul {
+    list-style-type: disc;
+}
+
+li > p {
+    margin: 0px;
+}
+
+code {
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+}
+
+h2 code {
+    font-size: 30px;
+    font-weight: 1000;
+    text-transform: none;
+}
+
+h3 code {
+    font-size: 20px;
+    font-weight: 1000;
+    text-transform: none;
+}
+
+pre code {
+    font-size: inherit; /* Ensure the font size inside <pre> is inherited */
+    padding-left: 0em;
+    padding-right: 0em;
+}
+
+pre {
+    padding: 30px;
+    overflow: auto;
+}
+
+figure {
+    width: fit-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0px;
+}
+
+figcaption {
+    align-self: flex-end;
+}
+
+.image {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+a {
+    text-decoration-thickness: 1px;
+}
+
+img {
+    max-width: 100%;
+}
+
+blockquote {
+    border-left: 4px solid;
+    margin: 0px;
+    padding-left: 18px;
+}
+
+.parse-error::before {
+    content: 'Error: ';
+    font-weight: 1000;
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
+    background-color: white;
+    color: #d60000;
+    padding: 10px 0px 10px 10px;
+    margin: 10px;
+}
+
+.parse-error {
+    background-color: #d60000;
+    color: white;
+    padding: 10px;
+    font-size: 20px;
+    font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
+}
+
+@media only screen and (max-width: 1000px) {
+    body {
+        margin: 7vw;
+    }
+    pre, code {
+        font-size: 14px;
+    }
+}
