@@ -90,14 +90,31 @@ MathJax = {
 <pre><code class="language-bash">cl /std:c++latest /Fa /O2 main.cpp</code></pre>
 <h3>Rendering to <code>life.txt</code></h3>
 <p>The key here is not to break C++ syntax; otherwise, we won’t get the next frame due to a compilation error in the C++ code during the next iteration of <code>update()</code>:</p>
-<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">render</span>(life):
-    <span class="code-keyword">with</span> <span class="code-call">open</span>(<span class="code-literal">'life.txt'</span>, <span class="code-literal">'w'</span>) <span class="code-keyword">as</span> f:
-        <span class="code-keyword">for</span> r <span class="code-keyword">in</span> <span class="code-call">range</span>(N):
-            f.<span class="code-call">write</span>(<span class="code-literal">'{'</span>)
-            <span class="code-keyword">for</span> c <span class="code-keyword">in</span> <span class="code-call">range</span>(N):
-                cell = <span class="code-literal">'X'</span> <span class="code-keyword">if</span> life[r][c] == <span class="code-literal">1</span> <span class="code-keyword">else</span> <span class="code-literal">'_'</span>
-                f.<span class="code-call">write</span>(f<span class="code-literal">'{cell},'</span>)
-            f.<span class="code-call">write</span>(<span class="code-literal">'},\n'</span>)</code></pre>
+<pre><code class="language-cpp"><span class="code-keyword">consteval</span> Canvas <span class="code-call">update</span>(Canvas old)
+{
+    Canvas res;
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">int</span> r = <span class="code-literal">0</span>; r &lt; N; ++r) {
+        <span class="code-keyword">for</span> (<span class="code-keyword">int</span> c = <span class="code-literal">0</span>; c &lt; N; ++c) {
+
+            <span class="code-keyword">int</span> neighboursCount = <span class="code-literal">0</span>;
+            <span class="code-keyword">for</span> (<span class="code-keyword">int</span> nr = r - <span class="code-literal">1</span>; nr &lt;= r + <span class="code-literal">1</span>; ++nr) {
+                <span class="code-keyword">for</span> (<span class="code-keyword">int</span> nc = c - <span class="code-literal">1</span>; nc &lt;= c + <span class="code-literal">1</span>; ++nc) {
+                    <span class="code-keyword">if</span> (nr == r && nc == c) <span class="code-keyword">continue</span>;
+
+                    <span class="code-keyword">int</span> wrappedR = (nr + N) % N;
+                    <span class="code-keyword">int</span> wrappedC = (nc + N) % N;
+                    neighboursCount += <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">int</span>&gt;(old[wrappedR][wrappedC]);
+                }
+            }
+
+            <span class="code-keyword">const</span> <span class="code-keyword">bool</span> isAlive = old[r][c];
+            res[r][c] = neighboursCount == <span class="code-literal">3</span> || (isAlive && neighboursCount == <span class="code-literal">2</span>);
+        }
+    }
+
+    <span class="code-keyword">return</span> res;
+}</code></pre>
 <p>Isn’t it a marvel:</p>
 <ul>
 	<li><code>constexpr</code>-only</li>
