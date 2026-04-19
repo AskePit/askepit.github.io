@@ -1007,18 +1007,7 @@ Tails: <span class="code-literal">34</span> <span class="code-literal">359</span
 <p><b>x1.23</b>. Sure, it’s not four times faster, but at least I didn’t end up back at square one after rewriting the code.</p>
 <h3>Optimization Results</h3>
 <p>That wraps up this optimization saga. Now we can evaluate what we’ve done and lock in the results. Here’s a summary table of all the optimizations:</p>
-<p>| Milestone            | Time                          | Speedup |</p>
-<p>| -------------------- | ----------------------------- | ------- |</p>
-<p>| Measurement Start    | <code>20min 41s 897ms 383us 600ns</code> | -       |</p>
-<p>| Without distribution | <code>10min 50s 93ms 886us 900ns</code>  | x1.9    |</p>
-<p>| Lazy generator       | <code>7min 8s 600ms 933us</code>         | x1.5    |</p>
-<p>| Restructuring        | <code>19s 826ms 601us</code>             | x21.6   |</p>
-<p>| std::popcount()      | <code>5s 460ms 958us 600ns</code>        | x3.6    |</p>
-<p>| 64-bit generator     | <code>2s 554ms 51us 200ns</code>         | x2.1    |</p>
-<p>| Multithreading       | <code>126ms 479us 900ns</code>           | x20.2   |</p>
-<p>| Custom Generator     | <code>93ms 529us 800ns</code>            | x1.4    |</p>
-<p>| More threads         | <code>75ms 91us 300ns</code>             | x1.25   |</p>
-<p>| SIMD                 | <code>60ms 906us 200ns</code>            | x1.23   |</p>
+<table><thead><tr><th>Milestone</th><th>Time</th><th>Speedup</th></tr></thead><tbody><tr><td>Measurement Start</td><td><code>20min 41s 897ms 383us 600ns</code></td><td>-</td></tr><tr><td>Without distribution</td><td><code>10min 50s 93ms 886us 900ns</code></td><td>x1.9</td></tr><tr><td>Lazy generator</td><td><code>7min 8s 600ms 933us</code></td><td>x1.5</td></tr><tr><td>Restructuring</td><td><code>19s 826ms 601us</code></td><td>x21.6</td></tr><tr><td>std::popcount()</td><td><code>5s 460ms 958us 600ns</code></td><td>x3.6</td></tr><tr><td>64-bit generator</td><td><code>2s 554ms 51us 200ns</code></td><td>x2.1</td></tr><tr><td>Multithreading</td><td><code>126ms 479us 900ns</code></td><td>x20.2</td></tr><tr><td>Custom Generator</td><td><code>93ms 529us 800ns</code></td><td>x1.4</td></tr><tr><td>More threads</td><td><code>75ms 91us 300ns</code></td><td>x1.25</td></tr><tr><td>SIMD</td><td><code>60ms 906us 200ns</code></td><td>x1.23</td></tr></tbody></table>
 <p>Final Speedup: <b>x20,235!</b></p>
 <p>Honestly, there should’ve been a nice illustrative chart instead of a table, but the speedup was so massive that the chart, as soon as it started, just plummeted to the X-axis due to an absurdly large Y-range. Still, I tried to improvise and present to you my little hack — a chart with nested ranges:</p>
 
