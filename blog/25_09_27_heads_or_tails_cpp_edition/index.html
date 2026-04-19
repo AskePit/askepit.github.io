@@ -354,7 +354,7 @@ Tails: <span class="code-literal">32851</span>, <span class="code-literal">50.12
 <p>Well — our 50.1266% already has less error than Kerrich’s 50.67%.</p>
 <p>But there’s an interesting point. To bring it up, I have to admit I omitted another old experiment.</p>
 <p>Half a century before John Edmund Kerrich flipped a coin 10,000 times, another scientist, Karl Pearson, did the same with his students. They ran even more iterations — a crazy 24,000 flips, with results of 12,012 to 11,988, or 50.05% versus 49.95%.</p>
-<p>My generator with 65,536 coin flips performs two and a half times more flips, yet the percentage more often stays around \[50.1%; 50.2%\], which is “worse” than Pearson’s results, although sometimes it approaches his results and sometimes slightly undershoots them. From this, we could cautiously conclude that 24,000 or 65,000 coin flips don’t differ significantly in terms of statistical results.</p>
+<p>My generator with 65,536 coin flips performs two and a half times more flips, yet the percentage more often stays around [50.1%; 50.2%], which is “worse” than Pearson’s results, although sometimes it approaches his results and sometimes slightly undershoots them. From this, we could cautiously conclude that 24,000 or 65,000 coin flips don’t differ significantly in terms of statistical results.</p>
 <p>Either Pearson lied.</p>
 <p>Or my generator lies.</p>
 <p>Or I’m lying.</p>
@@ -581,7 +581,7 @@ std::uniform_int_distribution&lt;<span class="code-keyword">int</span>&gt; uni {
 <p>They were too suspicious, and there were too many of them.</p>
 <p>First, I tried switching to a classic C approach: <a href="https://en.cppreference.com/w/cpp/numeric/random/srand.html"><code>srand</code></a> + <a href="https://en.cppreference.com/w/cpp/numeric/random/rand.html"><code>rand</code></a>. That was a disaster — it was slow.</p>
 <p>Then I experimented with other distribution classes. Some gave completely incorrect results, not converging to 50/50. Others worked and were even slightly faster than <code>std::uniform_int_distribution</code>, for example <a href="https://en.cppreference.com/w/cpp/numeric/random/bernoulli_distribution.html"><code>std::bernoulli_distribution</code></a>. Plus, that distribution naturally produces <code>bool</code>. But the speed gain was minimal.</p>
-<p>That made me wonder: do I even need a distribution? What if I just throw it away? Essentially, all I need is a zero or a one. The generator itself — <code>std::mt19937</code> and its friends — can generate random numbers directly via <code>operator()</code>. The catch is that we’ll get some random number (its type depends on the generator class), and we need to convert it into the range \[0; 1\].</p>
+<p>That made me wonder: do I even need a distribution? What if I just throw it away? Essentially, all I need is a zero or a one. The generator itself — <code>std::mt19937</code> and its friends — can generate random numbers directly via <code>operator()</code>. The catch is that we’ll get some random number (its type depends on the generator class), and we need to convert it into the range [0; 1].</p>
 <p>I naively reasoned that if I just take the zero-th bit of that number, it should be sufficiently random. It turned out not all generators handle this well, but generators like <code>std::minstd_rand</code> and <code>std::mt19937</code> continued producing distributions tending toward 50/50, so I confidently threw away <code>std::uniform_int_distribution</code> and changed the coin flip code to this:</p>
 <pre><code class="language-diff">-<span class="code-keyword">int</span> res = <span class="code-call">uni</span>(gen);
 +<span class="code-keyword">int</span> res = <span class="code-call">gen</span>() & <span class="code-literal">1</span>;</code></pre>
@@ -1018,7 +1018,7 @@ Tails: <span class="code-literal">34</span> <span class="code-literal">359</span
     </figure>
 </div>
 
-<p>In short, I don’t know any better way to show the scale of a twenty-thousand-fold speedup — the result is just too good :) Read the chart like this — as soon as it drops to the X-axis, move to the next chart, which zooms in on the Y-axis. If the labels are hard to read, the main chart covers a range of \[0; 1400\] seconds, the second-level chart covers \[0; 20\] seconds, and the third — \[0; 0.14\] seconds.</p>
+<p>In short, I don’t know any better way to show the scale of a twenty-thousand-fold speedup — the result is just too good :) Read the chart like this — as soon as it drops to the X-axis, move to the next chart, which zooms in on the Y-axis. If the labels are hard to read, the main chart covers a range of [0; 1400] seconds, the second-level chart covers [0; 20] seconds, and the third — [0; 0.14] seconds.</p>
 <p>It’s also worth calculating the speed of our automated coin tosser. 68,719,476,736 tosses in about 61 milliseconds — which equals:</p>
 <pre><code class="language-"><span class="code-literal">68 719 476 736</span> / <span class="code-literal">61</span>ms
 <span class="code-literal">1</span> <span class="code-literal">128</span> <span class="code-literal">283</span> <span class="code-literal">766</span> / ms

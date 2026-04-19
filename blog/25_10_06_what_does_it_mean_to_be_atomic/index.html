@@ -615,7 +615,7 @@ ldr r4, <span class="code-literal">0</span>(r3);</code></pre>
 <span class="code-keyword">int</span> b = ptr-&gt;b;
 <span class="code-keyword">return</span> a + b;</code></pre>
 <p>The loads from ptr after the <code>gAtomicPtr</code> load ensure that the correct values of a and b are observed. This pairs with a Release operation on the writer side by releasing gAtomicPtr.</p>
-<p>As said above the returned pointer from a .load(memory_order_read_depends) can only be used to then further load values. Dereferencing(\*) and Arrow Dereferencing(-&gt;) are valid operations on return values from .load(memory_order_read_depends).</p>
+<p>As said above the returned pointer from a .load(memory_order_read_depends) can only be used to then further load values. Dereferencing(*) and Arrow Dereferencing(-&gt;) are valid operations on return values from .load(memory_order_read_depends).</p>
 <pre><code class="language-cpp">MyStruct* ptr = gAtomicPtr.<span class="code-call">load</span>(memory_order_read_depends);
 <span class="code-keyword">int</span> a = ptr-&gt;a;  - VALID
 <span class="code-keyword">int</span> a = *ptr;    - VALID</code></pre>

@@ -218,7 +218,7 @@ $$</p>
 <p>and walked away happy.</p>
 <p>But things got weird when I started writing this article — probably a year after that blessed <s>confession</s> chat session. I had, of course, completely forgotten the name of that scientist ChatGPT proudly dropped on me back then. I dug through my chat history to flex that name here for you — only to find I’d deleted the conversation. I tend to do periodic spring cleaning in my chat archive, which in this case came back to bite me.</p>
 <p>I decided to go around the problem and simply fed my own code (which, ironically, was based on ChatGPT's own advice) back into the machine and asked, “Hey, what’s this algorithm called?”</p>
-<p>The soulless machine shrugged and said, “Dunno. But it <i>kinda</i> looks like a <s>general prosecutor</s> modified <a href="https://en.wikipedia.org/wiki/Canberra_distance#:~:text=The%20Canberra%20distance%20is%20a,of%20L%E2%82%81%20\(Manhattan\">Canberra distance</a>%20distance.),” which does in fact look suspiciously like mine (yes, <i>mine</i>), but it’s still different:</p>
+<p>The soulless machine shrugged and said, “Dunno. But it <i>kinda</i> looks like a <s>general prosecutor</s> modified <a href="https://en.wikipedia.org/wiki/Canberra_distance#:~:text=The%20Canberra%20distance%20is%20a,of%20L%E2%82%81%20(Manhattan)%20distance.">Canberra distance</a>,” which does in fact look suspiciously like mine (yes, <i>mine</i>), but it’s still different:</p>
 <p class="latex">$$
 difference(a,b) = \frac{∣a−b∣}{|a| + |b|}
 $$</p>
@@ -273,7 +273,7 @@ $$</p>
         MIN_MAX_WEIGHT = (<span class="code-literal">1.0</span> - MEDIAN_WEIGHT) / <span class="code-literal">2.0</span>
 
         <span class="code-keyword">return</span> MIN_MAX_WEIGHT * min_similarity + MIN_MAX_WEIGHT * max_similarity + MEDIAN_WEIGHT * med_similarity</code></pre>
-<p>What’s important here is that for my specific <code>DataRange</code> class, I decided it makes sense to lean heavily on the <i>median</i> when computing similarity—without completely ignoring the min and max, which should also play a role in the outcome. But let’s be honest: if two <code>DataRange</code> objects \[10; 100\] and \[12; 80\] share the same median—say, 40—then those two ranges <i>have</i> to be pretty close. After all, the range’s minimum and maximum are usually outliers—deviations from the mean or median. So, in this concrete case, I arbitrarily assigned a <i>70%</i> weight to the median’s influence on similarity, and split the remaining influence between min and max at <i>15%</i> each.</p>
+<p>What’s important here is that for my specific <code>DataRange</code> class, I decided it makes sense to lean heavily on the <i>median</i> when computing similarity—without completely ignoring the min and max, which should also play a role in the outcome. But let’s be honest: if two <code>DataRange</code> objects [10; 100] and [12; 80] share the same median—say, 40—then those two ranges <i>have</i> to be pretty close. After all, the range’s minimum and maximum are usually outliers—deviations from the mean or median. So, in this concrete case, I arbitrarily assigned a <i>70%</i> weight to the median’s influence on similarity, and split the remaining influence between min and max at <i>15%</i> each.</p>
 <blockquote><p>As you might have noticed, I’m no mathematician, and my familiarity with statistics and data analysis is—if I’m honest—basically surface level. So if you want to tell me in the comments why my approach is just amateur daydreaming and how it <i>really</i> should be calculated, we’ll all come out ahead.</p></blockquote>
 <hr>
 <p>Alright, we’ve got one more class we want to compare: <code>ProbabilityTable</code>:</p>
@@ -293,7 +293,7 @@ $$</p>
 	GameOverResult.BLACK_WINS: <span class="code-literal">0.3</span>,
 	GameOverResult.DRAW: <span class="code-literal">0.1</span>,
 }</code></pre>
-<p>Here, for comparing objects, we can apply a different kind of heuristic. The main ace up our sleeve is that the numbers in the dictionary are, by definition, already normalized to the \[0; 1\] range—so I figured we could compute their <i>difference</i> simply as $difference(a,b) = |a-b|$. Then we convert that to <i>similarity</i> using the inversion we already know: $similarity(a,b) = 1.0 - difference(a,b)$.</p>
+<p>Here, for comparing objects, we can apply a different kind of heuristic. The main ace up our sleeve is that the numbers in the dictionary are, by definition, already normalized to the [0; 1] range—so I figured we could compute their <i>difference</i> simply as $difference(a,b) = |a-b|$. Then we convert that to <i>similarity</i> using the inversion we already know: $similarity(a,b) = 1.0 - difference(a,b)$.</p>
 <p>Finally, we take the arithmetic mean over the entire map—and voilà: the comparison is done.</p>
 <pre><code class="language-python"><span class="code-keyword">class</span> ProbabilityTable:
 ...
