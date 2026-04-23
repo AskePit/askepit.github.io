@@ -40,7 +40,7 @@ h3 code {
     font-size: 19px;
 }
 
-ul, li, p, blockquote, small {
+ul, li, p, blockquote, small, table {
     font-family: var(--text-font);
     font-size: 1rem;
     line-height: 1.75;

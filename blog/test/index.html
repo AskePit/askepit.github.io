@@ -142,6 +142,7 @@ MathJax = {
 <p class="latex">$$
 R_{n+1}=(R_n*a+b) \bmod m
 $$</p>
+<table><thead><tr><th>Milestone</th><th>Time</th><th>Speedup</th></tr></thead><tbody><tr><td>Measurement Start</td><td><code>20min 41s 897ms 383us 600ns</code></td><td>-</td></tr><tr><td>Without distribution</td><td><code>10min 50s 93ms 886us 900ns</code></td><td>x1.9</td></tr><tr><td>Lazy generator</td><td><code>7min 8s 600ms 933us</code></td><td>x1.5</td></tr><tr><td>Restructuring</td><td><code>19s 826ms 601us</code></td><td>x21.6</td></tr><tr><td>std::popcount()</td><td><code>5s 460ms 958us 600ns</code></td><td>x3.6</td></tr><tr><td>64-bit generator</td><td><code>2s 554ms 51us 200ns</code></td><td>x2.1</td></tr><tr><td>Multithreading</td><td><code>126ms 479us 900ns</code></td><td>x20.2</td></tr><tr><td>Custom Generator</td><td><code>93ms 529us 800ns</code></td><td>x1.4</td></tr><tr><td>More threads</td><td><code>75ms 91us 300ns</code></td><td>x1.25</td></tr><tr><td>SIMD</td><td><code>60ms 906us 200ns</code></td><td>x1.23</td></tr></tbody></table>
 <p>Or, to put it simply, for the next number in the sequence, we:</p>
 <ul>
 	<li>Multiply it by something large and preferably prime</li>

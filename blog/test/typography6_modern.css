@@ -39,7 +39,7 @@ h2 code {
     font-size: 21px;
 }
 
-ul, li, p, blockquote, small {
+ul, li, p, blockquote, small, table {
     font-family: var(--text-font);
     font-size: 19px;
     font-weight: 350;

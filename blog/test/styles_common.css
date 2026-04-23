@@ -26,13 +26,11 @@ code {
 h2 code {
     font-size: 30px;
     font-weight: 1000;
-    text-transform: none;
 }
 
 h3 code {
     font-size: 20px;
     font-weight: 1000;
-    text-transform: none;
 }
 
 pre code {
@@ -95,6 +93,27 @@ blockquote {
     padding: 10px;
     font-size: 20px;
     font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
+}
+
+table, td, th {
+    border-collapse: collapse;
+    text-align: left;
+}
+
+tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+table {
+    margin: 20px 0px;
+}
+
+td, th {
+  padding: 4px 10px;
 }
 
 @media only screen and (max-width: 1000px) {
