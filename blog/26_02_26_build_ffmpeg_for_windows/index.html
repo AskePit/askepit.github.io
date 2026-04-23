@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>Build ffmpeg for Windows</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Recently I had to build ffmpeg on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated">
+    <meta name="keywords" content="c++, c, ffmpeg, windows">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/build_ffmpeg_for_windows/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="Build ffmpeg for Windows">
+    <meta property="og:description" content="Recently I had to build ffmpeg on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated">
+    <meta property="og:image" content="https://habrastorage.org/r/w780/getpro/habr/upload_files/5fd/2ab/95a/5fd2ab95abf261ce8c04e7abb07f7c06.jpg">
+    <meta property="og:url" content="https://askepit.github.io/blog/build_ffmpeg_for_windows/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Build ffmpeg for Windows">
+    <meta name="twitter:description" content="Recently I had to build ffmpeg on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w780/getpro/habr/upload_files/5fd/2ab/95a/5fd2ab95abf261ce8c04e7abb07f7c06.jpg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_dark.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>Build ffmpeg for Windows</h1>
+<p>Recently I had to build <a href="https://ffmpeg.org/">ffmpeg</a> on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated. There are even articles on the internet that open with: "The official documentation for building ffmpeg on Windows is hopelessly outdated — here's how to do it now." The funny part is that those articles are outdated too, and don't provide a working "press X to compile" solution anymore.</p>
+<p>So I'll just leave here an instruction that works as of February 2026. It will probably become outdated like all the ones before it. But when it does, just let me know and I'll try to keep it current.</p>
+<h2>Installing MSYS2</h2>
+<p>First things first, we'll install MSYS2, which gives us a Unix-like environment on Windows — specifically the ability to run <code>configure</code> and <code>make</code>.</p>
+<ul>
+	<li>Download and run <a href="https://www.msys2.org/">MSYS2</a></li>
+	<li>Open the file <code>c:/msys64/msys2_shell.cmd</code> and remove <code>rem</code> from the line <code>rem set MSYS2_PATH_TYPE=inherit</code></li>
+	<li>Launch <code>x64 Native Tools Command Prompt for VS 2022</code> (or whatever version of VS you have)</li>
+	<li>From within that terminal, launch <code>c:/msys64/msys2_shell.cmd</code> — <i>another</i> terminal will open, and you'll run the remaining commands inside it</li>
+	<li><code>pacman -Syu</code></li>
+	<li><code>pacman -S make</code></li>
+	<li><code>pacman -S nasm</code></li>
+	<li>Run <code>mv /usr/bin/link.exe /usr/bin/link.exe.bak</code>. Yes, yes — we're effectively removing the local <code>link.exe</code>, because it will conflict with the MSVC toolchain's <code>link.exe</code></li>
+</ul>
+<p>Congratulations, you've configured MSYS2 to build ffmpeg with the MSVC toolchain in a Unix-like environment.</p>
+<h2>Downloading ffmpeg</h2>
+<p>Clone the <a href="https://git.ffmpeg.org/ffmpeg.git">ffmpeg repository</a> with:</p>
+<pre><code class="language-bash">git clone https:<span class="code-comment">//git.ffmpeg.org/ffmpeg.git &lt;ffmpeg-folder&gt;</span></code></pre>
+<h2>Building ffmpeg</h2>
+<p>First, launch the "terminal through a terminal" again:</p>
+<ul>
+	<li>Launch <code>x64 Native Tools Command Prompt for VS 2022</code></li>
+	<li>From within that terminal, launch <code>c:/msys64/msys2_shell.cmd</code></li>
+	<li>In that terminal, navigate to the ffmpeg repository folder</li>
+	<li>To verify everything is going according to plan, run <code>cl</code>. You should see something like:</li>
+</ul>
+<pre><code class="language-">Microsoft (R) C/C++ Optimizing Compiler Version <span class="code-literal">19.43.34809</span> <span class="code-keyword">for</span> x64
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+usage: cl [ option... ] filename... [ /link linkoption... ]</code></pre>
+<p>If the terminal says it has no idea what <code>cl.exe</code> is, <b>something went wrong</b>. Re-read the instructions, reinstall everything, pray.</p>
+<p>All further work happens in this second MSYS2 terminal.</p>
+<h3>Default Build</h3>
+<p>The most minimal ffmpeg build:</p>
+<pre><code class="language-bash">./configure --target-os=win64 --arch=x86_64 --toolchain=msvc
+make -j16</code></pre>
+<h3>Custom Build</h3>
+<p>You can add various configuration flags to <code>configure</code>, which you can discover via <code>./configure --help</code>. Ffmpeg has extremely extensive customization options.</p>
+<p>Example:</p>
+<pre><code class="language-bash">./configure \
+  --target-os=win64 \
+  --arch=x86_64 \
+  --toolchain=msvc \
+  --disable-programs \
+  --disable-doc \
+  --disable-encoders \
+  --disable-muxers \
+  --disable-filters \
+  --disable-devices \
+  --disable-network \
+  --disable-avfilter \
+  --disable-avdevice \
+  --disable-mediafoundation \
+  --enable-decoder=aac,ac3,adpcm_ima_wav,adpcm_ms,alac,av1,bmp,eac3,dnxhd,ffv1,ffvhuff,flac,flc,flic,flv1,gif,h263,h263p,h264,hevc,indeo3,indeo4,indeo5,mjpeg,mp3,mpeg1video,mpeg2video,mpeg4,msmpeg4v2,msmpeg4v3,opus,pal8,paletteuse,pcm_s16le,pcm_s24le,prores,png,rawvideo,rv10,rv20,svq1,svq3,theora,tiff,vc1,vorbis,vp8,vp9,webp,wmv1,wmv2,wmv3 \
+  --enable-demuxer=asf,avi,flc,flic,flv,gif,image2,image2pipe,matroska,mjpeg,mov,mp3,mp4,mpegps,mpegts,ogg,png,wav,webm,webp \
+  --enable-parser=aac,ac3,flac,h263,h264,hevc,mpeg4video,mpegvideo,rawvideo,vorbis,vp8,vp9 \
+  --enable-protocol=file \
+  --enable-swscale \
+  --enable-swresample \
+  --enable-avformat \
+  --enable-avcodec \
+  --enable-avutil \
+  --enable-zlib \
+  --extra-cflags=<span class="code-literal">"-I../thirdparty/zlib"</span> \
+  --extra-ldflags=<span class="code-literal">"-LIBPATH:../bin/obj/thirdparty/zlib"</span>
+
+make -j16</code></pre>
+<h3>Building a Dynamic Library</h3>
+<p>By default <code>make</code> builds static libraries. If you need DLLs, add the following flags to <code>configure</code>:</p>
+<pre><code class="language-bash">./configure \
+  ...
+  --enable-shared \
+  --disable-<span class="code-keyword">static</span>
+
+make -j16</code></pre>
+<h2>Where Everything Gets Built</h2>
+<p>Finding the built libraries and header files so you can actually use them in your project is its own little adventure.</p>
+<p>The <code>*.lib</code> files are scattered across the following folders:</p>
+<pre><code class="language-">ffmpeg/libavcodec/avcodec.lib
+ffmpeg/libavdevice/avdevice.lib
+ffmpeg/libavfilter/avfilter.lib
+ffmpeg/libavformat/avformat.lib
+ffmpeg/libavutil/avutil.lib
+ffmpeg/libswresample/swresample.lib
+ffmpeg/libswscale/swscale.lib</code></pre>
+<p>If you feel like it, you can write a script that simply searches the entire repository for all <code><i>.lib</code>, <code></i>.dll</code>, <code>*.pdb</code> files and drops them into your project.</p>
+<p>For headers it's a bit more involved. You need to, drumroll please... copy all <code><i>.h</code> and <code></i>.hpp</code> files from the repository into your project <b>preserving the folder structure</b>. You can also write a script to do this for you. The bonus challenge <s>for hardcore nerds</s> — write a script that analyzes each header file, builds a dependency tree of all headers, and deletes any headers that nobody references %).</p>
+<hr>
+<p>Since I'm so casually throwing around the idea of writing scripts for all this, it would be strange not to show how I actually handle it. I use Python:</p>
+<pre><code class="language-python"><span class="code-keyword">def</span> <span class="code-call">make_dir</span>(path):
+    os.<span class="code-call">makedirs</span>(path, exist_ok=<span class="code-keyword">True</span>)
+
+<span class="code-keyword">def</span> <span class="code-call">remove_dir</span>(path):
+    shutil.<span class="code-call">rmtree</span>(path, ignore_errors=<span class="code-keyword">True</span>)
+
+<span class="code-keyword">def</span> <span class="code-call">copy_files</span>(src, dst, extensisons: list[str], preserve_structure: bool = <span class="code-keyword">True</span>):
+    <span class="code-call">make_dir</span>(dst)
+    <span class="code-keyword">for</span> root, dirs, files <span class="code-keyword">in</span> os.<span class="code-call">walk</span>(src):
+        <span class="code-keyword">for</span> file <span class="code-keyword">in</span> files:
+            <span class="code-keyword">if</span> <span class="code-call">any</span>(file.<span class="code-call">endswith</span>(ext) <span class="code-keyword">for</span> ext <span class="code-keyword">in</span> extensisons):
+                src_file = os.path.<span class="code-call">join</span>(root, file)
+                <span class="code-keyword">if</span> preserve_structure:
+                    rel_path = os.path.<span class="code-call">relpath</span>(root, src)
+                    dst_dir = os.path.<span class="code-call">join</span>(dst, rel_path)
+                    <span class="code-call">make_dir</span>(dst_dir)
+                    dst_file = os.path.<span class="code-call">join</span>(dst_dir, file)
+                <span class="code-keyword">else</span>:
+                    dst_file = os.path.<span class="code-call">join</span>(dst, file)
+                shutil.<span class="code-call">copy2</span>(src_file, dst_file)
+
+<span class="code-keyword">def</span> <span class="code-call">copy_ffmpeg</span>():
+    <span class="code-call">remove_dir</span>(<span class="code-literal">'app/ffmpeg_lib'</span>)
+    <span class="code-call">remove_dir</span>(<span class="code-literal">'app/ffmpeg_include'</span>)
+
+    <span class="code-call">copy_files</span>(<span class="code-literal">'ffmpeg'</span>, <span class="code-literal">'app/ffmpeg_lib'</span>, [<span class="code-literal">'.lib'</span>, <span class="code-literal">'.dll'</span>, <span class="code-literal">'.pdb'</span>], preserve_structure=<span class="code-keyword">False</span>)
+    <span class="code-call">copy_files</span>(<span class="code-literal">'ffmpeg'</span>, <span class="code-literal">'app/ffmpeg_include'</span>, [<span class="code-literal">'.h'</span>, <span class="code-literal">'.hpp'</span>], preserve_structure=<span class="code-keyword">True</span>)</code></pre>
+<h2>Conclusion</h2>
+<p>Building ffmpeg on Windows is not exactly a pleasant experience. I hope this guide makes your life with ffmpeg just a tiny bit more enjoyable.</p>
+<p>Any corrections or alternative simpler ways to build ffmpeg on Windows are welcome in the comments. If you just want to complain about ffmpeg — also feel free. If you want to tell me what a noob I am and that it's actually super simple — I'll read that too with pleasure.</p>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>

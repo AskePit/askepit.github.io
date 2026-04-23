@@ -1,0 +1,778 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>C++ penny pinching</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Recently at work we ran into high memory consumption in a game. It was caused by storing a large amount of terrain information and tile properties that the game needs for various gameplay calculations. A very common problem, and it hits especially hard with large arrays or matrices of significant dimensions.">
+    <meta name="keywords" content="c++, optimizations, memory">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/cpp_penny_pinching/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="C++ penny pinching">
+    <meta property="og:description" content="Recently at work we ran into high memory consumption in a game. It was caused by storing a large amount of terrain information and tile properties that the game needs for various gameplay calculations. A very common problem, and it hits especially hard with large arrays or matrices of significant dimensions.">
+    <meta property="og:image" content="https://habrastorage.org/r/w780/getpro/habr/upload_files/f11/8d9/8b0/f118d98b0f7ab732d6dc2de9f36693db.jpg">
+    <meta property="og:url" content="https://askepit.github.io/blog/cpp_penny_pinching/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="C++ penny pinching">
+    <meta name="twitter:description" content="Recently at work we ran into high memory consumption in a game. It was caused by storing a large amount of terrain information and tile properties that the game needs for various gameplay calculations. A very common problem, and it hits especially hard with large arrays or matrices of significant dimensions.">
+    <meta name="twitter:image" content="https://habrastorage.org/r/w780/getpro/habr/upload_files/f11/8d9/8b0/f118d98b0f7ab732d6dc2de9f36693db.jpg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" href="../typography_neutral.css" id="typography" type="text/css"/>
+    <link rel="stylesheet" href="../styles_dark.css" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>C++ penny pinching</h1>
+<p>Recently at work we ran into high memory consumption in a game. It was caused by storing a large amount of terrain information and tile properties that the game needs for various gameplay calculations. A very common problem, and it hits especially hard with large arrays or matrices of significant dimensions.</p>
+<p>A pretty typical scenario — you have a perfectly reasonable struct that stores information about a single object. But there are a <i>lot</i> of those objects. Say, a 1000x1000 terrain grid. That's already a whole million objects! And your measly 32-byte struct gets multiplied a million times and balloons to 30.5 MB of RAM.</p>
+<p>Arguably the most correct solution here is to fundamentally rethink how this enormous pile of data is stored in memory. There are plenty of directions you can dig toward:</p>
+<ul>
+	<li>Streaming. At any given moment, load only the data you currently need from disk into memory. Evict what's no longer relevant.</li>
+	<li>Data compression. Store data in a packed, compressed form. Decompress on the fly when reading.</li>
+	<li>Clever data structures that allow storing identical neighboring data in a very compact form. A classic example — <a href="https://en.wikipedia.org/wiki/Quadtree">quadtrees</a>.</li>
+</ul>
+<p>But this article is not about those smart solutions — it's a bit more down to earth. Before diving into expensive rewrites, it's worth taking what you might call the zeroth optimization step — try to optimize the struct or class itself so that it takes up less space. Every penny counts!</p>
+<h2>A Spherical Example</h2>
+<p>For illustration purposes, let's take a clean theoretical example. We have a <code>PersonInfo</code> struct and some associated types:</p>
+<pre><code class="language-cpp"><span class="code-keyword">enum class</span> RoleType {
+    Employee,
+    Student,
+    Contractor,
+    Retired
+};
+
+<span class="code-keyword">struct</span> EmployeeData {};
+<span class="code-keyword">struct</span> StudentData {};
+<span class="code-keyword">struct</span> ContractorData {};
+<span class="code-keyword">struct</span> RetiredData {};
+
+<span class="code-keyword">struct</span> PersonInfo {
+    uint16_t id;
+    <span class="code-keyword">int</span> age;
+    uint32_t salary;
+
+    <span class="code-keyword">bool</span> isMarried;
+    <span class="code-keyword">bool</span> hasDrivingLicense;
+    <span class="code-keyword">bool</span> isRemoteWorker;
+    <span class="code-keyword">bool</span> hasChildren;
+    <span class="code-keyword">bool</span> ownsHouse;
+    <span class="code-keyword">bool</span> isSmoker;
+    <span class="code-keyword">bool</span> isShareholder;
+
+    RoleType role;
+    <span class="code-keyword">void</span>* roleData;
+
+    <span class="code-keyword">bool</span> isAvailable;
+};</code></pre>
+<p>What's going on here:</p>
+<ul>
+	<li><code>id</code>. 16-bit employee ID.</li>
+	<li><code>age</code>. Employee age.</li>
+	<li><code>salary</code>. Employee salary, represented in some internal decimal format that we'll describe as a 32-bit number for simplicity.</li>
+	<li>A bunch of <code>bool</code> fields with various employee info.</li>
+	<li><code>role</code> and <code>roleData</code>. A pair of fields describing the employee's role and the data associated with that specific role. Essentially a tagged union held together with duct tape. For <code>RoleType::Employee</code>, the <code>void<i></code> hides an <code>EmployeeData</i></code>, for <code>RoleType::Student</code> — a <code>StudentData*</code>, and so on.</li>
+	<li><code>isAvailable</code>. Whether the employee is currently available or on vacation/sick leave/etc.</li>
+</ul>
+<p>There are lots and lots of employees. And we have an application that keeps a large number of <code>PersonInfo</code> objects in memory. Our goal — reduce memory consumption of this large <code>PersonInfo</code> array.</p>
+<h2>Disclaimers, Caveats</h2>
+<p>Let's briefly outline the conditions the application runs under:</p>
+<ul>
+	<li>64-bit platform.</li>
+	<li>We assume a typical industrial compiler like gcc, msvc, clang, icc with default compilation flags.</li>
+	<li>Theoretically, a struct's memory layout can vary from compiler to compiler, platform to platform. In practice, for the compilers mentioned above and for everything shown below, <a href="https://godbolt.org/">Godbolt (a.k.a. Compiler Explorer)</a> produces the same memory layout results.</li>
+	<li>We will <b>not</b> use bitfields. Maximally implementation-defined behavior that you shouldn't rely on if you need any portability whatsoever.</li>
+</ul>
+<h2>The Starting Point</h2>
+<p>So, our initial <code>struct PersonInfo</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> PersonInfo {
+    uint16_t id;
+    <span class="code-keyword">int</span> age;
+    uint32_t salary;
+
+    <span class="code-keyword">bool</span> isMarried;
+    <span class="code-keyword">bool</span> hasDrivingLicense;
+    <span class="code-keyword">bool</span> isRemoteWorker;
+    <span class="code-keyword">bool</span> hasChildren;
+    <span class="code-keyword">bool</span> ownsHouse;
+    <span class="code-keyword">bool</span> isSmoker;
+    <span class="code-keyword">bool</span> isShareholder;
+
+    RoleType role;
+    <span class="code-keyword">void</span>* roleData;
+
+    <span class="code-keyword">bool</span> isAvailable;
+};</code></pre>
+<p>has the following memory layout:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/zp/-v/jv/zp-vjvn4-qsvno9hq3ppbbqarfa.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Total — the struct occupies <b>40 bytes</b> and has several ugly gaping holes in memory. This is padding, whose job is to align struct fields so they sit at addresses properly aligned to their size. The compiler is not allowed to reorder struct fields, so it can't optimize anything on its own. The particularly painful part is the 7 wasted bytes at the end of the struct — <code>PersonInfo</code> has 8-byte alignment, so the last <code>bool</code> that crept past byte 32 forced the struct to consume a full 8 bytes.</p>
+<p>A well-known phenomenon, documented in hundreds of articles across the internet. If you don't understand what's happening here and why, you can freely Google "struct padding" or "c++ alignment" to learn more.</p>
+<h2>Shuffling the Struct</h2>
+<p>The simplest and most common way to fight padding — reorder fields from largest to smallest:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> PersonInfo {
+    <span class="code-keyword">void</span>* roleData;
+    uint32_t salary;
+    <span class="code-keyword">int</span> age;
+    RoleType role;
+    uint16_t id;
+
+    <span class="code-keyword">bool</span> isMarried;
+    <span class="code-keyword">bool</span> hasDrivingLicense;
+    <span class="code-keyword">bool</span> isRemoteWorker;
+    <span class="code-keyword">bool</span> hasChildren;
+    <span class="code-keyword">bool</span> ownsHouse;
+    <span class="code-keyword">bool</span> isSmoker;
+    <span class="code-keyword">bool</span> isShareholder;
+    <span class="code-keyword">bool</span> isAvailable;
+};</code></pre>
+<p>This is the simplest trick in the world and essentially free — it asks nothing of you and delivers instant results:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/zg/ro/bj/zgrobjuf8uie9v4u9u_3e42n1bm.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>This picture looks much nicer, and we saved 8 bytes by doing virtually nothing! We're now at <b>32 bytes</b>.</p>
+<h2>Trimming the Budget</h2>
+<p>A closer look at the struct reveals a couple of places where we can trim the type sizes without losing anything.</p>
+<p>The first obvious case — the <code>age</code> field. Someone slapped an <code>int</code> on it without a second thought, even though we don't plan to account for unborn employees with negative ages or biblical centenarians at 900+. <s>640Kb</s> <code>uint8_t</code> is honestly enough for everyone, and it lets us ditch 3 extra bytes.</p>
+<p>The second case is less obvious — <code>enum class RoleType</code>. It's declared the simple way, without specifying an underlying type, which defaults it to the same <code>int</code> we already fought once. Since <code>RoleType</code> only has 4 variants, two bits would suffice, but we'll give it a whole 8, because that's the minimum we can do: <code>enum class RoleType : uint8_t</code>.</p>
+<p>Let's look at the resulting code:</p>
+<pre><code class="language-cpp"><span class="code-keyword">enum class</span> RoleType : uint8_t {
+    Employee,
+    Student,
+    Contractor,
+    Retired
+};
+
+<span class="code-keyword">struct</span> PersonInfo {
+    <span class="code-keyword">void</span>* roleData;
+    uint32_t salary;
+    uint16_t id;
+    uint8_t age;
+    RoleType role;
+
+    <span class="code-keyword">bool</span> isMarried;
+    <span class="code-keyword">bool</span> hasDrivingLicense;
+    <span class="code-keyword">bool</span> isRemoteWorker;
+    <span class="code-keyword">bool</span> hasChildren;
+    <span class="code-keyword">bool</span> ownsHouse;
+    <span class="code-keyword">bool</span> isSmoker;
+    <span class="code-keyword">bool</span> isShareholder;
+    <span class="code-keyword">bool</span> isAvailable;
+};</code></pre>
+<p>Still not too many deviations from the original, but look at the memory layout:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/vg/tt/1z/vgtt1zzrdbfbyzxywhe9ybrvhuo.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>We achieved the tightest possible packing and fit into <b>24 bytes</b>.</p>
+<h2>Squeezing the Booleans</h2>
+<p>In mainstream programming languages (and probably all of them) there's one unpleasant truth about boolean values: logically they represent one bit of information, but in practice they're implemented as 1-byte types, meaning they take up 8 times more space than necessary! In some languages it's even worse. Such is life — machines prefer to operate on whole machine words rather than extracting individual bits.</p>
+<p>If you look carefully at our current memory layout above --^, you'll notice something interesting: eight booleans lined up in a neat row. 8 bits that bloated into 8 bytes — 7 bytes down the drain. And we can pack them neatly into a single <code>uint8_t</code> (or <code>std::byte</code>) to finally restore justice.</p>
+<p>The code will be modified more substantially here, since we need to remove 8 public fields and replace them with a single private one. In place of the booleans, we'll expose a getter/setter interface:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> PersonInfo {
+    <span class="code-keyword">void</span>* roleData;
+    uint32_t salary;
+    uint16_t id;
+    uint8_t age;
+    RoleType role;
+
+    <span class="code-keyword">bool</span> <span class="code-call">isMarried</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">hasDrivingLicense</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">isRemoteWorker</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">hasChildren</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">ownsHouse</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">isSmoker</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">isShareholder</span>() <span class="code-keyword">const</span>;
+    <span class="code-keyword">bool</span> <span class="code-call">isAvailable</span>() <span class="code-keyword">const</span>;
+
+    <span class="code-keyword">void</span> <span class="code-call">setIsMarried</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setHasDrivingLicense</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setIsRemoteWorker</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setHasChildren</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setOwnsHouse</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setIsSmoker</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setIsShareholder</span>(<span class="code-keyword">bool</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setIsAvailable</span>(<span class="code-keyword">bool</span> val);
+
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t IsMarriedMask         = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">0</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t HasDrivingLicenseMask = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">1</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t IsRemoteWorkerMask    = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">2</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t HasChildrenMask       = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">3</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t OwnsHouseMask         = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">4</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t IsSmokerMask          = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">5</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t IsShareholderMask     = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">6</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uint8_t IsAvailableMask       = <span class="code-literal">1</span> &lt;&lt; <span class="code-literal">7</span>;
+
+    <span class="code-keyword">bool</span> <span class="code-call">getFlag</span>(uint8_t mask) <span class="code-keyword">const</span>;
+    <span class="code-keyword">void</span> <span class="code-call">setFlag</span>(uint8_t mask, <span class="code-keyword">bool</span> val);
+
+    uint8_t m_flags;
+};
+
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">getFlag</span>(uint8_t mask) <span class="code-keyword">const</span> {
+    <span class="code-keyword">return</span> m_flags & mask;
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setFlag</span>(uint8_t mask, <span class="code-keyword">bool</span> val) {
+    m_flags = val ? (m_flags | mask) : (m_flags & ~mask);
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">isMarried</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(IsMarriedMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">hasDrivingLicense</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(HasDrivingLicenseMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">isRemoteWorker</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(IsRemoteWorkerMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">hasChildren</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(HasChildrenMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">ownsHouse</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(OwnsHouseMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">isSmoker</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(IsSmokerMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">isShareholder</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(IsShareholderMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">bool</span> PersonInfo::<span class="code-call">isAvailable</span>() <span class="code-keyword">const</span> { <span class="code-keyword">return</span> <span class="code-call">getFlag</span>(IsAvailableMask); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setIsMarried</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(IsMarriedMask, val); }
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setHasDrivingLicense</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(HasDrivingLicenseMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setIsRemoteWorker</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(IsRemoteWorkerMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setHasChildren</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(HasChildrenMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setOwnsHouse</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(OwnsHouseMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setIsSmoker</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(IsSmokerMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setIsShareholder</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(IsShareholderMask, val); }
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setIsAvailable</span>(<span class="code-keyword">bool</span> val) { <span class="code-keyword">return</span> <span class="code-call">setFlag</span>(IsAvailableMask, val); }</code></pre>
+<p>Ugly? Absolutely. But the era of free and even cheap optimizations ended in the previous chapters. Squeezing the struct further requires greater sacrifices for diminishing returns — that's just reality. But let's see what we've gained:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/cz/m6/ga/czm6gawi7pg3bbpcjivljfat65e.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Well, we did save our 7 bytes as planned, but unfortunately we didn't actually reduce the struct's size. It stayed at <b>24 bytes</b>, since <code>alignof(PersonInfo)</code> is the minimum discrete unit by which the struct size can shrink.</p>
+<p>The good news is that any further trivial optimization will finally produce a real size reduction, since we're literally <a href="https://habr.com/ru/articles/27055/">one byte</a> short (&lt;-- easter egg for people from the Mesozoic).</p>
+<h2>Hiding a Stash</h2>
+<p>Time to look at our homemade "tagged union from Rust/Zig":</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span>* roleData;
+RoleType role;</code></pre>
+<p>Some thoughts:</p>
+<ul>
+	<li>As noted above, despite <code>RoleType</code> currently using an 8-bit underlying type, it actually represents just 4 variants that would fit in 2 bits.</li>
+	<li><code>roleData</code> is a pointer on a 64-bit machine. And as mentioned, it takes 8 bytes on any self-respecting platform (and we only work on those!). This means the pointer address is always a multiple of eight — because alignment. For a number that's a multiple of eight, its 3 least significant bits are always zero. On a 32-bit machine, by the way, the address would be a multiple of four, so the 2 least significant bits would always be zero.</li>
+	<li>See where I'm going with this? Whether x86 or x64 — our <code>enum class RoleType</code> can always be <i>embedded into the body of the pointer</i> <code>void* roleData</code>, while still allowing us to recover both the original pointer and the enum value. In other words, we can "dissolve" the <code>role</code> field inside the least significant bits of the <code>roleData</code> pointer.</li>
+</ul>
+<p>Cool? Cool. Let's do it:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> PersonInfo {
+<span class="code-keyword">private</span>:
+	uintptr_t m_role;
+
+<span class="code-keyword">public</span>:
+	uint32_t salary;
+	uint16_t id;
+	uint8_t age;
+
+	RoleType <span class="code-call">role</span>() <span class="code-keyword">const</span>;
+	<span class="code-keyword">void</span>* <span class="code-call">roleData</span>() <span class="code-keyword">const</span>;
+	...
+
+	<span class="code-keyword">void</span> <span class="code-call">setRole</span>(RoleType val);
+	<span class="code-keyword">void</span> <span class="code-call">setRoleData</span>(<span class="code-keyword">void</span>* val);
+	...
+
+<span class="code-keyword">private</span>:
+	...
+	<span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> uintptr_t RoleMask = <span class="code-literal">0</span>b11;
+	...
+
+	uint8_t m_flags;
+};
+
+<span class="code-keyword">inline</span> RoleType PersonInfo::<span class="code-call">role</span>() <span class="code-keyword">const</span> {
+	uint8_t roleTypeRaw = m_role & RoleMask;
+	<span class="code-keyword">return</span> <span class="code-keyword">static_cast</span>&lt;RoleType&gt;(roleTypeRaw);
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span>* PersonInfo::<span class="code-call">roleData</span>() <span class="code-keyword">const</span> {
+	uintptr_t roleDataRaw = m_role & ~RoleMask;
+	<span class="code-keyword">return</span> <span class="code-keyword">reinterpret_cast</span>&lt;<span class="code-keyword">void</span>*&gt;(roleDataRaw);
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setRole</span>(RoleType val) {
+	uint8_t roleTypeRaw = <span class="code-keyword">static_cast</span>&lt;uint8_t&gt;(val);
+	uintptr_t roleDataRaw = m_role & ~RoleMask;
+	m_role = roleDataRaw | roleTypeRaw;
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> PersonInfo::<span class="code-call">setRoleData</span>(<span class="code-keyword">void</span>* val) {
+	<span class="code-call">assert</span>(val & RoleMask == <span class="code-literal">0</span>);
+
+	uint8_t roleTypeRaw = m_role & RoleMask;
+	uintptr_t roleDataRaw = <span class="code-keyword">reinterpret_cast</span>&lt;uintptr_t&gt;(val) & ~RoleMask;
+	m_role = roleDataRaw | roleTypeRaw;
+}</code></pre>
+<p>The struct is disfigured. On the funny side — we still need to maintain field ordering to preserve the previous padding optimization, and we had to juggle access specifiers: <code>private</code>, <code>public</code>, <code>private</code>. Don't forget to bribe the reviewer of your branch to look the other way.</p>
+<blockquote><p>UPD: An important <a href="https://habr.com/ru/articles/1003644/#comment_29586186">note</a> from commenter @AlexeyMartynov: explicitly introducing different access specifiers in your struct or class can theoretically have unexpected effects on field ordering, which may shatter all your plans and expectations. Arm yourself with a debugger or print <a href="https://en.cppreference.com/w/cpp/types/offsetof.html"><code>offsetof(type, member)</code></a> to know for certain what's going on! At the end of the article I'll attach a cheat sheet on how to do this.</p></blockquote>
+<p>And at last, we end up with this:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/x-/4h/go/x-4hgonqqfdxwnfeqwm9qyyjo4w.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>This is so beautiful I can't put it into words. Just scroll up to the very first memory layout and behold what we've done to this struct. And it hasn't lost any of its functionality.</p>
+<p>But now it weighs <b>16 bytes</b> instead of <b>40 bytes</b>. I'd say saving 60% of memory out of thin air is quite respectable. Especially considering we didn't have to make any fateful architectural decisions or rewrite half the project to adopt a new data management paradigm.</p>
+<p>To be fair, those 60% memory savings cost us -60% code readability. But that's a matter of priorities.</p>
+<h2>Bonus Levels</h2>
+<p>Can we think of anything else? Of course we can! The ways to reduce your memory footprint are endless, since you can apply an endless number of heuristics depending on what your data actually represents.</p>
+<p>With the <code>PersonInfo</code> struct I was only able to demonstrate a limited set of basic tricks. Now let's briefly run through a few more techniques worth mentioning.</p>
+<h3>Union</h3>
+<p>If you have <i>overlapping</i> data that can't coexist at the same time, you might want to look at <code>union</code>. Just be extremely careful and keep in mind that it's dangerously easy to step on a UB landmine with unions.</p>
+<p>Here's a spherical example in a vacuum where only one group of fields is active at any given moment:</p>
+<pre><code class="language-cpp"><span class="code-keyword">enum class</span> CellStatus : uint8_t {
+	Metabolic,
+    AcidicInhibitor,
+    Signaling,
+    Energy
+};
+
+<span class="code-keyword">struct</span> Cell {
+    CellStatus status;
+
+    <span class="code-comment">// CellStatus::Metabolic</span>
+    <span class="code-keyword">float</span> metabolicLevel;
+
+    <span class="code-comment">// CellStatus::AcidicInhibitor</span>
+    uint16_t inhibitorClearanceTicks;
+    uint8_t acidityLevel;
+    uint8_t acidityExposure;
+
+    <span class="code-comment">// CellStatus::Signaling</span>
+    uint8_t signalLevel;
+    uint8_t signalLevelPrev;
+
+    <span class="code-comment">// CellStatus::Energy</span>
+    uint16_t energyReserve;
+
+    <span class="code-comment">// ...</span>
+    <span class="code-comment">// lots of other fields</span>
+    <span class="code-comment">// ...</span>
+};</code></pre>
+<p>Don't even ask what's going on here — this is science fiction. And yes, the example is also a bit crude. Usually structs don't scream so openly that they're just a disguised <code>union</code>.</p>
+<p>Simple math shows that in this flat form, the fields in question take <code>4 + 2 + 1 + 1 + 1 + 1 + 2 = 12</code> bytes (excluding padding). Inside a <code>union</code>, those same fields would only take as much as the largest group — in our case there are two, both at 4 bytes (the fields for <code>Cell::AcidicInhibitor</code> and <code>Cell::Metabolic</code>). 4 bytes instead of 12 — in some cases, that's quite decent.</p>
+<p>The only question is the cost of the refactor:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> Cell {
+    CellStatus status;
+
+    <span class="code-keyword">float</span> <span class="code-call">metabolicLevel</span>() <span class="code-keyword">const</span>;
+    uint16_t <span class="code-call">inhibitorClearanceTicks</span>() <span class="code-keyword">const</span>;
+    uint8_t <span class="code-call">acidityLevel</span>() <span class="code-keyword">const</span>;
+    uint8_t <span class="code-call">acidityExposure</span>() <span class="code-keyword">const</span>;
+    uint8_t <span class="code-call">signalLevel</span>() <span class="code-keyword">const</span>;
+    uint8_t <span class="code-call">signalLevelPrev</span>() <span class="code-keyword">const</span>;
+    uint16_t <span class="code-call">energyReserve</span>() <span class="code-keyword">const</span>;
+
+    <span class="code-keyword">void</span> <span class="code-call">setMetabolicLevel</span>(<span class="code-keyword">float</span> val);
+    <span class="code-keyword">void</span> <span class="code-call">setInhibitorClearanceTicks</span>(uint16_t val);
+    <span class="code-keyword">void</span> <span class="code-call">setAcidityLevel</span>(uint8_t val);
+    <span class="code-keyword">void</span> <span class="code-call">setAcidityExposure</span>(uint8_t val);
+    <span class="code-keyword">void</span> <span class="code-call">setSignalLevel</span>(uint8_t val);
+    <span class="code-keyword">void</span> <span class="code-call">setSignalLevelPrev</span>(uint8_t val);
+    <span class="code-keyword">void</span> <span class="code-call">setEnergyReserve</span>(uint16_t val);
+
+    <span class="code-comment">// ...</span>
+    <span class="code-comment">// lots of other fields</span>
+    <span class="code-comment">// ...</span>
+
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">union</span> {
+        <span class="code-keyword">float</span> m_metabolicLevel;
+        <span class="code-keyword">struct</span> {
+            uint16_t m_inhibitorClearanceTicks;
+            uint8_t m_acidityLevel;
+            uint8_t m_acidityExposure;
+        };
+        <span class="code-keyword">struct</span> {
+            uint8_t m_signalLevel;
+            uint8_t m_signalLevelPrev;
+        };
+        uint16_t m_energyReserve;
+    };
+};
+
+<span class="code-keyword">inline</span> <span class="code-keyword">float</span> Cell::<span class="code-call">metabolicLevel</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::Metabolic);
+    <span class="code-keyword">return</span> m_metabolicLevel;
+}
+<span class="code-keyword">inline</span> uint16_t Cell::<span class="code-call">inhibitorClearanceTicks</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    <span class="code-keyword">return</span> m_inhibitorClearanceTicks;
+}
+<span class="code-keyword">inline</span> uint8_t Cell::<span class="code-call">acidityLevel</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    <span class="code-keyword">return</span> m_acidityLevel;
+}
+<span class="code-keyword">inline</span> uint8_t Cell::<span class="code-call">acidityExposure</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    <span class="code-keyword">return</span> m_acidityExposure;
+}
+<span class="code-keyword">inline</span> uint8_t Cell::<span class="code-call">signalLevel</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::Signaling);
+    <span class="code-keyword">return</span> m_signalLevel;
+}
+<span class="code-keyword">inline</span> uint8_t Cell::<span class="code-call">signalLevelPrev</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::Signaling);
+    <span class="code-keyword">return</span> m_signalLevelPrev;
+}
+<span class="code-keyword">inline</span> uint16_t Cell::<span class="code-call">energyReserve</span>() <span class="code-keyword">const</span> {
+    <span class="code-call">assert</span>(status == CellStatus::Energy);
+    <span class="code-keyword">return</span> m_energyReserve;
+}
+
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setMetabolicLevel</span>(<span class="code-keyword">float</span> val) {
+    <span class="code-call">assert</span>(status == CellStatus::Metabolic);
+    m_metabolicLevel = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setInhibitorClearanceTicks</span>(uint16_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    m_inhibitorClearanceTicks = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setAcidityLevel</span>(uint8_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    m_acidityLevel = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setAcidityExposure</span>(uint8_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::AcidicInhibitor);
+    m_acidityExposure = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setSignalLevel</span>(uint8_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::Signaling);
+    m_signalLevel = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setSignalLevelPrev</span>(uint8_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::Signaling);
+    m_signalLevelPrev = val;
+}
+<span class="code-keyword">inline</span> <span class="code-keyword">void</span> Cell::<span class="code-call">setEnergyReserve</span>(uint16_t val) {
+    <span class="code-call">assert</span>(status == CellStatus::Energy);
+    m_energyReserve = val;
+}</code></pre>
+<p>Scary? Scary. But such is the price. The asserts are there to protect against reading or writing to an inactive field.</p>
+<p>Someone might point out that in the modern world we have <code>std::variant&lt;&gt;</code> for this, and I even tried to use it for this task — the code became even more unbearable — thanks everyone, love you all, but I'll pass.</p>
+<h3>Bitfields</h3>
+<p>Despite giving bitfields a red card at the start of the article, they're still a valid tool. And they might work just fine for some people. For example, if you know you're always on one platform, with one compiler, and you don't need a stable ABI for compatibility with anything — you get a powerful and in its own way elegant tool:</p>
+<pre><code class="language-cpp"><span class="code-keyword">enum class</span> RoleType {
+    Employee,
+    Student,
+    Contractor,
+    Retired
+};
+
+<span class="code-keyword">struct</span> PersonInfo {
+    <span class="code-keyword">void</span>* roleData;
+    uint32_t salary;
+    <span class="code-keyword">int</span> age;
+    uint16_t id;
+
+    RoleType role : <span class="code-literal">2</span>;
+    <span class="code-keyword">bool</span> isMarried : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> hasDrivingLicense : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> isRemoteWorker : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> hasChildren : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> ownsHouse : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> isSmoker : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> isShareholder : <span class="code-literal">1</span>;
+    <span class="code-keyword">bool</span> isAvailable : <span class="code-literal">1</span>;
+};</code></pre>
+<p>Congratulations, you solved the boolean packing problem with far less blood. Moreover, look — we even fit <code>RoleType role</code> into 2 bits!</p>
+<p>Except, when I said compilers do mysterious things with bitfields, I wasn't joking — look at the memory layout MSVC produces for the code above:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/mw/db/vh/mwdbvhu4r_gprgvobdmuokez9ky.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>See those gaping holes that kill the whole idea of bitfields? Well. To be fair, I cheated a little by declaring <code>RoleType</code> without an underlying type. If you restore <code>enum class RoleType : uint8_t</code>, you get:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/lk/wq/d8/lkwqd8ayesp4dyxf-wibg9d8zzm.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<p>Make of that what you will — you'll have to investigate on a case-by-case basis what your compiler decided to do for you.</p>
+<h3>Eliminating Floating-Point Numbers</h3>
+<p>Very often in structs with <code>double</code> or <code>float</code> fields, you can carve out some precious space by sacrificing precision or value range.</p>
+<p>The first and simplest thing you can do — replace <code>double</code> with <code>float</code> wherever you don't need <code>double</code> precision. That saves you half the space right there.</p>
+<p>The second trick, commonly used in games for transmitting floating-point numbers over the network — quantization. We convert our <code>float</code> to some <code>uint16_t</code> or <code>uint8_t</code>, agreeing in advance on the allowable range of values for that particular variable. By adjusting the number of bits and the range, we indirectly control the resulting precision. If the precision isn't satisfactory, increase the type size.</p>
+<p>I'm not a huge expert in these calculations, but the idea goes roughly like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Uint&gt;
+Uint <span class="code-call">pack</span>(<span class="code-keyword">float</span> value, <span class="code-keyword">float</span> minVal, <span class="code-keyword">float</span> maxVal) {
+	<span class="code-call">assert</span>(value &gt;= minVal && value &lt;= maxVal);
+	<span class="code-keyword">constexpr</span> <span class="code-keyword">int</span> bits = <span class="code-keyword">sizeof</span>(Uint) * <span class="code-literal">8</span>;
+
+	<span class="code-keyword">const</span> <span class="code-keyword">float</span> scale = (std::<span class="code-call">pow</span>(<span class="code-literal">2</span>, bits) - <span class="code-literal">1</span>) / (maxVal - minVal);
+	<span class="code-keyword">return</span> <span class="code-keyword">static_cast</span>&lt;Uint&gt;(std::<span class="code-call">round</span>((value - minVal) * scale));
+}
+
+<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Uint&gt;
+<span class="code-keyword">float</span> <span class="code-call">unpack</span>(Uint packed, <span class="code-keyword">float</span> minVal, <span class="code-keyword">float</span> maxVal) {
+	<span class="code-keyword">constexpr</span> <span class="code-keyword">int</span> bits = <span class="code-keyword">sizeof</span>(Uint) * <span class="code-literal">8</span>;
+
+	<span class="code-keyword">const</span> <span class="code-keyword">float</span> scale = (maxVal - minVal) / (std::<span class="code-call">pow</span>(<span class="code-literal">2</span>, bits) - <span class="code-literal">1</span>);
+	<span class="code-keyword">return</span> <span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">float</span>&gt;(packed) * scale + minVal;
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-keyword">float</span> val = <span class="code-literal">10.</span>f;
+
+    uint8_t packed8 = pack&lt;uint8_t&gt;(val, <span class="code-literal">0.</span>f, <span class="code-literal">180.</span>f);
+    <span class="code-keyword">float</span> unpacked8 = <span class="code-call">unpack</span>(packed8, <span class="code-literal">0.</span>f, <span class="code-literal">180.</span>f);
+
+    uint16_t packed16 = pack&lt;uint16_t&gt;(val, <span class="code-literal">0.</span>f, <span class="code-literal">180.</span>f);
+    <span class="code-keyword">float</span> unpacked16 = <span class="code-call">unpack</span>(packed16, <span class="code-literal">0.</span>f, <span class="code-literal">180.</span>f);
+
+    std::cout &lt;&lt; <span class="code-literal">"Original: "</span> &lt;&lt; val &lt;&lt; <span class="code-literal">"\n"</span>;
+    std::cout &lt;&lt; <span class="code-literal">"Packed8: "</span> &lt;&lt; +packed8 &lt;&lt; <span class="code-literal">", Unpacked8: "</span> &lt;&lt; unpacked8 &lt;&lt; <span class="code-literal">"\n"</span>;
+    std::cout &lt;&lt; <span class="code-literal">"Packed16: "</span> &lt;&lt; packed16 &lt;&lt; <span class="code-literal">", Unpacked16: "</span> &lt;&lt; unpacked16 &lt;&lt; <span class="code-literal">"\n"</span>;
+}</code></pre>
+<p>Result:</p>
+<pre><code class="language-">Original: <span class="code-literal">10</span>
+Packed8: <span class="code-literal">14</span>, Unpacked8: <span class="code-literal">9.88235</span>
+Packed16: <span class="code-literal">3641</span>, Unpacked16: <span class="code-literal">10.0005</span></code></pre>
+<p>10 degrees turned into 9.88235 when packing into 1 byte. For some use cases, that loss of precision is more than acceptable. And instead of 4 bytes, you have 1.</p>
+<h3>bfloat16</h3>
+<p>This is my favorite. If you don't care about your <code>float</code> precision at all, you can pack them into the <a href="https://en.wikipedia.org/wiki/Bfloat16_floating-point_format"><code>bfloat16</code></a> format. It's very easy to do, thanks to the properties of floating-point numbers as defined by the <a href="https://askepit.github.io/tools/ieee754_calculator/">IEEE-754</a> standard.</p>
+<p>The idea: you can turn a 32-bit float into a 16-bit one simply by sacrificing the least significant bits of the mantissa. As it happens, the least significant bits of the mantissa are <i>literally</i> the least significant bits of the <code>float</code>. So simple bit shifting — and you're done!</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> bfloat16 {
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">static_assert</span>(<span class="code-keyword">sizeof</span>(<span class="code-keyword">float</span>) == <span class="code-keyword">sizeof</span>(uint32_t));
+
+    <span class="code-keyword">explicit</span> <span class="code-call">bfloat16</span>(<span class="code-keyword">float</span> f)
+        : <span class="code-call">m_data</span>(<span class="code-keyword">static_cast</span>&lt;uint16_t&gt;(std::bit_cast&lt;uint32_t&gt;(f) &gt;&gt; <span class="code-literal">16</span>)) { }
+
+    <span class="code-keyword">float</span> <span class="code-call">get</span>() <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> std::bit_cast&lt;<span class="code-keyword">float</span>&gt;(<span class="code-keyword">static_cast</span>&lt;uint32_t&gt;(m_data) &lt;&lt; <span class="code-literal">16</span>);
+    }
+
+<span class="code-keyword">private</span>:
+    uint16_t m_data;
+};
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    bfloat16 <span class="code-call">pi</span>(<span class="code-literal">3.14159</span>f);
+    std::cout &lt;&lt; <span class="code-literal">"bfloated PI: "</span> &lt;&lt; pi.<span class="code-call">get</span>() &lt;&lt; <span class="code-literal">"\n"</span>;
+}</code></pre>
+<p>Output:</p>
+<pre><code class="language-">bfloated PI: <span class="code-literal">3.14062</span></code></pre>
+<p>Not too bad at all.</p>
+<p>And if you know your numbers can only be positive, we can squeeze out one more bit of precision by repurposing the sign bit!</p>
+<pre><code class="language-cpp"><span class="code-keyword">class</span> ubfloat16 {
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">static_assert</span>(<span class="code-keyword">sizeof</span>(<span class="code-keyword">float</span>) == <span class="code-keyword">sizeof</span>(uint32_t));
+
+    <span class="code-keyword">explicit</span> <span class="code-call">ubfloat16</span>(<span class="code-keyword">float</span> f)
+        : <span class="code-call">m_data</span>(<span class="code-keyword">static_cast</span>&lt;uint16_t&gt;((std::bit_cast&lt;uint32_t&gt;(f) &lt;&lt; <span class="code-literal">1</span>) &gt;&gt; <span class="code-literal">16</span>)) { }
+
+    <span class="code-keyword">float</span> <span class="code-call">get</span>() <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> std::bit_cast&lt;<span class="code-keyword">float</span>&gt;(<span class="code-keyword">static_cast</span>&lt;uint32_t&gt;(m_data) &lt;&lt; <span class="code-literal">15</span>);
+    }
+
+<span class="code-keyword">private</span>:
+    uint16_t m_data;
+};</code></pre>
+<p>Let's compare both classes:</p>
+<pre><code class="language-cpp"><span class="code-keyword">int</span> <span class="code-call">main</span>()
+{
+    <span class="code-keyword">const</span> <span class="code-keyword">float</span> val = <span class="code-literal">35001.02</span>f;
+    bfloat16 <span class="code-call">bfloat</span>(val);
+    ubfloat16 <span class="code-call">ubfloat</span>(val);
+
+    std::cout &lt;&lt; std::<span class="code-call">setprecision</span>(<span class="code-literal">9</span>) &lt;&lt; <span class="code-literal">" original: "</span> &lt;&lt; val &lt;&lt; <span class="code-literal">"\n"</span>;
+    std::cout &lt;&lt; std::<span class="code-call">setprecision</span>(<span class="code-literal">9</span>) &lt;&lt; <span class="code-literal">" bfloated: "</span> &lt;&lt; bfloat.<span class="code-call">get</span>() &lt;&lt; <span class="code-literal">"\n"</span>;
+    std::cout &lt;&lt; std::<span class="code-call">setprecision</span>(<span class="code-literal">9</span>) &lt;&lt; <span class="code-literal">"ubfloated: "</span> &lt;&lt; ubfloat.<span class="code-call">get</span>() &lt;&lt; <span class="code-literal">"\n"</span>;
+}</code></pre>
+<p>Output:</p>
+<pre><code class="language-"> original: <span class="code-literal">35001.0195</span>
+ bfloated: <span class="code-literal">34816</span>
+ubfloated: <span class="code-literal">34944</span></code></pre>
+<p>The larger the number in absolute terms, the worse the precision and the greater the loss.</p>
+<p>The <code>bfloat16</code> approach in particular is used to the fullest extent in neural network training. There, billions of floating-point weights get packed into a single byte quite happily, and the neural networks are generally fine with it.</p>
+<h2>Appendix I. Inspecting Memory Layout</h2>
+<p>How do you find out the exact memory layout of your struct? Let's go through all the methods I know.</p>
+<h3>GCC</h3>
+<p>GCC has a warning <code>-Wpadded</code> that will tell you if a struct has padding holes. Doesn't give the full picture, but it's something.</p>
+<h3>Clang</h3>
+<p>Clang has a more powerful tool:</p>
+<pre><code class="language-bash">clang++ -Xclang -fdump-record-layouts file.cpp</code></pre>
+<p>This prints the layout of all classes and structs.</p>
+<h3>Visual Studio</h3>
+<p>For MSVC in Visual Studio, you can hover over any class or struct and in the tooltip that appears, select Memory Layout — you'll see a diagram similar to what I've shown in this article:</p>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/lk/wq/d8/lkwqd8ayesp4dyxf-wibg9d8zzm.png" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h3><code>static_assert</code></h3>
+<p>You can always verify certain sizes directly in your code via <a href="https://en.cppreference.com/w/cpp/language/static_assert.html"><code>static_assert</code></a>. The language provides helpers like <a href="https://en.cppreference.com/w/cpp/language/sizeof.html"><code>sizeof</code></a>, <a href="https://en.cppreference.com/w/cpp/language/alignof.html"><code>alignof</code></a>, <a href="https://en.cppreference.com/w/cpp/types/offsetof.html"><code>offsetof</code></a>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static_assert(sizeof</span>(MyStruct) == <span class="code-literal">32</span>);
+<span class="code-keyword">static_assert</span>(<span class="code-keyword">alignof</span>(MyStruct) == <span class="code-literal">8</span>);
+<span class="code-keyword">static_assert</span>(<span class="code-call">offsetof</span>(MyStruct, field) == <span class="code-literal">8</span>);</code></pre>
+<p>But these checks only work if you already have some hypothesis or gut feeling about how things are laid out in memory. And that's not always the case. So...</p>
+<h3>Printing It by Hand</h3>
+<p>If you don't have a reliable tool to inspect the memory layout of your struct for your specific environment, you can always use the same <a href="https://en.cppreference.com/w/cpp/language/sizeof.html"><code>sizeof</code></a>, <a href="https://en.cppreference.com/w/cpp/language/alignof.html"><code>alignof</code></a>, <a href="https://en.cppreference.com/w/cpp/types/offsetof.html"><code>offsetof</code></a> to implement your own small layout printing utility:</p>
+<pre><code class="language-cpp">#<span class="code-keyword">define</span> <span class="code-call">PRINT_MEMBER</span>(T, member) \
+    <span class="code-call">printMember</span>(#member, <span class="code-call">offsetof</span>(T, member), <span class="code-keyword">sizeof</span>(((T*)<span class="code-literal">0</span>)-&gt;member))
+
+<span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> T&gt;
+<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">printHeader</span>(<span class="code-keyword">const</span> <span class="code-keyword">char</span>* name)
+{
+	std::cout &lt;&lt; <span class="code-literal">"\n=== "</span> &lt;&lt; name &lt;&lt; <span class="code-literal">" ===\n"</span>;
+	std::cout &lt;&lt; <span class="code-literal">"sizeof  : "</span> &lt;&lt; <span class="code-keyword">sizeof</span>(T) &lt;&lt; <span class="code-literal">"\n"</span>;
+	std::cout &lt;&lt; <span class="code-literal">"alignof : "</span> &lt;&lt; <span class="code-keyword">alignof</span>(T) &lt;&lt; <span class="code-literal">"\n\n"</span>;
+}
+
+<span class="code-keyword">static</span> <span class="code-keyword">const</span> <span class="code-keyword">char</span>* PADDING_NAME = <span class="code-literal">"      xxx      "</span>;
+<span class="code-keyword">static</span> std::size_t previousEnd = <span class="code-literal">0</span>;
+
+<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">printLine</span>(<span class="code-keyword">const</span> <span class="code-keyword">char</span>* name, std::size_t offset, std::size_t size)
+{
+	std::cout &lt;&lt; <span class="code-literal">"  "</span> &lt;&lt; std::<span class="code-call">setw</span>(<span class="code-literal">17</span>) &lt;&lt; std::left &lt;&lt; name
+		&lt;&lt; <span class="code-literal">" offset="</span> &lt;&lt; std::<span class="code-call">setw</span>(<span class="code-literal">3</span>) &lt;&lt; offset
+		&lt;&lt; <span class="code-literal">" size="</span> &lt;&lt; size &lt;&lt; <span class="code-literal">"\n"</span>;
+}
+
+<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">printMember</span>(<span class="code-keyword">const</span> <span class="code-keyword">char</span>* name, std::size_t offset, std::size_t size)
+{
+	<span class="code-keyword">if</span> (offset &gt; previousEnd) {
+		<span class="code-call">printLine</span>(PADDING_NAME, previousEnd, offset - previousEnd);
+	}
+	<span class="code-call">printLine</span>(name, offset, size);
+
+	previousEnd = offset + size;
+}
+
+<span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> T&gt;
+<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">printTailPadding</span>()
+{
+	<span class="code-keyword">const</span> size_t align = <span class="code-keyword">alignof</span>(T);
+	<span class="code-keyword">const</span> size_t padding = (align - previousEnd % align) % align;
+	<span class="code-keyword">if</span> (padding == <span class="code-literal">0</span>) {
+		<span class="code-keyword">return</span>;
+	}
+	<span class="code-call">printLine</span>(PADDING_NAME, previousEnd, padding);
+}
+
+<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">inspectPersonInfo</span>()
+{
+	printHeader&lt;PersonInfo&gt;(<span class="code-literal">"PersonInfo"</span>);
+
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, id);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, age);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, salary);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, isMarried);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, hasDrivingLicense);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, isRemoteWorker);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, hasChildren);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, ownsHouse);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, isSmoker);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, isShareholder);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, role);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, roleData);
+	<span class="code-call">PRINT_MEMBER</span>(PersonInfo, isAvailable);
+
+	printTailPadding&lt;PersonInfo&gt;();
+
+	std::cout &lt;&lt; <span class="code-literal">"\n"</span>;
+}
+
+<span class="code-keyword">int</span> <span class="code-call">main</span>() {
+	<span class="code-call">inspectPersonInfo</span>();
+}</code></pre>
+<p>Output:</p>
+<pre><code class="language-">== PersonInfo ===
+<span class="code-keyword">sizeof</span>  : <span class="code-literal">40</span>
+<span class="code-keyword">alignof</span> : <span class="code-literal">8</span>
+
+  id                offset=<span class="code-literal">0</span>   size=<span class="code-literal">2</span>
+        xxx         offset=<span class="code-literal">2</span>   size=<span class="code-literal">2</span>
+  age               offset=<span class="code-literal">4</span>   size=<span class="code-literal">4</span>
+  salary            offset=<span class="code-literal">8</span>   size=<span class="code-literal">4</span>
+  isMarried         offset=<span class="code-literal">12</span>  size=<span class="code-literal">1</span>
+  hasDrivingLicense offset=<span class="code-literal">13</span>  size=<span class="code-literal">1</span>
+  isRemoteWorker    offset=<span class="code-literal">14</span>  size=<span class="code-literal">1</span>
+  hasChildren       offset=<span class="code-literal">15</span>  size=<span class="code-literal">1</span>
+  ownsHouse         offset=<span class="code-literal">16</span>  size=<span class="code-literal">1</span>
+  isSmoker          offset=<span class="code-literal">17</span>  size=<span class="code-literal">1</span>
+  isShareholder     offset=<span class="code-literal">18</span>  size=<span class="code-literal">1</span>
+        xxx         offset=<span class="code-literal">19</span>  size=<span class="code-literal">1</span>
+  role              offset=<span class="code-literal">20</span>  size=<span class="code-literal">4</span>
+  roleData          offset=<span class="code-literal">24</span>  size=<span class="code-literal">8</span>
+  isAvailable       offset=<span class="code-literal">32</span>  size=<span class="code-literal">1</span>
+        xxx         offset=<span class="code-literal">33</span>  size=<span class="code-literal">7</span></code></pre>
+<h3>Compiler Explorer</h3>
+<p>In addition to the hand-rolled solution, you can head over to <a href="https://godbolt.org/">Godbolt (a.k.a. Compiler Explorer)</a>.</p>
+<p>Paste the memory layout printing code for your struct (exactly the one above), configure the service to execute the program rather than show assembly (yes, Compiler Explorer supports that too), and inspect the memory layout output for <i>any</i> platform and any compiler.</p>
+<p>Not all platforms support execution properly, but on all the major compilers you'll definitely be able to check everything.</p>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>
