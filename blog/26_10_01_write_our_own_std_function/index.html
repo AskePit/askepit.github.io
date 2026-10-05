@@ -1,0 +1,1206 @@
+
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>How to implement std::function</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Why std::function? Because, surprisingly enough, an implementation of std::function touches on a large number of advanced techniques and language subtleties, and all of them are quite interesting for a curious C++ programmer.">
+    <meta name="keywords" content="c++, function">
+    <meta name="author" content="Nikolai Shalakin">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://askepit.github.io/blog/how_to_implement_std_function/">
+    <!-- Open Graph -->
+    <meta property="og:title" content="How to implement std::function">
+    <meta property="og:description" content="Why std::function? Because, surprisingly enough, an implementation of std::function touches on a large number of advanced techniques and language subtleties, and all of them are quite interesting for a curious C++ programmer.">
+    <meta property="og:image" content="https://habrastorage.org/webt/af/61/b6/af61b6d5ba81eced46acd5141b11ebda.jpg">
+    <meta property="og:url" content="https://askepit.github.io/blog/how_to_implement_std_function/">
+    <meta property="og:type" content="article">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="How to implement std::function">
+    <meta name="twitter:description" content="Why std::function? Because, surprisingly enough, an implementation of std::function touches on a large number of advanced techniques and language subtleties, and all of them are quite interesting for a curious C++ programmer.">
+    <meta name="twitter:image" content="https://habrastorage.org/webt/af/61/b6/af61b6d5ba81eced46acd5141b11ebda.jpg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+    </style>
+    <link rel="stylesheet" href="../styles_common.css" id="common-styles" type="text/css"/>
+    <link rel="stylesheet" id="typography" type="text/css"/>
+    <link rel="stylesheet" id="theme" title="Light" type="text/css"/>
+    <link rel="stylesheet" href="../switches.css" id="switcher-styles" type="text/css"/>
+    <link rel="stylesheet" href="../hamburger_menu.css" id="switcher-styles" type="text/css"/>
+</head>
+<body>
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<input id="hamburger-switch" class="hamburger-checkbox" type="checkbox" name="hamburger">
+<label for="hamburger-switch" class="hamburger-menu">
+    <div class="hamburger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-menu">
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+        </svg>
+    </div>
+    <input id="theme-switch" class="switch-checkbox" type="checkbox" name="theme">
+    <label for="theme-switch" class="switch-body">
+        <div class="checked-state moon"></div>
+        <div class="unchecked-state sun"></div>
+        <div class="slider"></div>
+    </label>
+    <input id="typography-switch" class="switch-checkbox" type="checkbox" name="typo" style="top: 190px;">
+    <label for="typography-switch" class="switch-body second">
+        <div class="checked-state serif"></div>
+        <div class="unchecked-state sans"></div>
+        <div class="slider"></div>
+    </label>
+</label>
+<h1>How to implement std::function</h1>
+
+<div class="image">
+    <figure>
+        <img src="https://habrastorage.org/webt/af/61/b6/af61b6d5ba81eced46acd5141b11ebda.jpg" alt="">
+        <figcaption></figcaption>
+    </figure>
+</div>
+
+<h2>Introduction</h2>
+<p>In this article, I want to dive into (and take the reader along with me into) the depths of C++, using the implementation of our own <a href="https://en.cppreference.com/cpp/utility/functional/function"><code>std::function</code></a> as an example. We’ll descend gradually and step by step, increasing the complexity as we go. I’ll try to explain everything as simply and clearly as possible, so that the barrier to entry is low and as many readers as possible can comfortably absorb the material.</p>
+<p>Why <code>std::function</code>? Because, surprisingly enough, an implementation of <code>std::function</code> touches on a large number of advanced techniques and language subtleties, and all of them are quite interesting for a curious C++ programmer.</p>
+<p>Recently, a Habr article by @dalerank, <a href="https://habr.com/ru/articles/1044450/">C++101</a>, was published with a huge list of established C++ idioms used in real-world production code. I think it complements this article perfectly, because as the narrative develops, we’ll see many of these idioms put into practice - in a concentrated form, inside one particular, reasonably compact class. And if you want to take a deeper look at any particular pattern, you can jump over to Sergey’s article for a more detailed introduction to the technique in question.</p>
+<h2>Naive implementation</h2>
+<p>What is <code>std::function</code> at its core? It’s a wrapper around any object that can be <i>called</i>, whether it’s a lambda, a functor, or a function pointer. The key word here is "any". The wrapper should abstract us away from the concrete type of the object. This is where the first trick from the world of C++ comes to our rescue:</p>
+<blockquote><p>In C++, you can always hide a concrete type <b>behind a template</b>. For example, we could wrap our object like this:</p></blockquote>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+    <span class="code-call">Function</span>(F f)
+        : <span class="code-call">m_f</span>(std::<span class="code-call">move</span>(f))
+    {}
+
+<span class="code-keyword">private</span>:
+    F m_f;
+};</code></pre>
+<p>You can wrap <i>literally</i> <i>anything</i> this way. The other question is how we can actually use such a wrapper afterward. As soon as we need to call our object, we realize that we don't have the expressive power to describe the method we need:</p>
+<pre><code class="language-cpp">??? <span class="code-keyword">operator</span>()(???... args) {
+    <span class="code-keyword">return</span> <span class="code-call">m_f</span>(std::forward&lt;???&gt;(args)...);
+}</code></pre>
+<p>And guess what? - we can add <i>even more</i> template arguments to achieve exactly what we had in mind:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F, <span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span> ...Args&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+    <span class="code-call">Function</span>(F f)
+        : <span class="code-call">m_f</span>(std::<span class="code-call">move</span>(f))
+    {}
+
+    Ret <span class="code-keyword">operator</span>()(Args... args) {
+        <span class="code-keyword">return</span> <span class="code-call">m_f</span>(std::forward&lt;Args&gt;(args)...);
+    }
+
+<span class="code-keyword">private</span>:
+    F m_f;
+};</code></pre>
+<p>And just like that, right at the very beginning of the article, we already have a more or less working solution. Yes, this code actually works:</p>
+<pre><code class="language-cpp"><span class="code-keyword">auto</span> discriminant = [](<span class="code-keyword">float</span> a, <span class="code-keyword">float</span> b, <span class="code-keyword">float</span> c) {
+    <span class="code-keyword">return</span> b * b - <span class="code-literal">4</span> * a * c;
+};
+Function&lt;<span class="code-keyword">decltype</span>(discriminant), <span class="code-keyword">float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>&gt; f = discriminant;
+
+<span class="code-keyword">auto</span> res = <span class="code-call">f</span>(<span class="code-literal">1</span>, <span class="code-literal">2</span>, <span class="code-literal">3</span>);</code></pre>
+<p>But as you can see, this implementation has a serious problem with how the template arguments are specified - we have to break out <code>decltype</code> and express the type of the first argument in terms of the argument itself, which is, firstly, cumbersome and, secondly, not always possible.</p>
+<p>Now remember how conveniently the type of the same kind of object is expressed with <code>std::function</code>:</p>
+<pre><code class="language-cpp">Function&lt;<span class="code-keyword">float(float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>)&gt; f;</code></pre>
+<p>Two differences immediately stand out:</p>
+<ul>
+	<li>The type of the wrapped object - that very first argument - isn't used at all</li>
+	<li>Somehow, magical parentheses have appeared in the argument list, allowing us to describe the arguments in the natural "signature" syntax used by functions</li>
+</ul>
+<p>We'd like to achieve the same thing.</p>
+<h2>Type erasure</h2>
+<p>Let's get rid of <code>typename F</code> from the class declaration. In general, we don't have to get rid of <code>typename F</code> entirely - we can try moving it to a more secluded place. A good candidate for hiding <code>typename F</code> is the constructor, because calling such a constructor will allow <code>F</code> to be deduced automatically, which is exactly what we need:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span> ...Args&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-call">Function</span>(F&& f)
+        : <span class="code-call">m_f</span>(f)
+    {}
+
+...
+
+<span class="code-keyword">private</span>:
+    ??? m_f;
+};</code></pre>
+<p>As we can see, sweeping the template argument under the constructor narrows its "scope" - now it is, <i>suddenly</i>, visible only inside the constructor, and outside of it the class has no idea that <code>F</code> even exists. How we're supposed to declare <code>m_f</code> now is anyone's guess. By taking its template parameter away, we've also taken away its ability to tell the compiler what its type is at compile time.</p>
+<p>The type of <code>m_f</code> still needs to be abstract and generic - after all, that's the whole point of wrapping an object. But we've hit a dead end with templates - we need some other mechanism. And C++ has one:</p>
+<blockquote><p>If <b>static polymorphism</b> - that is, templates - is no longer up to the task, there's a good chance you need <b>dynamic polymorphism</b> - that is, a <b>polymorphic base class</b> with virtual functions</p></blockquote>
+<p>How do we switch from a template type to a dynamic runtime type? With templates, it was simple - the compiler took the programmer at their word that everything the code did with type <code>F</code> was allowed. And if the code successfully compiled with a particular substituted type, then everything was fine.</p>
+<p>With dynamic types, we don't have that luxury, so we'll have to describe manually what the type can do. In our case, pretty much the only thing we require from the object is the ability to call it through some kind of <code>call</code>, so I envision the base class looking roughly like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> FuncInterface
+{
+    <span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+    <span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+};</code></pre>
+<p>A perceptive reader might ask - what are <code>Ret</code> and <code>Args</code>? I plan to make <code>FuncInterface</code> a nested class inside our <code>Function</code>, so the full picture will look like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">class</span> Function
+{
+...
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">struct</span> FuncInterface
+    {
+        <span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+        <span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+    };
+...
+    std::unique_ptr&lt;FuncInterface&gt; m_f;
+};</code></pre>
+<p>So <code>Ret</code> and <code>Args</code> remain template arguments. And notice that we've now managed to resolve the type of <code>m_f</code> - it's a polymorphic runtime class allocated on the heap. Quite a symbiosis of templates and virtual functions. But this is only the beginning!</p>
+<p>Watch closely: we have our <code>FuncInterface</code> base class. But who is going to derive from it? And how do we create an instance of such an object? Let's start feeling our way around, beginning with the constructor:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-call">Function</span>(F&& f) {
+        m_f = std::make_unique&lt;FuncImpl&lt;F&gt;&gt;(std::forward&lt;F&gt;(f));
+    }
+...
+};</code></pre>
+<p>See <code>FuncImpl&lt;F&gt;</code>? Obviously, this thing needs to inherit from <code>FuncInterface</code> for our plan to work. It also needs to be a template class so that it knows about <code>F</code>. <i>Quite a symbiosis of templates and virtual functions</i>. Phew.</p>
+<p>Let's try to describe what we have in mind:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-call">Function</span>(F&& f) {
+        m_f = std::make_unique&lt;FuncImpl&lt;F&gt;&gt;(std::forward&lt;F&gt;(f));
+    }
+
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">struct</span> FuncInterface
+    {
+        <span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+        <span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+    };
+
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">struct</span> FuncImpl final : <span class="code-keyword">public</span> FuncInterface
+    {
+        F m_f;
+
+        <span class="code-call">FuncImpl</span>(F f)
+            : <span class="code-call">m_f</span>(std::<span class="code-call">move</span>(f))
+        {}
+
+        Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> override {
+            <span class="code-keyword">return</span> <span class="code-call">m_f</span>(std::forward&lt;Args&gt;(args)...);
+        }
+    };
+
+    std::unique_ptr&lt;FuncInterface&gt; m_f;
+};</code></pre>
+<p>Now, to call the functor, all we need to do is call the <code>call</code> method on the internal wrapper:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">class</span> Function
+{
+<span class="code-keyword">public</span>:
+...
+    Ret <span class="code-keyword">operator</span>()(Args... args) {
+        <span class="code-keyword">return</span> m_f-&gt;<span class="code-call">call</span>(std::forward&lt;Args&gt;(args)...);
+    }
+...
+};</code></pre>
+<p>And it works. We have just implemented an idiom called <b>Type Erasure</b>, which is used in virtually every canonical implementation of <code>std::function</code> and <code>std::any</code> - that is, whenever we need to erase and anonymize a concrete type.</p>
+<p>Let's take another look at the resulting code to understand what's actually going on, because it's quite non-trivial from the perspective of typical C++ and may cause a headache for anyone seeing it for the first time.</p>
+<p>The main idea is that, in our quest to hide type <code>F</code>, we first moved it into the constructor, and then passed the baton further - to the inner class <code>FuncImpl&lt;F&gt;</code>, where it eventually settled. Inside this class, we can still work with <code>F</code> as a template parameter. But to keep it from leaking outside, we derived <code>FuncImpl&lt;F&gt;</code> from <code>FuncInterface</code> and used that boundary to provide a clever conversion from templates to virtual functions. We expose the virtual interface to the outside world and pretend that the template doesn't exist at all, when in reality it has simply been cleverly hidden away. <b>Quite a symbiosis of templates and virtual functions.</b></p>
+<p>The funniest thing about this idiom is that, in practice, all the code we've written is just boilerplate for fighting the very nature of C++ - its type system. On top of that, this approach has significant overhead - we know that virtual functions come with the cost of indirect calls and a virtual table. Worse, we now have a heap allocation. And all of this is solely to fight the language's type system. In other words, this is one of those moments when <b>you pay for something you never planned to use</b> - you were simply forced to.</p>
+<hr>
+<p>But we still have a long way to go, and we'll try to mitigate these problems. For now, though, I'll allow myself a couple of small pedantic fixes to the code.</p>
+<p>First: a template type passed to the constructor should ideally be stripped of all the unnecessary baggage. This can include references, cv-qualifiers, indirection - pretty much anything. So it's good practice to clean up the type using <code>std::decay</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-call">Function</span>(F&& f) {
+    <span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+    m_f = std::make_unique&lt;FuncImpl&lt;Fn&gt;&gt;(std::forward&lt;F&gt;(f));
+}</code></pre>
+<p>Second: let's immediately lay the groundwork for the desired const-correctness behavior. We want both our <code>Function::operator()</code> and <code>FuncImpl::call()</code> to be const <i>always</i>, even if the object inside changes its state when called. Why? Because the mutability of the wrapped object is none of <code>Function</code>'s concern. It's simpler and cleaner to make <code>Function</code> const always. This is, among other things, how <code>std::function</code> behaves.</p>
+<p>On top of that, the constructor for <code>FuncImpl</code> should be improved and turned into a forwarding constructor, so that it can accept the object without unnecessary copies or moves. Let's implement both changes at once:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">struct</span> FuncImpl final : <span class="code-keyword">public</span> FuncInterface
+{
+    <span class="code-keyword">mutable</span> F m_f;
+
+    <span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> U&gt;
+    <span class="code-call">FuncImpl</span>(U&& f)
+        : <span class="code-call">m_f</span>(std::forward&lt;U&gt;(f))
+    {}
+
+    ...
+};</code></pre>
+<p>To implement this, we added <code>mutable</code> to <code>m_f</code> and made the constructor a template.</p>
+<p>Third: we'd like to return to the problem of function-signature notation. For now, we still have one difference from <code>std::function</code>:</p>
+<pre><code class="language-cpp">Function&lt;<span class="code-keyword">float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>&gt; f = discriminant;
+
+...
+
+std::function&lt;<span class="code-keyword">float</span>(<span class="code-keyword">float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>)&gt; f = discriminant;</code></pre>
+<p>There is a solution to this, and I can't offer anything more useful than simply memorizing it:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span>&gt;
+<span class="code-keyword">class</span> Function;
+
+<span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span> ...Args&gt;
+<span class="code-keyword">class</span> Function&lt;<span class="code-call">Ret</span>(Args...)&gt;
+{
+    ...
+}</code></pre>
+<p>"What is going on here?" was my first thought when I saw this. Here's what happens. First, we declare an empty primary template for <code>Function&lt;&gt;</code>. Nobody will ever use it. <code>class Function&lt;Ret(Args...)&gt;</code>, on the other hand, is a <i>partial specialization</i> of the template for a function type. The language thoughtfully provides a way to write a type as <code>Ret(Args...)</code>. This is an interesting notation because, technically speaking, it is <i>one argument</i>, but a composite one containing <code>Ret</code> and <code>Args</code>. This will be the only specialization for <code>Function</code>, and from now on we are forced to use it:</p>
+<pre><code class="language-cpp">Function&lt;<span class="code-keyword">float(float</span>, <span class="code-keyword">float</span>, <span class="code-keyword">float</span>)&gt; f = discriminant;</code></pre>
+<p>And that's exactly what we wanted.</p>
+<h2>In-place storage</h2>
+<p><code>std::function</code> is often used when a function needs to accept arbitrary logic as a parameter. Back in the days of ancient C++, a plain function pointer could be used for this - the canonical callback. But in the modern world, we often want to pass a lambda that captures variables, with some context. And there is practically no alternative to <code>std::function</code> for this kind of parameter.</p>
+<p>Now imagine that such a function with a <code>std::function</code> parameter becomes part of hot code, meaning it gets called an enormous number of times. This is where we inevitably run into the main problem Type Erasure has given us - heap allocations. They are always expensive, and under load - they are <b>very</b> expensive.</p>
+<blockquote><p>It's not only allocations that can be expensive, but, surprisingly enough, <i>deallocations</i> as well.</p></blockquote>
+<p>The standard <code>std::function</code> solved this problem with its most important optimization:</p>
+<blockquote><p><b>Small Object Optimization</b>. Also known by the abbreviations SOO, SSO, and SBO. From now on, though, I'll call it <b>In-place storage</b>, simply because I like the name better. And we'll be adding it to our <code>Function</code>.</p>
+<p>The idea behind the optimization is elegant: if the object we're responsible for is small enough, we don't need to allocate space for it on the heap - we can place it directly inside ourselves. All we need to do is reserve some space for it, and the size of that space depends on what you are more willing to sacrifice - a little extra memory or a few allocations.</p></blockquote>
+<p>Without this optimization, our <code>Function</code> currently has the size of <code>sizeof std::unique_ptr&lt;&gt;</code>, which is 8 bytes. Usually, the object is expanded to 16 or 24 bytes - depending on how much memory you're willing to sacrifice. We'll settle on the exact size as the story unfolds.</p>
+<hr>
+<p>The first thing standing in the way of implementing this optimization is <code>std::unique_ptr&lt;&gt;</code>, whose interface severely limits our ability to construct and destroy objects, so we'll regress to a good old raw pointer.</p>
+<pre><code class="language-cpp"><span class="code-comment">// was</span>
+std::unique_ptr&lt;FuncInterface&gt; m_f;
+
+<span class="code-comment">// became</span>
+FuncInterface* m_f;</code></pre>
+<p>Now let's introduce some constants describing our in-place storage:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static constexpr</span> size_t INPLACE_SIZE = <span class="code-literal">8</span>;
+<span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t INPLACE_ALIGNMENT = <span class="code-keyword">alignof</span>(std::max_align_t);</code></pre>
+<p>As you can see, for now I've decided to use in-place storage only for objects up to 8 bytes. And that's small. <b>Really</b> small. But soon we'll see that putting ourselves under these rather harsh constraints will actually work in our favor. As for alignment, we've tried to make it as democratic as possible, so that <i>almost</i> anything can fit into our storage.</p>
+<p>Now we're all set to give our pointer a bit of a split personality:</p>
+<pre><code class="language-cpp"><span class="code-keyword">union</span> {
+	FuncInterface* m_heap;
+	<span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte m_inplace[INPLACE_SIZE];
+};
+
+<span class="code-keyword">bool</span> m_isInplace = <span class="code-keyword">false</span>;</code></pre>
+<p>The old-school <code>union</code> <s>is better than two shiny new</s> <code><s>std::variant</s></code><s>s</s> is the canonical solution for SSO optimization. Note that <code>m_inplace</code> is simply a byte array aligned to <code>INPLACE_ALIGNMENT</code>. It's ready to host any object that meets our criteria. No SMS and no allocations. It makes sense to put these straightforward criteria into a separate <code>constexpr</code> function:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> <span class="code-keyword">bool</span> <span class="code-call">DoesFitInplace</span>() {
+	<span class="code-keyword">return</span> <span class="code-keyword">sizeof</span>(F) &lt;= INPLACE_SIZE && <span class="code-keyword">alignof</span>(F) &lt;= INPLACE_ALIGNMENT;
+}</code></pre>
+<p>This method will determine the object's fate as early as the creation of <code>Function</code>: if the object's type allows it to fit inside our storage, it will live in <code>m_inplace</code>; otherwise, it will be honestly allocated in <code>m_heap</code>. And <code>Function</code>'s code will account for this duality everywhere:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span> ...Args&gt;
+<span class="code-keyword">class</span> Function&lt;<span class="code-call">Ret</span>(Args...)&gt;
+{
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-call">Function</span>(F&& f) {
+        <span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+        <span class="code-keyword">using</span> WrapperT = FuncImpl&lt;Fn&gt;;
+
+        <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;WrapperT&gt;()) {
+            <span class="code-keyword">new</span> (m_inplace) <span class="code-call">WrapperT</span>(std::forward&lt;F&gt;(f));
+            m_isInplace = <span class="code-keyword">true</span>;
+        } <span class="code-keyword">else</span> {
+            m_heap = <span class="code-keyword">new</span> <span class="code-call">WrapperT</span>(std::forward&lt;F&gt;(f));
+            m_isInplace = <span class="code-keyword">false</span>;
+        }
+    }
+
+    ~<span class="code-call">Function</span>() {
+        FuncInterface* ptr = <span class="code-call">getPtr_</span>();
+        <span class="code-keyword">if</span> (m_isInplace) {
+            ptr-&gt;~<span class="code-call">FuncInterface</span>();
+        } <span class="code-keyword">else</span> {
+            <span class="code-keyword">delete</span> ptr;
+        }
+    }
+
+    Ret <span class="code-keyword">operator</span>()(Args... args) <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> <span class="code-call">getPtr_</span>()-&gt;<span class="code-call">call</span>(std::forward&lt;Args&gt;(args)...);
+    }
+
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">struct</span> FuncInterface
+    {
+        <span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+        <span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+    };
+
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">struct</span> FuncImpl final : <span class="code-keyword">public</span> FuncInterface
+    {
+        F m_f;
+
+        <span class="code-call">FuncImpl</span>(F f)
+            : <span class="code-call">m_f</span>(std::<span class="code-call">move</span>(f))
+        {}
+
+        Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> override {
+            <span class="code-keyword">return</span> <span class="code-call">m_f</span>(std::forward&lt;Args&gt;(args)...);
+        }
+    };
+
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t INPLACE_SIZE = <span class="code-literal">8</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t INPLACE_ALIGNMENT = <span class="code-keyword">alignof</span>(std::max_align_t);
+
+    <span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> <span class="code-keyword">bool</span> <span class="code-call">DoesFitInplace</span>() {
+        <span class="code-keyword">return</span> <span class="code-keyword">sizeof</span>(F) &lt;= INPLACE_SIZE && <span class="code-keyword">alignof</span>(F) &lt;= INPLACE_ALIGNMENT;
+    }
+
+    <span class="code-keyword">const</span> FuncInterface* <span class="code-call">getPtr_</span>() <span class="code-keyword">const</span> {
+        <span class="code-keyword">if</span> (m_isInplace) {
+            <span class="code-keyword">return</span> std::<span class="code-call">launder</span>(<span class="code-keyword">reinterpret_cast</span>&lt;<span class="code-keyword">const</span> FuncInterface*&gt;(m_inplace));
+        } <span class="code-keyword">else</span> {
+            <span class="code-keyword">return</span> m_heap;
+        }
+    }
+
+    FuncInterface* <span class="code-call">getPtr_</span>() {
+        <span class="code-keyword">return</span> <span class="code-keyword">const_cast</span>&lt;FuncInterface*&gt;(
+            std::<span class="code-call">as_const</span>(*<span class="code-keyword">this</span>).<span class="code-call">getPtr_</span>()
+        );
+    }
+
+    <span class="code-keyword">union</span> {
+        FuncInterface* m_heap;
+        <span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte m_inplace[INPLACE_SIZE];
+    };
+
+    <span class="code-keyword">bool</span> m_isInplace = <span class="code-keyword">false</span>;
+};</code></pre>
+<p>As you can see, we even managed to hide the heap/in-place duality behind the <code>_getPtr()</code> method. Explicit access to <code>m_isInplace</code> is now limited to the constructor and destructor.</p>
+<blockquote><p>The resulting constructor, destructor, and <code>_getPtr()</code> are excellent real-world examples for brushing up on some genuinely advanced language nuances, such as:</p>
+<p>- What is the difference between an expression <code>new</code> and <code>operator new</code></p>
+<p>- What is placement <code>new</code>, what does its syntax look like, and does it allocate memory</p>
+<p>- When and why we might need to call a destructor manually</p>
+<p>- What <code>std::launder</code> is for, and why we need it specifically in our case</p>
+<p>If you're shaky on these topics, I'll send you over to my article about <a href="https://habr.com/ru/articles/1070000/">object lifetimes in C++</a> for the answers. Just make sure you come back alive ;) In the <b>Provides Storage</b> chapter, you'll find an example involving <code>std::launder</code> that is similar to our <code>getPtr_()</code>.</p></blockquote>
+<h3>In-place problem</h3>
+<p>After adding in-place storage to <code>Function</code>, I wanted to enjoy the fruits of my labor and see with my own eyes how small functors would be placed in the buffer instead of being allocated on the heap. I added a simple <code>std::cout</code> to the constructor:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-call">Function</span>(F f)
+{
+	...
+
+	<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;WrapperT&gt;()) {
+		std::cout &lt;&lt; <span class="code-literal">"inplace!\n"</span>;
+		...
+	} <span class="code-keyword">else</span> {
+		...
+	}
+}</code></pre>
+<p>and ran the <code>Function</code> tests on a bunch of different objects. Know what I got? Nothing. Not a single enthusiastic "inplace!" in the console. That was strange, because a lambda like</p>
+<pre><code class="language-cpp"><span class="code-keyword">auto</span> lambda = []() { std::cout &lt;&lt; <span class="code-literal">"YEAH"</span>; };</code></pre>
+<p>takes up practically no space - my, admittedly rather modest, 8 bytes of in-place storage should have been enough.</p>
+<p>So I started printing the sizes of the original object and the wrapper storing it:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-call">Function</span>(F f)
+{
+	<span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+	<span class="code-keyword">using</span> WrapperT = FuncImpl&lt;Fn&gt;;
+
+	std::cout &lt;&lt; <span class="code-literal">"callable size: "</span> &lt;&lt; <span class="code-keyword">sizeof</span>(Fn) &lt;&lt; <span class="code-literal">"\n"</span>
+			  &lt;&lt; <span class="code-literal">" wrapper size: "</span> &lt;&lt; <span class="code-keyword">sizeof</span>(WrapperT) &lt;&lt; <span class="code-literal">"\n"</span>;
+
+	<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;WrapperT&gt;()) {
+		std::cout &lt;&lt; <span class="code-literal">"inplace!\n"</span>;
+		...
+	} <span class="code-keyword">else</span> {
+		...
+	}
+}</code></pre>
+<p>And this is what I saw:</p>
+<pre><code class="language-cpp">callable size: <span class="code-literal">1</span>
+ wrapper size: <span class="code-literal">16</span>
+
+callable size: <span class="code-literal">8</span>
+ wrapper size: <span class="code-literal">16</span>
+
+callable size: <span class="code-literal">64</span>
+ wrapper size: <span class="code-literal">72</span>
+
+callable size: <span class="code-literal">48</span>
+ wrapper size: <span class="code-literal">56</span>
+
+callable size: <span class="code-literal">4</span>
+ wrapper size: <span class="code-literal">16</span>
+
+callable size: <span class="code-literal">16</span>
+ wrapper size: <span class="code-literal">24</span></code></pre>
+<p>FFFUUU!!1</p>
+<p>My lambda could have been as small as 1 byte and still wouldn't fit into the buffer, because the wrapper was always <i>at least 16 bytes</i> in size!</p>
+<p>I immediately understood the problem: <code>FuncImpl&lt;Fn&gt;</code> carries an 8-byte pointer to the virtual table, which by itself is enough to consume the entire buffer. The memory layout of such a wrapper would look roughly like this:</p>
+<pre><code class="language-"><span class="code-literal">00</span> xxxxxxxx  vtable
+<span class="code-literal">08</span> x.......  <span class="code-keyword">lambda</span></code></pre>
+<p>The x's are occupied bytes, while the dots are padding for 8-byte alignment.</p>
+<p>Wasted. For now, let's just quietly harbor a grudge, increase the in-place storage size to 16 bytes</p>
+<pre><code class="language-cpp"><span class="code-keyword">static constexpr</span> size_t INPLACE_SIZE = <span class="code-literal">16</span>;</code></pre>
+<p>and move on. But first, let's make sure it actually works:</p>
+<pre><code class="language-cpp">callable size: <span class="code-literal">1</span>
+ wrapper size: <span class="code-literal">16</span>
+inplace!
+
+callable size: <span class="code-literal">8</span>
+ wrapper size: <span class="code-literal">16</span>
+inplace!
+
+callable size: <span class="code-literal">64</span>
+ wrapper size: <span class="code-literal">72</span>
+
+callable size: <span class="code-literal">48</span>
+ wrapper size: <span class="code-literal">56</span>
+
+callable size: <span class="code-literal">4</span>
+ wrapper size: <span class="code-literal">16</span>
+inplace!
+
+callable size: <span class="code-literal">16</span>
+ wrapper size: <span class="code-literal">24</span></code></pre>
+<p>It works.</p>
+<h2>Copy/move</h2>
+<p>Let's add copy/move semantics support to <code>Function</code>.</p>
+<p>First, let's prepare the ground. First of all,</p>
+<blockquote><p>A move constructor should be <code>noexcept</code> - that's the baseline. Even <code>std::vector</code> doesn't always use move semantics if its elements can throw during a move</p></blockquote>
+<p>When the object is stored on the heap, everything will be fine - we'll simply move a couple of pointers around. But if our object lives in in-place storage, moving it means calling the move constructor of the stored object, and theoretically that can throw. The least troublesome approach is to make sure that objects placed in in-place storage are nothrow-move-constructible:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> <span class="code-keyword">bool</span> <span class="code-call">DoesFitInplace</span>() {
+	<span class="code-keyword">return</span> <span class="code-keyword">sizeof</span>(F) &lt;= INPLACE_SIZE
+		&& <span class="code-keyword">alignof</span>(F) &lt;= INPLACE_ALIGNMENT
+		&& std::is_nothrow_move_constructible_v&lt;F&gt;;
+}</code></pre>
+<p>Second, we're about to add some new constructors to the class, while our current, so far only constructor</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt; <span class="code-call">Function</span>(F&& f);</code></pre>
+<p>is implemented in such a way that it can swallow pretty much anything you throw at it, leaving the other constructors out in the cold. We need to somehow narrow its scope. Let's assume that copy and move constructors only work with the type <code>Function&lt;...&gt;</code>. This means we can use some clever SFINAE to isolate our all-you-can-eat constructor from this type and let it accept everything else:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F, <span class="code-keyword">typename</span> = std::enable_if_t&lt;!std::is_same_v&lt;std::decay_t&lt;F&gt;, Function&gt;&gt;&gt;
+<span class="code-call">Function</span>(F&& f) {</code></pre>
+<hr>
+<p>Let's move on to implementing the constructors and assignment operators.</p>
+<blockquote><p>Usually, the <a href="https://nitinsharmacs.github.io/notes/tech/c++/copy-and-swap-idiom">copy-and-swap</a> idiom is a convenient way to implement exception-safe copy/move semantics. But it looks elegant and works efficiently only when <code>std::swap</code> can be implemented easily for the class.</p></blockquote>
+<p>With in-place storage, we're ruling ourselves out of that option - once you imagine moving data from in-place storage to the heap and back again, you'll simply stop wanting to do it :)</p>
+<p>So we'll take a different approach: if we carefully perform the copy or move steps in the right order, we can achieve strong exception safety even without the copy-and-swap idiom. Our goal is to implement a destructor, copy and move constructors, and copy and move assignment operators. They are almost always implemented in a rather repetitive way on top of a few helper functions: <code>destroy_</code>, <code>copyFrom_</code>, <code>moveFrom_</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">public</span>:
+    ~<span class="code-call">Function</span>() <span class="code-keyword">noexcept</span> {
+        <span class="code-call">destroy_</span>();
+    }
+
+    <span class="code-call">Function</span>(<span class="code-keyword">const</span> Function& other) {
+        <span class="code-call">copyFrom_</span>(other);
+    }
+
+    <span class="code-call">Function</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(other));
+    }
+
+    Function& <span class="code-keyword">operator</span>=(<span class="code-keyword">const</span> Function& other) {
+        <span class="code-keyword">if</span> (<span class="code-keyword">this</span> == &other)
+            <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+
+        Function <span class="code-call">tmp</span>(other);
+        <span class="code-call">destroy_</span>();
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(tmp));
+
+        <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+    }
+
+    Function& <span class="code-keyword">operator</span>=(Function &&other) <span class="code-keyword">noexcept</span> {
+        <span class="code-keyword">if</span> (<span class="code-keyword">this</span> == &other)
+            <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+
+        <span class="code-call">destroy_</span>();
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(other));
+
+        <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+    }</code></pre>
+<p>The copy assignment operator achieves strong exception safety thanks to the local copy <code>tmp</code>. If an exception occurs while copying into <code>tmp</code>, the original object remains untouched. Our move assignment operator cannot throw because we took care of that in advance.</p>
+<p>Now for the helper functions. All of them will have the heap/in-place duality. However, as soon as we start implementing them, we realize we're missing something:</p>
+<pre><code class="language-cpp"><span class="code-keyword">private</span>:
+    <span class="code-keyword">void</span> <span class="code-call">destroy_</span>() <span class="code-keyword">noexcept</span> {
+        FuncInterface* ptr = <span class="code-call">getPtr_</span>();
+        <span class="code-keyword">if</span> (m_isInplace) {
+            ptr-&gt;~<span class="code-call">FuncInterface</span>();
+        } <span class="code-keyword">else</span> {
+            <span class="code-keyword">if</span> (ptr) {
+                <span class="code-keyword">delete</span> ptr;
+            }
+        }
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+        m_isInplace = other.m_isInplace;
+        <span class="code-keyword">if</span> (m_isInplace) {
+            <span class="code-keyword">new</span> (m_inplace) ???(other.???)
+        } <span class="code-keyword">else</span> {
+            m_heap = <span class="code-keyword">new</span> ???(other.???);
+        }
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">moveFrom_</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+        m_isInplace = other.m_isInplace;
+        <span class="code-keyword">if</span> (m_isInplace) {
+            <span class="code-keyword">new</span> (m_inplace) ???(std::<span class="code-call">move</span>(other.???));
+        } <span class="code-keyword">else</span> {
+            m_heap = other.m_heap;
+            other.m_heap = <span class="code-keyword">nullptr</span>;
+        }
+    }</code></pre>
+<p>We're missing knowledge of the original type <code>F</code>, which was stolen from us a long time ago. Miraculously, <code>destroy_</code> escaped this fate. The only way around the problem is to expose all the missing operations in the public interface, so that we can implement them where the type <code>F</code> is still available - inside <code>FuncImpl</code>.</p>
+<p>Wherever we had <code>???</code> in the code, we're missing a corresponding function in <code>FuncInterface</code>. There are three such places in total:</p>
+<ul>
+	<li>Copying the object into in-place storage</li>
+	<li>Copying the object onto the heap</li>
+	<li>Moving the object into in-place storage</li>
+</ul>
+<p>Attention, a semantic shift is about to occur: while the move and copy assignment operators performed the action "we'll take someone else's stuff", our current functions reverse the direction - they will be "giving our stuff to someone else". This happens because it is the <i>source</i> object, with its heap/in-place duality, that needs to handle how and where to give away its data, while the receiving object merely provides the place where the data should be put.</p>
+<p>The extended <code>FuncInterface</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> FuncInterface
+{
+	<span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> FuncInterface* <span class="code-call">copyToHeap</span>() <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> <span class="code-keyword">void</span> <span class="code-call">copyToPlace</span>(<span class="code-keyword">void</span>* place) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> <span class="code-keyword">void</span> <span class="code-call">moveToPlace</span>(<span class="code-keyword">void</span>* place) = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+};</code></pre>
+<p>The implementation of these methods in <code>FuncImpl</code> is trivial:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">struct</span> FuncImpl final : <span class="code-keyword">public</span> FuncInterface
+{
+	<span class="code-keyword">mutable</span> F m_f;
+
+	<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> U&gt;
+	<span class="code-call">FuncImpl</span>(U&& f)
+		: <span class="code-call">m_f</span>(std::forward&lt;U&gt;(f))
+	{}
+
+	Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> override {
+		<span class="code-keyword">return</span> <span class="code-call">m_f</span>(std::forward&lt;Args&gt;(args)...);
+	}
+
+	FuncInterface* <span class="code-call">copyToHeap</span>() <span class="code-keyword">const</span> override {
+		<span class="code-keyword">return</span> <span class="code-keyword">new</span> <span class="code-call">FuncImpl</span>(m_f);
+	}
+
+	<span class="code-keyword">void</span> <span class="code-call">copyToPlace</span>(<span class="code-keyword">void</span>* place) <span class="code-keyword">const</span> override {
+		<span class="code-keyword">new</span> (place) <span class="code-call">FuncImpl</span>(m_f);
+	}
+
+	<span class="code-keyword">void</span> <span class="code-call">moveToPlace</span>(<span class="code-keyword">void</span>* place) override {
+		<span class="code-keyword">new</span> (place) <span class="code-call">FuncImpl</span>(std::<span class="code-call">move</span>(m_f));
+	}
+};</code></pre>
+<p>And now we can return to our "building blocks" and finish implementing <code>copyFrom_</code> and <code>moveFrom_</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+	<span class="code-keyword">const</span> FuncInterface* srcPtr = other.<span class="code-call">getPtr_</span>();
+
+	m_isInplace = other.m_isInplace;
+	<span class="code-keyword">if</span> (m_isInplace) {
+		srcPtr-&gt;<span class="code-call">copyToPlace</span>(m_inplace);
+	} <span class="code-keyword">else</span> {
+		m_heap = srcPtr-&gt;<span class="code-call">copyToHeap</span>();
+	}
+}
+
+<span class="code-keyword">void</span> <span class="code-call">moveFrom_</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+	FuncInterface* srcPtr = other.<span class="code-call">getPtr_</span>();
+
+	m_isInplace = other.m_isInplace;
+	<span class="code-keyword">if</span> (m_isInplace) {
+		srcPtr-&gt;<span class="code-call">moveToPlace</span>(m_inplace);
+	} <span class="code-keyword">else</span> {
+		m_heap = other.m_heap;
+		other.m_heap = <span class="code-keyword">nullptr</span>;
+	}
+}</code></pre>
+<p>Done - copy/move semantics are supported.</p>
+<h2>VTable problems</h2>
+<p>Let's return to the problem of virtual tables. As a reminder, in every object of type <code>struct FuncImpl&lt;F&gt; : FuncInterface</code>, the first 8 bytes are occupied by the virtual table. These are 8 bytes that sit dead weight in our in-place storage, while not even belonging to the object we're storing - after all, this is the <i>wrapper's</i> virtual table. As a result, we lose a significant number of cases where in-place optimization could have been used, simply because the vtable took up the space.</p>
+<p>For obvious reasons, there's nothing we can do about this - C++ itself dictates the rules of the game here. All that's left is: <b>BREAK THE PARADIGM</b>.</p>
+<blockquote><p>If the standard inheritance and virtual table mechanism in C++ doesn't work for you, <b>you can always write your own mechanism</b>. Even in C, people often write their own implementations to emulate C++ features.</p>
+<p>The advantage of rolling your own mechanism is that you get control over where and how the virtual table is stored; how it is structured; what its lifetime and rules are</p></blockquote>
+<p>Phew. As flexible as this sounds, it also promises to be complicated. But we're already knee-deep in it - what have we got to lose? Besides, this will be invaluable experience. And since I know how the article ends, I'll tell you that this solution will give us some major bonuses beyond our current goal of saving space in the in-place buffer.</p>
+<hr>
+<p>At its core, a virtual table is a very simple concept. It's an object containing pointers to functions, nothing magical. And describing the table itself will be quite easy. We simply take our <code>FuncInterface</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> FuncInterface
+{
+	<span class="code-keyword">virtual</span> Ret <span class="code-call">call</span>(Args... args) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> FuncInterface* <span class="code-call">copyToHeap</span>() <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> <span class="code-keyword">void</span> <span class="code-call">copyToPlace</span>(<span class="code-keyword">void</span>* place) <span class="code-keyword">const</span> = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> <span class="code-keyword">void</span> <span class="code-call">moveToPlace</span>(<span class="code-keyword">void</span>* place) = <span class="code-literal">0</span>;
+	<span class="code-keyword">virtual</span> ~<span class="code-call">FuncInterface</span>() {}
+};</code></pre>
+<p>and rewrite each virtual function so that it becomes a classic C-style function pointer:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> VTable
+{
+	Ret (*call)(<span class="code-keyword">void</span>*, Args... args);
+	<span class="code-keyword">void</span>* (*copyToHeap)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*);
+	<span class="code-keyword">void</span> (*copyToPlace)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+	<span class="code-keyword">void</span> (*moveToPlace)(<span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+	<span class="code-keyword">void</span> (*destroy)(<span class="code-keyword">void</span>*, <span class="code-keyword">bool</span> isInplace);
+};</code></pre>
+<p>Notice that we no longer have <code>this</code>, so the pointer to the object is passed explicitly as the first parameter, and its type is hidden behind <code>void*</code>. We also replaced the destructor with <code>destroy</code> and plan to put all the logic that previously lived in <code>Function::destroy_()</code> there - it seemed appropriate to me.</p>
+<p>We've managed to replace <code>FuncInterface</code> with <code>VTable</code> - now it's time to replace <code>FuncImpl&lt;F&gt;</code> with something new. There will be <i>no inheritance</i> anymore. So what do we do? How do we implement the concrete function specializations and populate the virtual table with them? And how do we then construct and provide the correct table to a particular <code>Function&lt;&gt;</code>? Let's reason through it step by step:</p>
+<ul>
+	<li>We still need <code>typename F</code> - without this type, type erasure falls apart</li>
+	<li>Functions specialized for a particular <code>F</code> can simply be static functions located <i>somewhere</i> - it doesn't even matter where</li>
+	<li>There must be a virtual table for each <code>F</code>, whose fields point to the functions from the previous item</li>
+	<li>In the <code>Function&lt;F&gt;(F&& f)</code> constructor, the table for the specific <code>F</code> must be found and stored by the class for later use</li>
+</ul>
+<p>All right - if each <code>F</code> needs its own set of static functions and its own virtual table, it makes sense to put all of them inside the body of a templated structure:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">struct</span> VTableFor
+{
+	<span class="code-keyword">static</span> Ret <span class="code-call">call</span>(<span class="code-keyword">void</span>* obj, Args... args) {
+		F& callable = *std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;F*&gt;(obj));
+		<span class="code-keyword">return</span> <span class="code-call">callable</span>(std::forward&lt;Args&gt;(args)...);
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span>* <span class="code-call">copyToHeap</span>(<span class="code-keyword">const</span> <span class="code-keyword">void</span>* obj) {
+		<span class="code-keyword">const</span> F& callable = *std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">const</span> F*&gt;(obj));
+		<span class="code-keyword">return</span> <span class="code-keyword">new</span> <span class="code-call">F</span>(callable);
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">copyToPlace</span>(<span class="code-keyword">const</span> <span class="code-keyword">void</span>* obj, <span class="code-keyword">void</span>* place) {
+		<span class="code-keyword">const</span> F& callable = *std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;<span class="code-keyword">const</span> F*&gt;(obj));
+		<span class="code-keyword">new</span> (place) <span class="code-call">F</span>(callable);
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">moveToPlace</span>(<span class="code-keyword">void</span>* obj, <span class="code-keyword">void</span>* place) {
+		F& callable = *std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;F*&gt;(obj));
+		<span class="code-keyword">new</span> (place) <span class="code-call">F</span>(std::<span class="code-call">move</span>(callable));
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">destroy</span>(<span class="code-keyword">void</span>* obj, <span class="code-keyword">bool</span> isInplace) {
+		F* callable = std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;F*&gt;(obj));
+		<span class="code-keyword">if</span> (isInplace) {
+			callable-&gt;~<span class="code-call">F</span>();
+		} <span class="code-keyword">else</span> {
+			<span class="code-keyword">if</span> (callable) {
+				<span class="code-keyword">delete</span> callable;
+			}
+		}
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">const</span> VTable vtable;
+};</code></pre>
+<p>The table is made <code>const</code> <i>intentionally</i> - we now have no choice but to explicitly initialize it somewhere with pointers to the static functions:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-comment">/*static*/</span> <span class="code-keyword">const</span> <span class="code-keyword">typename</span> Function&lt;<span class="code-call">Ret</span>(Args...)&gt;::VTable
+Function&lt;<span class="code-call">Ret</span>(Args...)&gt;::VTableFor&lt;F&gt;::vtable = {
+    &VTableFor&lt;F&gt;::call,
+    &VTableFor&lt;F&gt;::copyToHeap,
+    &VTableFor&lt;F&gt;::copyToPlace,
+    &VTableFor&lt;F&gt;::moveToPlace,
+    &VTableFor&lt;F&gt;::destroy
+};</code></pre>
+<p>The syntax looks terrifying, but in reality all the complexity lies in navigating your way to the <code>VTable</code> and <code>vtable</code> identifiers buried deep inside the template thicket.</p>
+<p>Now for the reason we went through all of this: the <code>Function</code> class will have its own virtual table, located <i>outside</i> the in-place storage, while the stored object will <i>single-handedly</i> occupy all the space in the heap and/or stack:</p>
+<pre><code class="language-cpp"><span class="code-keyword">union</span> {
+	<span class="code-keyword">void</span>* m_heap;
+	<span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte m_inplace[INPLACE_SIZE];
+};
+
+<span class="code-keyword">const</span> VTable* m_vtable = <span class="code-keyword">nullptr</span>;
+<span class="code-keyword">bool</span> m_isInplace = <span class="code-keyword">false</span>;</code></pre>
+<p>So yes - we didn't perform any special magic, we didn't save 8 bytes, they simply moved somewhere else. But this was a strategically advantageous move, because in-place storage can now accommodate many more objects at the same buffer size.</p>
+<p>We still have one final touch left in setting up the virtual table when creating <code>Function</code>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F, <span class="code-keyword">typename</span> = std::enable_if_t&lt;!std::is_same_v&lt;std::decay_t&lt;F&gt;, Function&gt;&gt;&gt;
+<span class="code-call">Function</span>(F&& f) {
+	<span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+
+	<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;Fn&gt;()) {
+		<span class="code-keyword">new</span> (m_inplace) <span class="code-call">Fn</span>(std::forward&lt;F&gt;(f));
+		m_isInplace = <span class="code-keyword">true</span>;
+	} <span class="code-keyword">else</span> {
+		m_heap = <span class="code-keyword">new</span> <span class="code-call">Fn</span>(std::forward&lt;F&gt;(f));
+		m_isInplace = <span class="code-keyword">false</span>;
+	}
+
+	m_vtable = &VTableFor&lt;Fn&gt;::vtable;
+}</code></pre>
+<p>And now we simply rewrite every place where we previously accessed the polymorphic wrapper to use the vtable instead, barely changing the structure of the code:</p>
+<pre><code class="language-cpp">Ret <span class="code-keyword">operator</span>()(Args... args) <span class="code-keyword">const</span> {
+	<span class="code-keyword">return</span> m_vtable-&gt;<span class="code-call">call</span>(<span class="code-call">getPtr_</span>(), std::forward&lt;Args&gt;(args)...);
+}
+
+<span class="code-keyword">void</span> <span class="code-call">destroy_</span>() <span class="code-keyword">noexcept</span> {
+	m_vtable-&gt;<span class="code-call">destroy</span>(<span class="code-call">getPtr_</span>(), m_isInplace);
+}
+
+<span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+	<span class="code-keyword">const</span> <span class="code-keyword">void</span>* srcPtr = other.<span class="code-call">getPtr_</span>();
+
+	m_isInplace = other.m_isInplace;
+	<span class="code-keyword">if</span> (m_isInplace) {
+		other.m_vtable-&gt;<span class="code-call">copyToPlace</span>(srcPtr, m_inplace);
+	} <span class="code-keyword">else</span> {
+		m_heap = other.m_vtable-&gt;<span class="code-call">copyToHeap</span>(srcPtr);
+	}
+
+	m_vtable = other.m_vtable;
+}
+
+<span class="code-keyword">void</span> <span class="code-call">moveFrom_</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+	<span class="code-keyword">void</span>* srcPtr = other.<span class="code-call">getPtr_</span>();
+
+	m_isInplace = other.m_isInplace;
+	<span class="code-keyword">if</span> (m_isInplace) {
+		other.m_vtable-&gt;<span class="code-call">moveToPlace</span>(srcPtr, m_inplace);
+	} <span class="code-keyword">else</span> {
+		m_heap = other.m_heap;
+		other.m_heap = <span class="code-keyword">nullptr</span>;
+	}
+
+	m_vtable = other.m_vtable;
+}</code></pre>
+<p>Note that in <code>copyFrom_</code> and <code>moveFrom_</code>, we now also need to make sure we overwrite <code>m_vtable</code>, so that it doesn't remain from the old object.</p>
+<h2>Hot/Cold</h2>
+<p>What operations are performed most often on <code>std::function</code>/<code>Function</code>? Obviously, we <i>call</i> it like an ordinary function. This is naturally the dominant use case for this kind of class - they are literally designed to be called.</p>
+<p>What happens to the CPU cache every time <code>Function</code> is called again? Let's trace it: <code>operator()</code> calls <code>m_vtable-&gt;call()</code>. But to get to <code>call()</code>, the contents of the virtual table must make their way into the cache, <i>in its entirety</i>:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> VTable
+{
+    Ret (*call)(<span class="code-keyword">void</span>*, Args... args);
+    <span class="code-keyword">void</span>* (*copyToHeap)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*);
+    <span class="code-keyword">void</span> (*copyToPlace)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*moveToPlace)(<span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*destroy)(<span class="code-keyword">void</span>*, <span class="code-keyword">bool</span> isInplace);
+};</code></pre>
+<p>All five 8-byte pointers end up in the cache every time you try to call the <code>Function</code> functor. That's 40 bytes of cache for a single <code>Function</code>. At the same time, there is a very good chance that none of the other four pointers will be used at all - copy, move, and destruction operations are extremely rare compared to <code>call</code>.</p>
+<blockquote><p>On the hot path, optimizing cache usage takes one of the leading roles. Any unnecessary data that makes its way into the cache occupies space that could have been used by other, more relevant data from memory.</p>
+<p>If you have frequently used data and rarely used data, you can separate them somewhat so that using the hot data doesn't drag the cold data into the cache.</p></blockquote>
+<p>The solution to our particular problem is remarkably simple - we can split the virtual table into two: hot and cold:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> HotVTable
+{
+    Ret (*call)(<span class="code-keyword">void</span>*, Args... args);
+};
+
+<span class="code-keyword">struct</span> ColdVTable
+{
+    <span class="code-keyword">void</span>* (*copyToHeap)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*);
+    <span class="code-keyword">void</span> (*copyToPlace)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*moveToPlace)(<span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*destroy)(<span class="code-keyword">void</span>*, <span class="code-keyword">bool</span> isInplace);
+};</code></pre>
+<p>Now the <code>Function</code> class will have two tables instead of one:</p>
+<pre><code class="language-diff">-<span class="code-keyword">const</span> VTable* m_vtable = <span class="code-keyword">nullptr</span>;
++<span class="code-keyword">const</span> HotVTable* m_hotVtable = <span class="code-keyword">nullptr</span>;
++<span class="code-keyword">const</span> ColdVTable* m_coldVtable = <span class="code-keyword">nullptr</span>;</code></pre>
+<p>The call operator goes through the "dedicated" hot channel:</p>
+<pre><code class="language-cpp">Ret <span class="code-keyword">operator</span>()(Args... args) <span class="code-keyword">const</span> {
+	<span class="code-keyword">return</span> m_hotVtable-&gt;<span class="code-call">call</span>(<span class="code-call">getPtr_</span>(), std::forward&lt;Args&gt;(args)...);
+}</code></pre>
+<p>Only one pointer comes into the cache. The utility functions remain in the cold table until they're needed.</p>
+<p>But we can make it <i>even</i> more efficient. Look at these two places in the code:</p>
+<pre><code class="language-cpp"><span class="code-keyword">const</span> HotVTable* m_hotVtable = <span class="code-keyword">nullptr</span>;
+
+...
+
+<span class="code-keyword">struct</span> HotVTable
+{
+    Ret (*call)(<span class="code-keyword">void</span>*, Args... args);
+};</code></pre>
+<p>This is literally a chain of "pointer to pointer". And since there is only one pointer in the table, this indirection is <i>unnecessary</i>, and we can eliminate it by getting rid of <code>HotVTable</code> altogether and keeping a bare function pointer:</p>
+<pre><code class="language-cpp"><span class="code-call">Ret</span>(*m_call)(<span class="code-keyword">void</span>*, Args... args) = <span class="code-keyword">nullptr</span>;
+<span class="code-keyword">const</span> ColdVTable* m_coldVtable = <span class="code-keyword">nullptr</span>;</code></pre>
+<p>We modify <code>Function::operator()</code>:</p>
+<pre><code class="language-cpp">Ret <span class="code-keyword">operator</span>()(Args... args) <span class="code-keyword">const</span> {
+    <span class="code-keyword">return</span> <span class="code-call">m_call</span>(<span class="code-call">getPtr_</span>(), std::forward&lt;Args&gt;(args)...);
+}</code></pre>
+<p>Extremely pleasant optimizations. And the coolest part is that they became possible only because we abandoned standard C++ virtual tables.</p>
+<h2>FunctionBuffer</h2>
+<p>After all the metamorphoses and transformations, the data members of the <code>Function</code> class look like this:</p>
+<pre><code class="language-cpp"><span class="code-keyword">union</span> {
+	<span class="code-keyword">void</span>* m_heap;
+	<span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte m_inplace[INPLACE_SIZE];
+};
+
+<span class="code-call">Ret</span>(*m_call)(<span class="code-keyword">void</span>*, Args... args) = <span class="code-keyword">nullptr</span>;
+<span class="code-keyword">const</span> ColdVTable* m_coldVtable = <span class="code-keyword">nullptr</span>;
+<span class="code-keyword">bool</span> m_isInplace = <span class="code-keyword">false</span>;</code></pre>
+<p>Look at <code>bool m_isInPlace</code> - it sticks in my craw, and there are two reasons for that.</p>
+<p>First, this field takes up not one byte, as it should (ideally, it should take up a single bit, but alas - we live in a world where that isn't the case), but a full eight bytes due to the memory layout of our <code>Function&lt;F&gt;</code> class:</p>
+<pre><code class="language-"><span class="code-literal">00</span> xxxxxxxx  <span class="code-keyword">union</span>
+<span class="code-literal">08</span> xxxxxxxx  <span class="code-keyword">union</span>
+<span class="code-literal">16</span> xxxxxxxx  m_call
+<span class="code-literal">24</span> xxxxxxxx  m_coldVtable
+<span class="code-literal">32</span> x.......  m_isInPlace</code></pre>
+<p>As you can see, <code>m_isInPlace</code> is a lonely <code>bool</code> among a neat row of 8-byte pointers, and unfortunately it can't squeeze itself into our memory without eating up an additional 7 bytes of padding.</p>
+<p>When <code>INPLACE_SIZE</code> was 8 bytes, the class was 24 bytes in size. Now that I've increased <code>INPLACE_SIZE</code> to 16 bytes, the class has grown to 40 bytes.</p>
+<blockquote><p>A cache line is <b>64 bytes</b> on modern architectures. If you're unsure, C++ provides the constants <a href="https://en.cppreference.com/cpp/thread/hardware_destructive_interference_size"><code>std::hardware_destructive_interference_size</code></a> and <a href="https://en.cppreference.com/cpp/thread/hardware_destructive_interference_size"><code>std::hardware_constructive_interference_size</code></a>, which return the exact figures for your platform.</p>
+<p>Use <code>std::hardware_destructive_interference_size</code> if you need the minimum distance at which two objects need to be <b>separated</b> to prevent <a href="https://en.wikipedia.org/wiki/False_sharing">false sharing</a>.</p>
+<p>Use <code>std::hardware_constructive_interference_size</code> if you need the size within which objects should be located to achieve <a href="https://en.wikipedia.org/wiki/False_sharing">true sharing</a>.</p>
+<p>Usually, both constants are equal.</p></blockquote>
+<p>Neither of our sizes - 24 or 40 - fits nicely into a cache line. If we could get rid of <code>m_isInPlace</code>, we'd get a size of 32 bytes - exactly 2 objects per 64-byte cache line. That's the ideal our class can strive for.</p>
+<p>Second, I <i>suspect</i> that, purely theoretically, the <code>m_isInPlace</code> flag could always be determined at compile time. We already do exactly that in one particular place:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-call">Function</span>(F&& f) {
+	<span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+	<span class="code-keyword">using</span> WrapperT = FuncImpl&lt;Fn&gt;;
+
+	<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;WrapperT&gt;()) {
+		<span class="code-keyword">new</span> (m_inplace) <span class="code-call">WrapperT</span>(std::forward&lt;F&gt;(f));
+		m_isInplace = <span class="code-keyword">true</span>;
+	} <span class="code-keyword">else</span> {
+		m_heap = <span class="code-keyword">new</span> <span class="code-call">WrapperT</span>(std::forward&lt;F&gt;(f));
+		m_isInplace = <span class="code-keyword">false</span>;
+	}
+}</code></pre>
+<p>See? - <code>if constexpr (DoesFitInplace&lt;WrapperT&gt;())</code>. I'm convinced that this approach can be applied to all the other cases where we currently check the <code>m_isInPlace</code> flag at runtime. And that means that by eliminating this flag, we won't just get a more cache-friendly memory layout - we'll also save on computation: the branches will disappear, which should make our CPU quite happy.</p>
+<blockquote><p><code>if constexpr</code> is no longer a branch for the CPU! Code will be generated for only one of the execution paths.</p></blockquote>
+<p>How do we pull this off? Let's look at the current virtual table:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> ColdVTable
+{
+    <span class="code-keyword">void</span>* (*copyToHeap)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*);
+    <span class="code-keyword">void</span> (*copyToPlace)(<span class="code-keyword">const</span> <span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*moveToPlace)(<span class="code-keyword">void</span>*, <span class="code-keyword">void</span>* place);
+    <span class="code-keyword">void</span> (*destroy)(<span class="code-keyword">void</span>*, <span class="code-keyword">bool</span> isInplace);
+};</code></pre>
+<p>The first thing that stands out is that the interface clearly separates the stack/heap duality and thus removes the responsibility for checking and managing this aspect from itself. All of that falls on the calling code:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+	<span class="code-keyword">const</span> <span class="code-keyword">void</span>* srcPtr = other.<span class="code-call">getPtr_</span>();
+
+	m_isInplace = other.m_isInplace;
+	<span class="code-keyword">if</span> (m_isInplace) {
+		other.m_vtable-&gt;<span class="code-call">copyToPlace</span>(srcPtr, m_inplace);
+	} <span class="code-keyword">else</span> {
+		m_heap = other.m_vtable-&gt;<span class="code-call">copyToHeap</span>(srcPtr);
+	}
+
+	m_vtable = other.m_vtable;
+}</code></pre>
+<p>The <code>destroy</code> function stands somewhat apart and hints at what a solution might look like:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">struct</span> VTableFor
+{
+    ...
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">destroy</span>(<span class="code-keyword">void</span>* obj, <span class="code-keyword">bool</span> isInplace) {
+		F* callable = std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;F*&gt;(obj));
+		<span class="code-keyword">if</span> (isInplace) {
+			callable-&gt;~<span class="code-call">F</span>();
+		} <span class="code-keyword">else</span> {
+			<span class="code-keyword">if</span> (callable) {
+				<span class="code-keyword">delete</span> callable;
+			}
+		}
+	}
+	...
+}</code></pre>
+<p>But again, we're passing the <code>isInplace</code> flag at runtime here, so this is only a hint at the solution, not the solution itself.</p>
+<p>Now notice that the object the virtual table operates on is a <code>void*</code>, and this is nothing other than our original callable itself, so inside the virtual table we simply cast it back to the original type and use it for its intended purpose:</p>
+<pre><code class="language-cpp"><span class="code-keyword">static</span> Ret <span class="code-call">call</span>(<span class="code-keyword">void</span>* obj, Args... args) {
+	F& callable = *std::<span class="code-call">launder</span>(<span class="code-keyword">static_cast</span>&lt;F*&gt;(obj));
+	<span class="code-keyword">return</span> <span class="code-call">callable</span>(std::forward&lt;Args&gt;(args)...);
+}</code></pre>
+<p>At this point, the provenance of the <code>void*</code> pointer is unknown to us - it may point either to the heap or to the in-place storage inside our <code>Function</code>. And that's the core problem.</p>
+<p>We can solve it by slightly shifting our perspective - what if the virtual table operated not on a <code>void*</code>, but on that very <code>union</code> living inside <code>Function</code>? Then we'd have all the information we need. Consider:</p>
+<ul>
+	<li>The virtual table has access to both the heap and the in-place storage simultaneously</li>
+	<li>Through <code>if constexpr (DoesFitInplace&lt;F&gt;())</code>, the table always knows which of these two places it needs to access to find the object, because this is essentially <code>constexpr</code> information and depends on the characteristics of <code>F</code>: its size and alignment</li>
+	<li>As a result, the table itself will be able to perform all operations without an explicit runtime <code>m_isInPlace</code> flag</li>
+</ul>
+<p>And the nice thing is that now that we've written the virtual table ourselves, we can really do whatever we want with it, including pulling off the hack we just described. With the standard inheritance approach and native C++ vtables, we can't do anything like this: the virtual table lives <i>inside</i> the object, and the object has already been created. And it might seem that it's all the same - we can use <code>if constexpr (DoesFitInplace&lt;F&gt;())</code> and determine where we were created, but all we have in our hands is <code>this</code>, and there's nothing frivolous we can do with it.</p>
+<p>Let's put the idea into practice. First, let's give our <code>union</code> a name so that we can refer to it:</p>
+<pre><code class="language-cpp"><span class="code-keyword">union</span> FunctionBuffer
+{
+	<span class="code-keyword">void</span>* heap;
+	<span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte inplace[INPLACE_SIZE];
+};</code></pre>
+<p>Let's immediately implement a convenient way to obtain the correct pointer when we know the type <code>F</code>: we'll write a helper templated <code>getPtr()</code> method:</p>
+<pre><code class="language-cpp"><span class="code-keyword">union</span> FunctionBuffer
+{
+	<span class="code-keyword">void</span>* heap;
+	<span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte inplace[INPLACE_SIZE];
+
+	<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+	F* <span class="code-call">getPtr</span>() <span class="code-keyword">const</span> {
+		<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+			<span class="code-keyword">return</span> std::<span class="code-call">launder</span>(
+			    <span class="code-keyword">reinterpret_cast</span>&lt;F*&gt;(<span class="code-keyword">const_cast</span>&lt;std::byte*&gt;(inplace))
+			);
+		} <span class="code-keyword">else</span> {
+			<span class="code-keyword">return</span> <span class="code-keyword">static_cast</span>&lt;F*&gt;(heap);
+		}
+	}
+
+	<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+	F* <span class="code-call">getPtr</span>() {
+		<span class="code-keyword">return</span> <span class="code-keyword">const_cast</span>&lt;F*&gt;(
+			std::<span class="code-call">as_const</span>(*<span class="code-keyword">this</span>).getPtr&lt;F&gt;()
+		);
+	}
+};</code></pre>
+<p>The virtual table now works with <code>FunctionBuffer</code> and acquires a rather pleasant interface:</p>
+<pre><code class="language-cpp"><span class="code-keyword">struct</span> ColdVTable
+{
+	<span class="code-keyword">void</span> (*copyTo)(<span class="code-keyword">const</span> FunctionBuffer& from, FunctionBuffer& to);
+	<span class="code-keyword">void</span> (*moveTo)(FunctionBuffer& from, FunctionBuffer& to);
+	<span class="code-keyword">void</span> (*destroy)(FunctionBuffer&);
+};</code></pre>
+<p>The outer <code>Function</code> class now has the following data members:</p>
+<pre><code class="language-cpp">FunctionBuffer m_buffer;
+<span class="code-call">Ret</span>(*m_call)(<span class="code-keyword">const</span> FunctionBuffer&, Args... args) = <span class="code-keyword">nullptr</span>;
+<span class="code-keyword">const</span> ColdVTable* m_coldVtable = <span class="code-keyword">nullptr</span>;</code></pre>
+<p>First, notice how <code>m_call</code> quietly started working with <code>FunctionBuffer</code> as well. Second, look at this: we no longer store a boolean, and we've now fit neatly into 32 bytes:</p>
+<pre><code class="language-"><span class="code-literal">00</span> xxxxxxxx  <span class="code-keyword">union</span>
+<span class="code-literal">08</span> xxxxxxxx  <span class="code-keyword">union</span>
+<span class="code-literal">16</span> xxxxxxxx  m_call
+<span class="code-literal">24</span> xxxxxxxx  m_coldVtable</code></pre>
+<p>I'm now extremely happy with the memory layout of <code>Function</code>.</p>
+<p>There's very little left to do - rewrite the implementation of the virtual table. In fact, it's quite easy:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-keyword">struct</span> ColdVTableFor
+{
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">copyTo</span>(<span class="code-keyword">const</span> FunctionBuffer& from, FunctionBuffer& to) {
+		<span class="code-keyword">const</span> F& srcCallable = *from.getPtr&lt;F&gt;();
+
+		<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+			<span class="code-keyword">new</span> (to.inplace) <span class="code-call">F</span>(srcCallable);
+		} <span class="code-keyword">else</span> {
+			to.heap = <span class="code-keyword">new</span> <span class="code-call">F</span>(srcCallable);
+		}
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">moveTo</span>(FunctionBuffer& from, FunctionBuffer& to) {
+		<span class="code-keyword">const</span> F& srcCallable = *from.getPtr&lt;F&gt;();
+
+		<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+			<span class="code-keyword">new</span> (to.inplace) <span class="code-call">F</span>(std::<span class="code-call">move</span>(srcCallable));
+		} <span class="code-keyword">else</span> {
+			to.heap = from.heap;
+			from.heap = <span class="code-keyword">nullptr</span>;
+		}
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">destroy</span>(FunctionBuffer& obj) {
+		<span class="code-keyword">const</span> F* callable = obj.getPtr&lt;F&gt;();
+		<span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+			callable-&gt;~<span class="code-call">F</span>();
+		} <span class="code-keyword">else</span> {
+			<span class="code-keyword">if</span> (callable) {
+				<span class="code-keyword">delete</span> callable;
+			}
+		}
+	}
+
+	<span class="code-keyword">static</span> <span class="code-keyword">const</span> ColdVTable vtable;
+};</code></pre>
+<p>And our private <code>destroy_</code>, <code>copyFrom_</code>, and <code>moveFrom_</code> have become practically one-liners:</p>
+<pre><code class="language-cpp"><span class="code-keyword">void</span> <span class="code-call">destroy_</span>() <span class="code-keyword">noexcept</span> {
+	m_coldVtable-&gt;<span class="code-call">destroy</span>(m_buffer);
+}
+
+<span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+	other.m_coldVtable-&gt;<span class="code-call">copyTo</span>(other.m_buffer, m_buffer);
+	m_call = other.m_call;
+	m_coldVtable = other.m_coldVtable;
+}
+
+<span class="code-keyword">void</span> <span class="code-call">moveFrom_</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+	other.m_coldVtable-&gt;<span class="code-call">moveTo</span>(other.m_buffer, m_buffer);
+	m_call = other.m_call;
+	m_coldVtable = other.m_coldVtable;
+}</code></pre>
+<p>All the changes turned out to be very simple and organic, almost as if they were suggesting themselves.</p>
+<h2>Conclusion</h2>
+<p>We have smoothly arrived at the final implementation of the <code>Function</code> class. I don't think I want to optimize the class any further, because at its current stage it seems quite convincing to me.</p>
+<p>Despite the fairly long article and the large number of explanations, the code itself turned out to be quite compact:</p>
+<pre><code class="language-cpp"><span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span>&gt;
+<span class="code-keyword">class</span> Function;
+
+<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">class</span> Function&lt;<span class="code-call">Ret</span>(Args...)&gt;
+{
+<span class="code-keyword">public</span>:
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F, <span class="code-keyword">typename</span> = std::enable_if_t&lt;!std::is_same_v&lt;std::decay_t&lt;F&gt;, Function&gt;&gt;&gt;
+    <span class="code-call">Function</span>(F&& f) {
+        <span class="code-keyword">using</span> Fn = std::decay_t&lt;F&gt;;
+
+        <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;Fn&gt;()) {
+            <span class="code-keyword">new</span> (m_buffer.inplace) <span class="code-call">Fn</span>(std::forward&lt;F&gt;(f));
+        } <span class="code-keyword">else</span> {
+            m_buffer.heap = <span class="code-keyword">new</span> <span class="code-call">Fn</span>(std::forward&lt;F&gt;(f));
+        }
+
+        m_call = &HotVTableFor&lt;Fn&gt;::call;
+        m_coldVtable = &ColdVTableFor&lt;Fn&gt;::vtable;
+    }
+
+    ~<span class="code-call">Function</span>() <span class="code-keyword">noexcept</span> {
+        <span class="code-call">destroy_</span>();
+    }
+
+    <span class="code-call">Function</span>(<span class="code-keyword">const</span> Function& other) {
+        <span class="code-call">copyFrom_</span>(other);
+    }
+
+    <span class="code-call">Function</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(other));
+    }
+
+    Function& <span class="code-keyword">operator</span>=(<span class="code-keyword">const</span> Function& other) {
+        <span class="code-keyword">if</span> (<span class="code-keyword">this</span> == &other)
+            <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+
+        Function <span class="code-call">tmp</span>(other);
+        <span class="code-call">destroy_</span>();
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(tmp));
+
+        <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+    }
+
+    Function& <span class="code-keyword">operator</span>=(Function &&other) <span class="code-keyword">noexcept</span> {
+        <span class="code-keyword">if</span> (<span class="code-keyword">this</span> == &other)
+            <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+
+        <span class="code-call">destroy_</span>();
+        <span class="code-call">moveFrom_</span>(std::<span class="code-call">move</span>(other));
+
+        <span class="code-keyword">return</span> *<span class="code-keyword">this</span>;
+    }
+
+    Ret <span class="code-keyword">operator</span>()(Args... args) <span class="code-keyword">const</span> {
+        <span class="code-keyword">return</span> <span class="code-call">m_call</span>(m_buffer, std::forward&lt;Args&gt;(args)...);
+    }
+
+<span class="code-keyword">private</span>:
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t INPLACE_SIZE = <span class="code-literal">16</span>;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> size_t INPLACE_ALIGNMENT = <span class="code-keyword">alignof</span>(std::max_align_t);
+
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">static</span> <span class="code-keyword">constexpr</span> <span class="code-keyword">bool</span> <span class="code-call">DoesFitInplace</span>() {
+        <span class="code-keyword">return</span> <span class="code-keyword">sizeof</span>(F) &lt;= INPLACE_SIZE
+            && <span class="code-keyword">alignof</span>(F) &lt;= INPLACE_ALIGNMENT
+            && std::is_nothrow_move_constructible_v&lt;F&gt;;
+    }
+
+    <span class="code-keyword">union</span> FunctionBuffer
+    {
+        <span class="code-keyword">void</span>* heap;
+        <span class="code-keyword">alignas</span>(INPLACE_ALIGNMENT) std::byte inplace[INPLACE_SIZE];
+
+        <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+        F* <span class="code-call">getPtr</span>() <span class="code-keyword">const</span> {
+            <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+                <span class="code-keyword">return</span> std::<span class="code-call">launder</span>(
+                    <span class="code-keyword">reinterpret_cast</span>&lt;F*&gt;(<span class="code-keyword">const_cast</span>&lt;std::byte*&gt;(inplace))
+                );
+            } <span class="code-keyword">else</span> {
+                <span class="code-keyword">return</span> <span class="code-keyword">static_cast</span>&lt;F*&gt;(heap);
+            }
+        }
+
+        <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+        F* <span class="code-call">getPtr</span>() {
+            <span class="code-keyword">return</span> <span class="code-keyword">const_cast</span>&lt;F*&gt;(
+                std::<span class="code-call">as_const</span>(*<span class="code-keyword">this</span>).getPtr&lt;F&gt;()
+            );
+        }
+    };
+
+    <span class="code-keyword">struct</span> ColdVTable
+    {
+        <span class="code-keyword">void</span> (*copyTo)(<span class="code-keyword">const</span> FunctionBuffer& from, FunctionBuffer& to);
+        <span class="code-keyword">void</span> (*moveTo)(FunctionBuffer& from, FunctionBuffer& to);
+        <span class="code-keyword">void</span> (*destroy)(FunctionBuffer&);
+    };
+
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">struct</span> HotVTableFor
+    {
+        <span class="code-keyword">static</span> Ret <span class="code-call">call</span>(<span class="code-keyword">const</span> FunctionBuffer& obj, Args... args) {
+            F& callable = *obj.getPtr&lt;F&gt;();
+            <span class="code-keyword">return</span> <span class="code-call">callable</span>(std::forward&lt;Args&gt;(args)...);
+        }
+    };
+
+    <span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+    <span class="code-keyword">struct</span> ColdVTableFor
+    {
+        <span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">copyTo</span>(<span class="code-keyword">const</span> FunctionBuffer& from, FunctionBuffer& to) {
+            <span class="code-keyword">const</span> F& srcCallable = *from.getPtr&lt;F&gt;();
+
+            <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+                <span class="code-keyword">new</span> (to.inplace) <span class="code-call">F</span>(srcCallable);
+            } <span class="code-keyword">else</span> {
+                to.heap = <span class="code-keyword">new</span> <span class="code-call">F</span>(srcCallable);
+            }
+        }
+
+        <span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">moveTo</span>(FunctionBuffer& from, FunctionBuffer& to) {
+            <span class="code-keyword">const</span> F& srcCallable = *from.getPtr&lt;F&gt;();
+
+            <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+                <span class="code-keyword">new</span> (to.inplace) <span class="code-call">F</span>(std::<span class="code-call">move</span>(srcCallable));
+            } <span class="code-keyword">else</span> {
+                to.heap = from.heap;
+                from.heap = <span class="code-keyword">nullptr</span>;
+            }
+        }
+
+        <span class="code-keyword">static</span> <span class="code-keyword">void</span> <span class="code-call">destroy</span>(FunctionBuffer& obj) {
+            <span class="code-keyword">const</span> F* callable = obj.getPtr&lt;F&gt;();
+            <span class="code-keyword">if</span> <span class="code-keyword">constexpr</span> (DoesFitInplace&lt;F&gt;()) {
+                callable-&gt;~<span class="code-call">F</span>();
+            } <span class="code-keyword">else</span> {
+                <span class="code-keyword">if</span> (callable) {
+                    <span class="code-keyword">delete</span> callable;
+                }
+            }
+        }
+
+        <span class="code-keyword">static</span> <span class="code-keyword">const</span> ColdVTable vtable;
+    };
+
+    <span class="code-keyword">void</span> <span class="code-call">destroy_</span>() <span class="code-keyword">noexcept</span> {
+        m_coldVtable-&gt;<span class="code-call">destroy</span>(m_buffer);
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">copyFrom_</span>(<span class="code-keyword">const</span> Function& other) {
+        other.m_coldVtable-&gt;<span class="code-call">copyTo</span>(other.m_buffer, m_buffer);
+        m_call = other.m_call;
+        m_coldVtable = other.m_coldVtable;
+    }
+
+    <span class="code-keyword">void</span> <span class="code-call">moveFrom_</span>(Function&& other) <span class="code-keyword">noexcept</span> {
+        other.m_coldVtable-&gt;<span class="code-call">moveTo</span>(other.m_buffer, m_buffer);
+        m_call = other.m_call;
+        m_coldVtable = other.m_coldVtable;
+    }
+
+    FunctionBuffer m_buffer;
+    <span class="code-call">Ret</span>(*m_call)(<span class="code-keyword">const</span> FunctionBuffer&, Args... args) = <span class="code-keyword">nullptr</span>;
+    <span class="code-keyword">const</span> ColdVTable* m_coldVtable = <span class="code-keyword">nullptr</span>;
+};
+
+<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> Ret, <span class="code-keyword">typename</span>... Args&gt;
+<span class="code-keyword">template</span> &lt;<span class="code-keyword">typename</span> F&gt;
+<span class="code-comment">/*static*/</span> <span class="code-keyword">const</span> <span class="code-keyword">typename</span> Function&lt;<span class="code-call">Ret</span>(Args...)&gt;::ColdVTable
+Function&lt;<span class="code-call">Ret</span>(Args...)&gt;::ColdVTableFor&lt;F&gt;::vtable = {
+    &ColdVTableFor&lt;F&gt;::copyTo,
+    &ColdVTableFor&lt;F&gt;::moveTo,
+    &ColdVTableFor&lt;F&gt;::destroy
+};</code></pre>
+<h2>Joke</h2>
+<pre><code class="language-cpp"><span class="code-keyword">namespace</span> std {
+    <span class="code-keyword">template</span>&lt;<span class="code-keyword">typename</span> Signature&gt;
+    <span class="code-keyword">using</span> funktion = ::Function&lt;Signature&gt;;
+} <span class="code-comment">// namespace std</span></code></pre>
+<p>Now we've brought our class into the form shown in the cover image: feel free to use <code>std::funktion</code> to your heart's content.</p>
+<p>Spoiler: In reality, you're not allowed to put anything in <code>namespace std</code> - formally, you get UB.</p>
+<hr>
+<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/1088580/">habr.com</a>, used under CC BY 3.0. Translated by the author.</small>
+<script type="text/javascript" src="../theme-script.js"></script>
+<script type="text/javascript" src="../typography-change-script.js"></script>
+</body>
+</html>
