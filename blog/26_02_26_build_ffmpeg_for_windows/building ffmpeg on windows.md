@@ -4,7 +4,7 @@ tags:
   - ffmpeg
 title: Build ffmpeg for Windows
 url-title: build_ffmpeg_for_windows
-description: Recently I had to build ffmpeg on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated
+description: Recently I had to build ffmpeg on Windows using the MSVC compiler. And let me tell you — I nearly died. The official documentation for building the project on Windows is hopelessly outdated.
 keywords:
   - c++
   - c
@@ -179,3 +179,6 @@ def copy_ffmpeg():
 Building ffmpeg on Windows is not exactly a pleasant experience. I hope this guide makes your life with ffmpeg just a tiny bit more enjoyable.
 
 Any corrections or alternative simpler ways to build ffmpeg on Windows are welcome in the comments. If you just want to complain about ffmpeg — also feel free. If you want to tell me what a noob I am and that it's actually super simple — I'll read that too with pleasure.
+
+---
+<small>© Nikolai Shalakin. Translated by the author.</small>

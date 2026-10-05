@@ -3,7 +3,7 @@ tags:
   - article
 title: Making bots play cards endlessly, part II
 url-title: making_bots_play_cards_endlessly_2
-description: We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is [here](https://askepit.github.io/blog/making_bots_play_cards_endlessly_1/). Highly recommended reading — otherwise, keeping up with the context will be a pain.
+description: We continue forcing bots to play cards endlessly in the desperate hope of shaking out the optimal settings for our card game. The first part of this epic saga is here. Highly recommended reading — otherwise, keeping up with the context will be a pain.
 keywords:
   - python
   - gamedev

@@ -828,3 +828,6 @@ In addition to the hand-rolled solution, you can head over to [Godbolt (a.k.a. C
 Paste the memory layout printing code for your struct (exactly the one above), configure the service to execute the program rather than show assembly (yes, Compiler Explorer supports that too), and inspect the memory layout output for *any* platform and any compiler.
 
 Not all platforms support execution properly, but on all the major compilers you'll definitely be able to check everything.
+
+---
+<small>© Nikolai Shalakin. Originally published by <a href="https://habr.com/ru/articles/1003644/">habr.com</a>, used under CC BY 3.0. Translated by the author.</small>
