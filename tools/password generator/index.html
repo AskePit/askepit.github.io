@@ -1,0 +1,90 @@
+<html>
+<head>
+    <title>Password Generator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generate strong, random passwords in your browser. Choose length, character set, and case — free, fast, and works offline.">
+    <link rel="canonical" href="https://askepit.github.io/tools/password-generator/">
+    <meta property="og:title" content="Password Generator">
+    <meta property="og:description" content="Generate strong, random passwords in your browser. Choose length, character set, and case.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://askepit.github.io/tools/password-generator/">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="alternate" hreflang="en" href="https://askepit.github.io/tools/password-generator/?lang=en">
+    <link rel="alternate" hreflang="zh" href="https://askepit.github.io/tools/password-generator/?lang=zh">
+    <link rel="alternate" hreflang="es" href="https://askepit.github.io/tools/password-generator/?lang=es">
+    <link rel="alternate" hreflang="ar" href="https://askepit.github.io/tools/password-generator/?lang=ar">
+    <link rel="alternate" hreflang="pt" href="https://askepit.github.io/tools/password-generator/?lang=pt">
+    <link rel="alternate" hreflang="id" href="https://askepit.github.io/tools/password-generator/?lang=id">
+    <link rel="alternate" hreflang="fr" href="https://askepit.github.io/tools/password-generator/?lang=fr">
+    <link rel="alternate" hreflang="ja" href="https://askepit.github.io/tools/password-generator/?lang=ja">
+    <link rel="alternate" hreflang="ru" href="https://askepit.github.io/tools/password-generator/?lang=ru">
+    <link rel="alternate" hreflang="de" href="https://askepit.github.io/tools/password-generator/?lang=de">
+    <link rel="alternate" hreflang="x-default" href="https://askepit.github.io/tools/password-generator/">
+</head>
+<body>
+    <div id="card">
+        <h1 data-i18n="title">Password Generator</h1>
+
+        <div id="result-wrap">
+            <div id="result" data-i18n="resultPlaceholder" data-i18n-attr="data-placeholder"></div>
+            <button id="copy-button" type="button" data-i18n="copy" data-i18n-attr="aria-label,title">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8" y="8" width="13" height="13" rx="2.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M16 8V5.5C16 4.67157 15.3284 4 14.5 4H5.5C4.67157 4 4 4.67157 4 5.5V14.5C4 15.3284 4.67157 16 5.5 16H8" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+            </button>
+        </div>
+
+        <div id="main-layout">
+            <div id="params-layout">
+                <div id="basic-layout">
+                    <div class="field">
+                        <label for="char-set" data-i18n="charSet">Character set</label>
+                        <select id="char-set" name="char-set">
+                            <option value="digits" data-i18n="charSetDigits">Digits</option>
+                            <option value="letters" data-i18n="charSetLetters">Letters</option>
+                            <option value="normal" selected data-i18n="charSetNormal">Normal</option>
+                            <option value="advanced" data-i18n="charSetAdvanced">Advanced</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="length" data-i18n="length">Length</label>
+                        <input type="number" id="length" name="length" min="1" value="8">
+                    </div>
+                </div>
+            </div>
+
+            <details id="advanced-options">
+                <summary data-i18n="advancedOptions">Advanced options</summary>
+                <div id="advanced-layout">
+                    <div class="field">
+                        <label for="exclude" data-i18n="exclude">Exclude characters</label>
+                        <input type="text" id="exclude" name="exclude" data-i18n="excludePlaceholder" data-i18n-attr="placeholder" placeholder="e.g. 0O1l">
+                    </div>
+
+                    <div class="field">
+                        <label for="include" data-i18n="include">Include characters</label>
+                        <input type="text" id="include" name="include" data-i18n="includePlaceholder" data-i18n-attr="placeholder" placeholder="e.g. #%">
+                    </div>
+
+                    <div class="field">
+                        <label for="case" data-i18n="case">Case</label>
+                        <select id="case" name="case">
+                            <option value="mixed" data-i18n="caseMixed">Mixed</option>
+                            <option value="lowercase" data-i18n="caseLowercase">Lowercase</option>
+                            <option value="uppercase" data-i18n="caseUppercase">Uppercase</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+
+            <button id="generate-button" data-i18n="generate">Generate</button>
+        </div>
+    </div>
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
